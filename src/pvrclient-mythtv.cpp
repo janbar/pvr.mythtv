@@ -1430,6 +1430,9 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
     PVR_TIMER tag;
     memset(&tag, 0, sizeof(PVR_TIMER));
 
+    /* TODO: Implement own timer types to get support for the timer features introduced with PVR API 1.9.7 */
+    tag.iTimerType = PVR_TIMER_TYPE_NONE;
+
     std::string rulemarker = "";
     tag.startTime = it->second->StartTime();
     tag.endTime = it->second->EndTime();
@@ -1448,8 +1451,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
       tag.iMarginEnd = rule.EndOffset();
       tag.iMarginStart = rule.StartOffset();
       tag.firstDay = it->second->RecordingStartTime();
-      tag.bIsRepeating = meta.isRepeating;
-      tag.iWeekdays = meta.weekDays;
+      tag.iWeekdays = meta.isRepeating ? meta.weekDays : PVR_WEEKDAY_NONE;
       if (*(meta.marker))
         rulemarker.append("(").append(meta.marker).append(")");
     }
@@ -1459,8 +1461,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
       tag.iMarginEnd = 0;
       tag.iMarginStart = 0;
       tag.firstDay = 0;
-      tag.bIsRepeating = false;
-      tag.iWeekdays = 0;
+      tag.iWeekdays = PVR_WEEKDAY_NONE;
     }
 
     // Status: Match recording status with PVR_TIMER status
@@ -1539,8 +1540,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
     //handle full myth-style series recording), then the best approach seems to be showning no repeat
     //without the optional a day mask as any repeats will be shown as separate timers in the list.
     //(It also makes the timers screen much easier to read!)
-    tag.bIsRepeating = false;
-    tag.iWeekdays = 0;
+    tag.iWeekdays = PVR_WEEKDAY_NONE;
     PVR->TransferTimerEntry(handle, &tag);
   }
 
@@ -1654,56 +1654,53 @@ MythRecordingRule PVRClientMythTV::PVRtoMythRecordingRule(const PVR_TIMER &timer
   }
 
   // Depending of timer type, create the best rule
-  if (timer.bIsRepeating)
+  if (timer.iWeekdays < PVR_WEEKDAY_ALLDAYS && timer.iWeekdays > PVR_WEEKDAY_NONE)
   {
-    if (timer.iWeekdays < 0x7F && timer.iWeekdays > 0)
+    // Move time to next day of week and find program info
+    // Then create a WEEKLY record rule
+    for (int bDay = 0; bDay < 7; bDay++)
     {
-      // Move time to next day of week and find program info
-      // Then create a WEEKLY record rule
-      for (int bDay = 0; bDay < 7; bDay++)
+      if ((timer.iWeekdays & (1 << bDay)) != 0)
       {
-        if ((timer.iWeekdays & (1 << bDay)) != 0)
-        {
-          int n = (((bDay + 1) % 7) - weekday(&st) + 7) % 7;
-          struct tm stm;
-          struct tm etm;
-          localtime_r(&st, &stm);
-          localtime_r(&et, &etm);
-          stm.tm_mday += n;
-          etm.tm_mday += n;
-          st = mktime(&stm);
-          et = mktime(&etm);
-          break;
-        }
+        int n = (((bDay + 1) % 7) - weekday(&st) + 7) % 7;
+        struct tm stm;
+        struct tm etm;
+        localtime_r(&st, &stm);
+        localtime_r(&et, &etm);
+        stm.tm_mday += n;
+        etm.tm_mday += n;
+        st = mktime(&stm);
+        et = mktime(&etm);
+        break;
       }
+    }
 
-      Myth::ProgramMapPtr epg = m_control->GetProgramGuide(timer.iClientChannelUid, st, st);
-      Myth::ProgramMap::reverse_iterator epgit = epg->rbegin(); // Get last found
-      if (epgit != epg->rend() && title.compare(0, epgit->second->title.length(), epgit->second->title) == 0)
-      {
-        epgInfo = MythEPGInfo(epgit->second);
-        epgFound = true;
-      }
-      else
-        epgInfo = MythEPGInfo();
-      rule = m_scheduleManager->NewWeeklyRecord(epgInfo);
-    }
-    else if (timer.iWeekdays == 0x7F)
+    Myth::ProgramMapPtr epg = m_control->GetProgramGuide(timer.iClientChannelUid, st, st);
+    Myth::ProgramMap::reverse_iterator epgit = epg->rbegin(); // Get last found
+    if (epgit != epg->rend() && title.compare(0, epgit->second->title.length(), epgit->second->title) == 0)
     {
-      // Create a DAILY record rule
-      Myth::ProgramMapPtr epg = m_control->GetProgramGuide(timer.iClientChannelUid, st, st);
-      Myth::ProgramMap::reverse_iterator epgit = epg->rbegin(); // Get last found
-      if (epgit != epg->rend() && title.compare(0, epgit->second->title.length(), epgit->second->title) == 0)
-      {
-        epgInfo = MythEPGInfo(epgit->second);
-        epgFound = true;
-      }
-      else
-        epgInfo = MythEPGInfo();
-      rule = m_scheduleManager->NewDailyRecord(epgInfo);
+      epgInfo = MythEPGInfo(epgit->second);
+      epgFound = true;
     }
+    else
+      epgInfo = MythEPGInfo();
+    rule = m_scheduleManager->NewWeeklyRecord(epgInfo);
   }
-  else
+  else if (timer.iWeekdays == PVR_WEEKDAY_ALLDAYS)
+  {
+    // Create a DAILY record rule
+    Myth::ProgramMapPtr epg = m_control->GetProgramGuide(timer.iClientChannelUid, st, st);
+    Myth::ProgramMap::reverse_iterator epgit = epg->rbegin(); // Get last found
+    if (epgit != epg->rend() && title.compare(0, epgit->second->title.length(), epgit->second->title) == 0)
+    {
+      epgInfo = MythEPGInfo(epgit->second);
+      epgFound = true;
+    }
+    else
+      epgInfo = MythEPGInfo();
+    rule = m_scheduleManager->NewDailyRecord(epgInfo);
+  }
+  else if (timer.iWeekdays == PVR_WEEKDAY_NONE)
   {
     // Find the program info at the given start time with the same title
     // When no entry was found with the same title, then the record rule type is manual
@@ -1764,15 +1761,12 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
 
   // Since TAG is transfered without repeating info we have to restore them before comparing,
   PVR_TIMER newTimer = timer;
-  if (old->second->bIsRepeating && !newTimer.bIsRepeating)
-  {
-    newTimer.bIsRepeating = true;
+  if (old->second->iWeekdays != PVR_WEEKDAY_NONE && newTimer.iWeekdays == PVR_WEEKDAY_NONE)
     newTimer.iWeekdays = old->second->iWeekdays;
-  }
 
   if (old->second->iClientChannelUid != newTimer.iClientChannelUid)
     diffmask |= CTTimer;
-  if (old->second->bIsRepeating != newTimer.bIsRepeating || old->second->iWeekdays != newTimer.iWeekdays)
+  if (old->second->iWeekdays != newTimer.iWeekdays)
     diffmask |= CTTimer;
   if (old->second->startTime != newTimer.startTime || old->second->endTime != newTimer.endTime)
     diffmask |= CTTimer;
