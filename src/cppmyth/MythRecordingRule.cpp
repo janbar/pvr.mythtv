@@ -432,3 +432,23 @@ void MythRecordingRule::SetEpisode(uint16_t episode)
 {
   m_recordSchedule->episode = episode;
 }
+
+time_t MythRecordingRule::NextRecording() const
+{
+  return m_recordSchedule->nextRecording;
+}
+
+time_t MythRecordingRule::LastRecorded() const
+{
+  return m_recordSchedule->lastRecorded;
+}
+
+time_t MythRecordingRule::LastDeleted() const
+{
+  return m_recordSchedule->lastDeleted;
+}
+
+uint32_t MythRecordingRule::AverageDelay() const
+{
+  return m_recordSchedule->averageDelay;
+}

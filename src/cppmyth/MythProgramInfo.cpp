@@ -279,9 +279,9 @@ std::string MythProgramInfo::Callsign() const
 }
 
 
-MythProgramInfo::RecordStatus MythProgramInfo::Status() const
+Myth::RS_t MythProgramInfo::Status() const
 {
-  return (m_proginfo ? (RecordStatus)m_proginfo->recording.status : Myth::RS_UNKNOWN);
+  return (m_proginfo ? (Myth::RS_t)m_proginfo->recording.status : Myth::RS_UNKNOWN);
 }
 
 std::string MythProgramInfo::RecordingGroup() const

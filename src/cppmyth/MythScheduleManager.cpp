@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2014 Team XBMC
+ *      Copyright (C) 2005-2015 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,22 +19,29 @@
  */
 
 #include "MythScheduleManager.h"
+#include "MythScheduleHelperNoHelper.h"
+#include "MythScheduleHelper75.h"
+#include "MythScheduleHelper76.h"
+#include "MythScheduleHelper85.h"
 #include "../client.h"
 #include "../tools.h"
 
 #include <cstdio>
+#include <cassert>
+#include <math.h>
 
 using namespace ADDON;
 using namespace PLATFORM;
 
 enum
 {
-  METHOD_UNKNOWN = 0,
-  METHOD_UPDATE_INACTIVE = 1,
-  METHOD_CREATE_OVERRIDE = 2,
-  METHOD_DELETE = 3,
-  METHOD_DISCREET_UPDATE = 4,
-  METHOD_FULL_UPDATE = 5
+  METHOD_UNKNOWN            = 0,
+  METHOD_NOOP               = 1,
+  METHOD_UPDATE_INACTIVE,
+  METHOD_CREATE_OVERRIDE,
+  METHOD_CREATE_DONTRECORD,
+  METHOD_DELETE,
+  METHOD_DISCREET_UPDATE,
 };
 
 static uint_fast32_t hashvalue(uint_fast32_t maxsize, const char *value)
@@ -54,16 +61,15 @@ static uint_fast32_t hashvalue(uint_fast32_t maxsize, const char *value)
   return h % maxsize;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 ////
 //// MythRecordingRuleNode
 ////
 
 MythRecordingRuleNode::MythRecordingRuleNode(const MythRecordingRule &rule)
-  : m_rule(rule)
-  , m_mainRule()
-  , m_overrideRules()
+: m_rule(rule)
+, m_mainRule()
+, m_overrideRules()
 {
 }
 
@@ -79,7 +85,7 @@ MythRecordingRule MythRecordingRuleNode::GetRule() const
 
 MythRecordingRule MythRecordingRuleNode::GetMainRule() const
 {
-  if (this->IsOverrideRule())
+  if (IsOverrideRule())
     return m_mainRule;
   return m_rule;
 }
@@ -89,7 +95,7 @@ bool MythRecordingRuleNode::HasOverrideRules() const
   return (!m_overrideRules.empty());
 }
 
-OverrideRuleList MythRecordingRuleNode::GetOverrideRules() const
+MythRecordingRuleList MythRecordingRuleNode::GetOverrideRules() const
 {
   return m_overrideRules;
 }
@@ -131,85 +137,43 @@ void MythScheduleManager::Setup()
   if (m_protoVersion != old)
   {
     SAFE_DELETE(m_versionHelper);
-    if (m_protoVersion >= 76)
+    if (m_protoVersion >= 85)
+    {
+      m_versionHelper = new MythScheduleHelper85(this, m_control);
+      XBMC->Log(LOG_DEBUG, "Using MythScheduleHelper85 and inherited functions");
+    }
+    else if (m_protoVersion >= 76)
+    {
       m_versionHelper = new MythScheduleHelper76(this, m_control);
+      XBMC->Log(LOG_DEBUG, "Using MythScheduleHelper76 and inherited functions");
+    }
     else if (m_protoVersion >= 75)
+    {
       m_versionHelper = new MythScheduleHelper75(this, m_control);
+      XBMC->Log(LOG_DEBUG, "Using MythScheduleHelper75 and inherited functions");
+    }
     else
+    {
       m_versionHelper = new MythScheduleHelperNoHelper();
+      XBMC->Log(LOG_DEBUG, "Using MythScheduleHelperNoHelper");
+    }
   }
 }
 
-uint32_t MythScheduleManager::MakeIndex(const ScheduledPtr &scheduled) const
+uint32_t MythScheduleManager::MakeIndex(const MythProgramInfo& recording)
 {
   // Recordings must keep same identifier even after refreshing cache (cf Update).
   // Numeric hash of UID is used to make the constant numeric identifier.
-  uint32_t index = (scheduled->RecordID() << 16) + hashvalue(0xFFFF, scheduled->UID().c_str());
+  // Since client share index range with 'node', I exclusively reserve the range
+  // of values 0x80000000 - 0xFFFFFFFF for indexing of upcoming.
+  uint32_t index = 0x80000000L | (recording.RecordID() << 16) | hashvalue(0xFFFF, recording.UID().c_str());
   return index;
 }
 
-MythRecordingRule MythScheduleManager::MakeDontRecord(const MythRecordingRule& rule, const ScheduledPtr& recording)
+uint32_t MythScheduleManager::MakeIndex(const MythRecordingRule& rule)
 {
-  MythRecordingRule modifier = rule.DuplicateRecordingRule();
-  // Do the same as backend even we know the modifier will be rejected for manual rule:
-  // Don't know if this behavior is a bug issue or desired: cf libmythtv/recordingrule.cpp
-  if (modifier.SearchType() != Myth::ST_ManualSearch)
-    modifier.SetSearchType(Myth::ST_NoSearch);
-
-  modifier.SetType(Myth::RT_DontRecord);
-  modifier.SetParentID(modifier.RecordID());
-  modifier.SetRecordID(0);
-  modifier.SetInactive(false);
-  // Assign recording info
-  modifier.SetTitle(recording->Title());
-  modifier.SetSubtitle(recording->Subtitle());
-  modifier.SetDescription(recording->Description());
-  modifier.SetChannelID(recording->ChannelID());
-  modifier.SetCallsign(recording->Callsign());
-  modifier.SetStartTime(recording->StartTime());
-  modifier.SetEndTime(recording->EndTime());
-  modifier.SetSeriesID(recording->SerieID());
-  modifier.SetProgramID(recording->ProgramID());
-  modifier.SetCategory(recording->Category());
-  if (rule.InetRef().empty())
-  {
-    modifier.SetInerRef(recording->Inetref());
-    modifier.SetSeason(recording->Season());
-    modifier.SetEpisode(recording->Episode());
-  }
-  return modifier;
-}
-
-MythRecordingRule MythScheduleManager::MakeOverride(const MythRecordingRule& rule, const ScheduledPtr& recording)
-{
-  MythRecordingRule modifier = rule.DuplicateRecordingRule();
-  // Do the same as backend even we know the modifier will be rejected for manual rule:
-  // Don't know if this behavior is a bug issue or desired: cf libmythtv/recordingrule.cpp
-  if (modifier.SearchType() != Myth::ST_ManualSearch)
-    modifier.SetSearchType(Myth::ST_NoSearch);
-
-  modifier.SetType(Myth::RT_OverrideRecord);
-  modifier.SetParentID(modifier.RecordID());
-  modifier.SetRecordID(0);
-  modifier.SetInactive(false);
-  // Assign recording info
-  modifier.SetTitle(recording->Title());
-  modifier.SetSubtitle(recording->Subtitle());
-  modifier.SetDescription(recording->Description());
-  modifier.SetChannelID(recording->ChannelID());
-  modifier.SetCallsign(recording->Callsign());
-  modifier.SetStartTime(recording->StartTime());
-  modifier.SetEndTime(recording->EndTime());
-  modifier.SetSeriesID(recording->SerieID());
-  modifier.SetProgramID(recording->ProgramID());
-  modifier.SetCategory(recording->Category());
-  if (rule.InetRef().empty())
-  {
-    modifier.SetInerRef(recording->Inetref());
-    modifier.SetSeason(recording->Season());
-    modifier.SetEpisode(recording->Episode());
-  }
-  return modifier;
+  // The range of values 0x0 - 0x7FFFFFFF is reserved for indexing of rule.
+  return rule.RecordID() & 0x7FFFFFFFL;
 }
 
 unsigned MythScheduleManager::GetUpcomingCount() const
@@ -218,152 +182,152 @@ unsigned MythScheduleManager::GetUpcomingCount() const
   return (unsigned)m_recordings.size();
 }
 
-ScheduleList MythScheduleManager::GetUpcomingRecordings()
+MythTimerEntryList MythScheduleManager::GetTimerEntries()
 {
-  ScheduleList recordings;
   CLockObject lock(m_lock);
+  MythTimerEntryList entries;
+
+  for (NodeList::iterator it = m_rules.begin(); it != m_rules.end(); ++it)
+  {
+    if ((*it)->IsOverrideRule())
+      continue;
+    MythTimerEntryPtr entry = MythTimerEntryPtr(new MythTimerEntry());
+    if (m_versionHelper->FillTimerEntry(*entry, **it))
+      entries.push_back(entry);
+  }
+
   for (RecordingList::iterator it = m_recordings.begin(); it != m_recordings.end(); ++it)
   {
+    MythTimerEntryPtr entry = MythTimerEntryPtr(new MythTimerEntry());
+    if (m_versionHelper->FillTimerEntry(*entry, *(it->second)))
+      entries.push_back(entry);
+  }
+  return entries;
+}
 
-    //Only include timers which have an inactive status if the user has requested it (flag m_showNotRecording)
-    switch (it->second->Status())
+MythScheduleManager::MSM_ERROR MythScheduleManager::SubmitTimer(const MythTimerEntry& entry)
+{
+  switch (entry.timerType)
+  {
+    case TIMER_TYPE_MANUAL_SEARCH:
+    case TIMER_TYPE_THIS_SHOWING:
+    case TIMER_TYPE_RECORD_ONE:
+    case TIMER_TYPE_RECORD_WEEKLY:
+    case TIMER_TYPE_RECORD_DAILY:
+    case TIMER_TYPE_RECORD_ALL:
+    case TIMER_TYPE_RECORD_SERIES:
+      break;
+    default:
+      return MSM_ERROR_NOT_IMPLEMENTED;
+  }
+  MythRecordingRule rule = m_versionHelper->NewFromTimer(entry, true);
+  MSM_ERROR ret = AddRecordingRule(rule);
+  return ret;
+}
+
+MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateTimer(const MythTimerEntry& entry)
+{
+  switch (entry.timerType)
+  {
+    case TIMER_TYPE_UPCOMING:
+    case TIMER_TYPE_DONT_RECORD:
+    case TIMER_TYPE_OVERRIDE:
     {
-    //Upcoming recordings which are disabled due to being lower priority duplicates or already recorded
-    case Myth::RS_EARLIER_RECORDING:  //will record earlier
-    case Myth::RS_LATER_SHOWING:      //will record later
-    case Myth::RS_CURRENT_RECORDING:  //Already in the current library
-    case Myth::RS_PREVIOUS_RECORDING: //Previoulsy recorded but no longer in the library
-      if (!m_showNotRecording)
+      MythRecordingRule newrule = m_versionHelper->NewFromTimer(entry, false);
+      return UpdateRecording(entry.entryIndex, newrule);
+    }
+    case TIMER_TYPE_MANUAL_SEARCH:
+    case TIMER_TYPE_THIS_SHOWING:
+    case TIMER_TYPE_RECORD_ONE:
+    case TIMER_TYPE_RECORD_WEEKLY:
+    case TIMER_TYPE_RECORD_DAILY:
+    case TIMER_TYPE_RECORD_ALL:
+    case TIMER_TYPE_RECORD_SERIES:
+    {
+      if (entry.epgCheck && entry.epgInfo.IsNull())
       {
-        XBMC->Log(LOG_DEBUG, "%s: Skipping %s:%s on %s because status %d and m_showNotRecording=%i", __FUNCTION__,
-                  it->second->Title().c_str(), it->second->Subtitle().c_str(), it->second->ChannelName().c_str(), it->second->Status(), m_showNotRecording);
-        continue;
+        XBMC->Log(LOG_ERROR, "%s: index %u requires valid EPG info", __FUNCTION__, entry.entryIndex);
+        return MSM_ERROR_NOT_IMPLEMENTED;
       }
+      MythRecordingRule newrule = m_versionHelper->NewFromTimer(entry, false);
+      return UpdateRecordingRule(entry.entryIndex, newrule);
+    }
     default:
       break;
-    }
-
-    recordings.push_back(std::make_pair(it->first, it->second));
   }
-  return recordings;
-}
-
-MythScheduleManager::MSM_ERROR MythScheduleManager::ScheduleRecording(MythRecordingRule &rule)
-{
-  // Don't schedule nil
-  if (rule.Type() == Myth::RT_NotRecording)
-    return MSM_ERROR_FAILED;
-
-  if (!m_control->AddRecordSchedule(*(rule.GetPtr())))
-    return MSM_ERROR_FAILED;
-
-  //if (!m_con.UpdateSchedules(rule.RecordID()))
-  //  return MSM_ERROR_FAILED;
-
-  return MSM_ERROR_SUCCESS;
-}
-
-MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteRecording(unsigned int index)
-{
-  CLockObject lock(m_lock);
-
-  ScheduledPtr recording = this->FindUpComingByIndex(index);
-  if (!recording)
-    return MSM_ERROR_FAILED;
-
-  RecordingRuleNodePtr node = this->FindRuleById(recording->RecordID());
-  if (node)
-  {
-    XBMC->Log(LOG_DEBUG, "%s - %u : Found rule %u type %d", __FUNCTION__, index, (unsigned)node->m_rule.RecordID(), (int)node->m_rule.Type());
-
-    // Delete override rules
-    if (node->HasOverrideRules())
-    {
-      for (OverrideRuleList::iterator ito = node->m_overrideRules.begin(); ito != node->m_overrideRules.end(); ++ito)
-      {
-        XBMC->Log(LOG_DEBUG, "%s - %u : Found override rule %u type %d", __FUNCTION__, index, (unsigned)ito->RecordID(), (int)ito->Type());
-        ScheduleList rec = this->FindUpComingByRuleId(ito->RecordID());
-        for (ScheduleList::iterator itr = rec.begin(); itr != rec.end(); ++itr)
-        {
-          XBMC->Log(LOG_DEBUG, "%s - %u : Found override recording %s status %d", __FUNCTION__, index, itr->second->UID().c_str(), itr->second->Status());
-          if (itr->second->Status() == Myth::RS_RECORDING || itr->second->Status() == Myth::RS_TUNING)
-          {
-            XBMC->Log(LOG_DEBUG, "%s - Stop recording %s", __FUNCTION__, itr->second->UID().c_str());
-            m_control->StopRecording(*(itr->second->GetPtr()));
-          }
-        }
-        XBMC->Log(LOG_DEBUG, "%s - Delete recording rule %u (modifier of rule %u)", __FUNCTION__, (unsigned)ito->RecordID(), (unsigned)node->m_rule.RecordID());
-        if (!m_control->RemoveRecordSchedule(ito->RecordID()))
-          XBMC->Log(LOG_ERROR, "%s - Delete recording rule failed", __FUNCTION__);
-      }
-    }
-
-    // Delete main rule
-    ScheduleList rec = this->FindUpComingByRuleId(node->m_rule.RecordID());
-    for (ScheduleList::iterator itr = rec.begin(); itr != rec.end(); ++itr)
-    {
-      XBMC->Log(LOG_DEBUG, "%s - %u : Found recording %s status %d", __FUNCTION__, index, itr->second->UID().c_str(), itr->second->Status());
-      if (itr->second->Status() == Myth::RS_RECORDING || itr->second->Status() == Myth::RS_TUNING)
-      {
-        XBMC->Log(LOG_DEBUG, "%s - Stop recording %s", __FUNCTION__, itr->second->UID().c_str());
-        m_control->StopRecording(*(itr->second->GetPtr()));
-      }
-    }
-    XBMC->Log(LOG_DEBUG, "%s - Delete recording rule %u", __FUNCTION__, node->m_rule.RecordID());
-    if (!m_control->RemoveRecordSchedule(node->m_rule.RecordID()))
-      XBMC->Log(LOG_ERROR, "%s - Delete recording rule failed", __FUNCTION__);
-
-    //if (!m_con.UpdateSchedules(-1))
-    //  return MSM_ERROR_FAILED;
-
-    // Another client could delete the rule at the same time. Therefore always SUCCESS even if database delete fails.
-    return MSM_ERROR_SUCCESS;
-  }
-  else
-  {
-    XBMC->Log(LOG_DEBUG, "%s - %u : No rule for recording %s status %d", __FUNCTION__, index, recording->UID().c_str(), recording->Status());
-    if (recording->Status() == Myth::RS_RECORDING || recording->Status() == Myth::RS_TUNING)
-    {
-      XBMC->Log(LOG_DEBUG, "%s - Stop recording %s", __FUNCTION__, recording->UID().c_str());
-      m_control->StopRecording(*(recording->GetPtr()));
-      return MSM_ERROR_SUCCESS;
-    }
-  }
-
   return MSM_ERROR_NOT_IMPLEMENTED;
 }
 
-MythScheduleManager::MSM_ERROR MythScheduleManager::DisableRecording(unsigned int index)
+MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteTimer(const MythTimerEntry& entry, bool force)
+{
+  switch (entry.timerType)
+  {
+    case TIMER_TYPE_UPCOMING:
+      return DisableRecording(entry.entryIndex);
+    case TIMER_TYPE_DONT_RECORD:
+    case TIMER_TYPE_OVERRIDE:
+      return DeleteModifier(entry.entryIndex);
+    case TIMER_TYPE_THIS_SHOWING:
+    case TIMER_TYPE_MANUAL_SEARCH:
+      return DeleteRecordingRule(entry.entryIndex);
+    case TIMER_TYPE_RECORD_ONE:
+    case TIMER_TYPE_RECORD_WEEKLY:
+    case TIMER_TYPE_RECORD_DAILY:
+    case TIMER_TYPE_RECORD_ALL:
+    case TIMER_TYPE_RECORD_SERIES:
+      if (force)
+        return DeleteRecordingRule(entry.entryIndex);
+      return MSM_ERROR_SUCCESS;
+    default:
+      break;
+  }
+  return MSM_ERROR_NOT_IMPLEMENTED;
+}
+
+MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteModifier(uint32_t index)
 {
   CLockObject lock(m_lock);
 
-  ScheduledPtr recording = this->FindUpComingByIndex(index);
+  MythScheduledPtr recording = FindUpComingByIndex(index);
+  if (!recording)
+    return MSM_ERROR_FAILED;
+  if (recording->Status() == Myth::RS_RECORDED)
+    return MSM_ERROR_FAILED;
+  MythRecordingRuleNodePtr node = FindRuleById(recording->RecordID());
+  if (node && node->IsOverrideRule())
+  {
+    XBMC->Log(LOG_DEBUG, "%s: Deleting modifier rule %u relates recording %u", __FUNCTION__, node->m_rule.RecordID(), index);
+    if (!m_control->RemoveRecordSchedule(node->m_rule.RecordID()))
+      XBMC->Log(LOG_ERROR, "%s: Deleting recording rule failed", __FUNCTION__);
+  }
+  // Another client could delete the rule at the same time. Therefore always SUCCESS even if database delete fails.
+  return MSM_ERROR_SUCCESS;
+}
+
+MythScheduleManager::MSM_ERROR MythScheduleManager::DisableRecording(uint32_t index)
+{
+  CLockObject lock(m_lock);
+
+  MythScheduledPtr recording = FindUpComingByIndex(index);
   if (!recording)
     return MSM_ERROR_FAILED;
 
-  if (recording->Status() == Myth::RS_INACTIVE || recording->Status() == Myth::RS_DONT_RECORD)
+  if (recording->Status() == Myth::RS_INACTIVE)
     return MSM_ERROR_SUCCESS;
 
-  RecordingRuleNodePtr node = this->FindRuleById(recording->RecordID());
+  MythRecordingRuleNodePtr node = FindRuleById(recording->RecordID());
   if (node)
   {
-    XBMC->Log(LOG_DEBUG, "%s - %u : %s:%s on channel %s program %s",
+    XBMC->Log(LOG_DEBUG, "%s: %u : %s:%s on channel %s program %s",
               __FUNCTION__, index, recording->Title().c_str(), recording->Subtitle().c_str(), recording->Callsign().c_str(), recording->UID().c_str());
-    XBMC->Log(LOG_DEBUG, "%s - %u : Found rule %u type %d with recording status %i",
+    XBMC->Log(LOG_DEBUG, "%s: %u : Found rule %u type %d with recording status %d",
               __FUNCTION__, index, (unsigned)node->m_rule.RecordID(), (int)node->m_rule.Type(), recording->Status());
     int method = METHOD_UNKNOWN;
     MythRecordingRule handle = node->m_rule.DuplicateRecordingRule();
 
-    // Not recording. Simply inactivate the rule
-    if (recording->Status() == Myth::RS_UNKNOWN)
+    // Method depends of its rule type
+    switch (node->m_rule.Type())
     {
-      method = METHOD_UPDATE_INACTIVE;
-    }
-    else
-    {
-      // Method depends of its rule type
-      switch (node->m_rule.Type())
-      {
       case Myth::RT_SingleRecord:
         switch (recording->Status())
         {
@@ -373,16 +337,19 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DisableRecording(unsigned in
             break;
           case Myth::RS_PREVIOUS_RECORDING:
           case Myth::RS_EARLIER_RECORDING:
-            method = METHOD_CREATE_OVERRIDE;
+            method = METHOD_CREATE_DONTRECORD;
             break;
           default:
             method = METHOD_UPDATE_INACTIVE;
             break;
         }
         break;
-      case Myth::RT_NotRecording:
-        method = METHOD_UPDATE_INACTIVE;
+
+      case Myth::RT_DontRecord:
+      case Myth::RT_OverrideRecord:
+        method = METHOD_DELETE;
         break;
+
       case Myth::RT_OneRecord:
       case Myth::RT_ChannelRecord:
       case Myth::RT_AllRecord:
@@ -390,74 +357,65 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DisableRecording(unsigned in
       case Myth::RT_WeeklyRecord:
       case Myth::RT_FindDailyRecord:
       case Myth::RT_FindWeeklyRecord:
-        method = METHOD_CREATE_OVERRIDE;
+        method = METHOD_CREATE_DONTRECORD;
         break;
-      case Myth::RT_OverrideRecord:
-        method = METHOD_DELETE;
-        break;
+
       default:
+        method = METHOD_UNKNOWN;
         break;
-      }
     }
 
-    XBMC->Log(LOG_DEBUG, "%s - %u : Dealing with the problem using method %i", __FUNCTION__, index, method);
-    if (method == METHOD_UPDATE_INACTIVE)
+    XBMC->Log(LOG_DEBUG, "%s: %u : Dealing with the problem using method %d", __FUNCTION__, index, method);
+    switch (method)
     {
-      handle.SetInactive(true);
-      if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
-        return MSM_ERROR_FAILED;
-      node->m_rule = handle; // sync node
-      //if (!m_con.UpdateSchedules(handle.RecordID()))
-      //  return MSM_ERROR_FAILED;
-      return MSM_ERROR_SUCCESS;
-    }
-    if (method == METHOD_CREATE_OVERRIDE)
-    {
-      handle = MakeDontRecord(handle, recording);
-      XBMC->Log(LOG_DEBUG, "%s - %u : Creating Override for %u (%s: %s) on %i (%s)"
-                , __FUNCTION__, index, (unsigned)handle.ParentID(), handle.Title().c_str(),
-                handle.Subtitle().c_str(), handle.ChannelID(), handle.Callsign().c_str());
+      case METHOD_UPDATE_INACTIVE:
+        handle.SetInactive(true);
+        if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
+          return MSM_ERROR_FAILED;
+        node->m_rule = handle; // sync node
+        return MSM_ERROR_SUCCESS;
 
-      if (!m_control->AddRecordSchedule(*(handle.GetPtr())))
-        return MSM_ERROR_FAILED;
-      node->m_overrideRules.push_back(handle); // sync node
-      //if (!m_con.UpdateSchedules(handle.RecordID()))
-      //  return MSM_ERROR_FAILED;
-      return MSM_ERROR_SUCCESS;
-    }
-    if (method == METHOD_DELETE)
-    {
-      return this->DeleteRecording(index);
+      case METHOD_CREATE_DONTRECORD:
+        handle = m_versionHelper->MakeDontRecord(handle, *recording);
+        XBMC->Log(LOG_DEBUG, "%s: %u : Creating Override for %u (%s: %s) on %u (%s)"
+                  , __FUNCTION__, index, (unsigned)handle.ParentID(), handle.Title().c_str(),
+                  handle.Subtitle().c_str(), handle.ChannelID(), handle.Callsign().c_str());
+
+        if (!m_control->AddRecordSchedule(*(handle.GetPtr())))
+          return MSM_ERROR_FAILED;
+        node->m_overrideRules.push_back(handle); // sync node
+        return MSM_ERROR_SUCCESS;
+
+      case METHOD_DELETE:
+        return DeleteRecordingRule(handle.RecordID());
+
+      default:
+        return MSM_ERROR_NOT_IMPLEMENTED;
     }
   }
-
-  return MSM_ERROR_NOT_IMPLEMENTED;
+  return MSM_ERROR_FAILED;
 }
 
-MythScheduleManager::MSM_ERROR MythScheduleManager::EnableRecording(unsigned int index)
+MythScheduleManager::MSM_ERROR MythScheduleManager::EnableRecording(uint32_t index)
 {
   CLockObject lock(m_lock);
 
-  ScheduledPtr recording = this->FindUpComingByIndex(index);
+  MythScheduledPtr recording = FindUpComingByIndex(index);
   if (!recording)
     return MSM_ERROR_FAILED;
 
-  RecordingRuleNodePtr node = this->FindRuleById(recording->RecordID());
+  MythRecordingRuleNodePtr node = FindRuleById(recording->RecordID());
   if (node)
   {
-    XBMC->Log(LOG_DEBUG, "%s - %u : %s:%s on channel %s program %s",
+    XBMC->Log(LOG_DEBUG, "%s: %u : %s:%s on channel %s program %s",
               __FUNCTION__, index, recording->Title().c_str(), recording->Subtitle().c_str(), recording->Callsign().c_str(), recording->UID().c_str());
-    XBMC->Log(LOG_DEBUG, "%s - %u : Found rule %u type %d disabled by status %i",
+    XBMC->Log(LOG_DEBUG, "%s: %u : Found rule %u type %d disabled by status %d",
               __FUNCTION__, index, (unsigned)node->m_rule.RecordID(), (int)node->m_rule.Type(), recording->Status());
     int method = METHOD_UNKNOWN;
     MythRecordingRule handle = node->m_rule.DuplicateRecordingRule();
 
     switch (recording->Status())
     {
-      case Myth::RS_UNKNOWN:
-        // Not recording. Simply activate the rule
-        method = METHOD_UPDATE_INACTIVE;
-        break;
       case Myth::RS_NEVER_RECORD:
       case Myth::RS_PREVIOUS_RECORDING:
       case Myth::RS_EARLIER_RECORDING:
@@ -467,195 +425,328 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::EnableRecording(unsigned int
         break;
 
       default:
-        // Method depends of its rule type
-        switch (node->m_rule.Type())
-        {
-          case Myth::RT_DontRecord:
-          case Myth::RT_OverrideRecord:
-            method = METHOD_DELETE;
-            break;
-          case Myth::RT_SingleRecord:
-          case Myth::RT_NotRecording:
-          case Myth::RT_OneRecord:
-          case Myth::RT_ChannelRecord:
-          case Myth::RT_AllRecord:
-          case Myth::RT_DailyRecord:
-          case Myth::RT_WeeklyRecord:
-          case Myth::RT_FindDailyRecord:
-          case Myth::RT_FindWeeklyRecord:
-            // Is it inactive ? Try to enable rule
-            method = METHOD_UPDATE_INACTIVE;
-            break;
-          default:
-            break;
-        }
+        // Enable parent rule
+        method = METHOD_UPDATE_INACTIVE;
         break;
     }
 
-    XBMC->Log(LOG_DEBUG, "%s - %u : Dealing with the problem using method %i", __FUNCTION__, index, method);
-    if (method == METHOD_UPDATE_INACTIVE)
+    XBMC->Log(LOG_DEBUG, "%s: %u : Dealing with the problem using method %d", __FUNCTION__, index, method);
+    switch (method)
     {
-      handle.SetInactive(false);
-      if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
-        return MSM_ERROR_FAILED;
-      node->m_rule = handle; // sync node
-      //if (!m_con.UpdateSchedules(handle.RecordID()))
-      //  return MSM_ERROR_FAILED;
-      return MSM_ERROR_SUCCESS;
-    }
-    if (method == METHOD_CREATE_OVERRIDE)
-    {
-      handle = MakeOverride(handle, recording);
-      XBMC->Log(LOG_DEBUG, "%s - %u : Creating Override for %u (%s:%s) on %i (%s)"
-                , __FUNCTION__, index, (unsigned)handle.ParentID(), handle.Title().c_str(),
-                handle.Subtitle().c_str(), handle.ChannelID(), handle.Callsign().c_str());
+      case METHOD_UPDATE_INACTIVE:
+        handle.SetInactive(false);
+        if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
+          return MSM_ERROR_FAILED;
+        node->m_rule = handle; // sync node
+        return MSM_ERROR_SUCCESS;
 
-      if (!m_control->AddRecordSchedule(*(handle.GetPtr())))
-        return MSM_ERROR_FAILED;
-      node->m_overrideRules.push_back(handle); // sync node
-      //if (!m_con.UpdateSchedules(handle.RecordID()))
-      //  return MSM_ERROR_FAILED;
-      return MSM_ERROR_SUCCESS;
-    }
-    if (method == METHOD_DELETE)
-    {
-      return this->DeleteRecording(index);
+      case METHOD_CREATE_OVERRIDE:
+        handle = m_versionHelper->MakeOverride(handle, *recording);
+        XBMC->Log(LOG_DEBUG, "%s: %u : Creating Override for %u (%s:%s) on %u (%s)"
+                  , __FUNCTION__, index, (unsigned)handle.ParentID(), handle.Title().c_str(),
+                  handle.Subtitle().c_str(), handle.ChannelID(), handle.Callsign().c_str());
+
+        if (!m_control->AddRecordSchedule(*(handle.GetPtr())))
+          return MSM_ERROR_FAILED;
+        node->m_overrideRules.push_back(handle); // sync node
+        return MSM_ERROR_SUCCESS;
+
+      default:
+        return MSM_ERROR_NOT_IMPLEMENTED;
     }
   }
-
-  return MSM_ERROR_NOT_IMPLEMENTED;
+  return MSM_ERROR_FAILED;
 }
 
-MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecording(unsigned int index, MythRecordingRule &newrule)
+MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecording(uint32_t index, MythRecordingRule& newrule)
 {
   CLockObject lock(m_lock);
 
-  ScheduledPtr recording = this->FindUpComingByIndex(index);
+  if (newrule.Type() == Myth::RT_UNKNOWN)
+    return MSM_ERROR_FAILED;
+
+  MythScheduledPtr recording = FindUpComingByIndex(index);
   if (!recording)
     return MSM_ERROR_FAILED;
 
-  RecordingRuleNodePtr node = this->FindRuleById(recording->RecordID());
+  MythRecordingRuleNodePtr node = FindRuleById(recording->RecordID());
   if (node)
   {
-    XBMC->Log(LOG_DEBUG, "%s - %u : Found rule %u type %d and recording status %i",
+    XBMC->Log(LOG_DEBUG, "%s: %u : Found rule %u type %d and recording status %d",
               __FUNCTION__, index, (unsigned)node->m_rule.RecordID(), (int)node->m_rule.Type(), recording->Status());
+
+    // Prior handle inactive
+    if (!node->m_rule.Inactive() && newrule.Inactive())
+    {
+      XBMC->Log(LOG_DEBUG, "%s: Disable recording", __FUNCTION__);
+      return DisableRecording(index);
+    }
+
     int method = METHOD_UNKNOWN;
     MythRecordingRule handle = node->m_rule.DuplicateRecordingRule();
 
-    // Rule update method depends of current rule type:
-    // - Updating override rule is limited.
-    // - Enabled repeating rule must to be overriden.
-    // - All others could be fully updated until it is recording.
     switch (node->m_rule.Type())
     {
-    case Myth::RT_DontRecord:
-    case Myth::RT_NotRecording:
-    case Myth::RT_TemplateRecord:
-      // Deny update
-      method = METHOD_UNKNOWN;
-      break;
-    case Myth::RT_AllRecord:
-    case Myth::RT_ChannelRecord:
-    case Myth::RT_OneRecord:
-    case Myth::RT_FindDailyRecord:
-    case Myth::RT_FindWeeklyRecord:
-    case Myth::RT_DailyRecord:
-    case Myth::RT_WeeklyRecord:
-      // When inactive we can replace with the new rule
-      if (handle.Inactive())
-      {
-        method = METHOD_FULL_UPDATE;
-      }
-      // When active we create override rule
-      else
-      {
-        // Only priority can be overriden
-        if (newrule.Priority() != handle.Priority())
-        {
-          handle.SetPriority(newrule.Priority());
-          method = METHOD_CREATE_OVERRIDE;
-        }
-        else
-          method = METHOD_UNKNOWN;
-      }
-      break;
-    case Myth::RT_OverrideRecord:
-      // Only priority can be overriden
-      handle.SetPriority(newrule.Priority());
-      method = METHOD_DISCREET_UPDATE;
-      break;
-    case Myth::RT_SingleRecord:
-      if (recording->Status() == Myth::RS_RECORDING || recording->Status() == Myth::RS_TUNING)
-      {
-        // Discreet update
-        handle.SetEndTime(newrule.EndTime());
-        handle.SetEndOffset(newrule.EndOffset());
+      case Myth::RT_NotRecording:
+      case Myth::RT_TemplateRecord:
+        method = METHOD_UNKNOWN;
+        break;
+
+      case Myth::RT_DontRecord:
+        method = METHOD_NOOP;
+        break;
+
+      case Myth::RT_OverrideRecord:
         method = METHOD_DISCREET_UPDATE;
-      }
-      else
-      {
-        method = METHOD_FULL_UPDATE;
-      }
-      break;
-    default:
-      break;
+        handle.SetInactive(newrule.Inactive());
+        handle.SetPriority(newrule.Priority());
+        handle.SetAutoExpire(newrule.AutoExpire());
+        handle.SetStartOffset(newrule.StartOffset());
+        handle.SetEndOffset(newrule.EndOffset());
+        handle.SetRecordingGroup(newrule.RecordingGroup());
+        break;
+
+      case Myth::RT_SingleRecord:
+        switch (recording->Status())
+        {
+          case Myth::RS_RECORDING:
+          case Myth::RS_TUNING:
+            method = METHOD_DISCREET_UPDATE;
+            handle.SetEndOffset(newrule.EndOffset());
+            break;
+          case Myth::RS_NEVER_RECORD:
+          case Myth::RS_PREVIOUS_RECORDING:
+          case Myth::RS_EARLIER_RECORDING:
+          case Myth::RS_CURRENT_RECORDING:
+            // Add override to record anyway
+            method = METHOD_CREATE_OVERRIDE;
+            handle.SetPriority(newrule.Priority());
+            handle.SetAutoExpire(newrule.AutoExpire());
+            handle.SetStartOffset(newrule.StartOffset());
+            handle.SetEndOffset(newrule.EndOffset());
+            handle.SetRecordingGroup(newrule.RecordingGroup());
+            break;
+          default:
+            method = METHOD_DISCREET_UPDATE;
+            handle.SetInactive(newrule.Inactive());
+            handle.SetPriority(newrule.Priority());
+            handle.SetAutoExpire(newrule.AutoExpire());
+            handle.SetStartOffset(newrule.StartOffset());
+            handle.SetEndOffset(newrule.EndOffset());
+            handle.SetRecordingGroup(newrule.RecordingGroup());
+          break;
+        }
+        break;
+
+      default:
+        method = METHOD_CREATE_OVERRIDE;
+        handle.SetPriority(newrule.Priority());
+        handle.SetAutoExpire(newrule.AutoExpire());
+        handle.SetStartOffset(newrule.StartOffset());
+        handle.SetEndOffset(newrule.EndOffset());
+        handle.SetRecordingGroup(newrule.RecordingGroup());
+        break;
     }
 
-    XBMC->Log(LOG_DEBUG, "%s - %u : Dealing with the problem using method %i", __FUNCTION__, index, method);
-    if (method == METHOD_DISCREET_UPDATE)
+    XBMC->Log(LOG_DEBUG, "%s: %u : Dealing with the problem using method %d", __FUNCTION__, index, method);
+    switch (method)
     {
-      if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
-        return MSM_ERROR_FAILED;
-      node->m_rule = handle; // sync node
-      //if (!m_con.UpdateSchedules(handle.RecordID()))
-      //  return MSM_ERROR_FAILED;
-      return MSM_ERROR_SUCCESS;
-    }
-    if (method == METHOD_CREATE_OVERRIDE)
-    {
-      handle = MakeOverride(handle, recording);
-      XBMC->Log(LOG_DEBUG, "%s - %u : Creating Override for %u (%s: %s) on %i (%s)"
-                , __FUNCTION__, index, (unsigned)node->m_rule.RecordID(), node->m_rule.Title().c_str(),
-                node->m_rule.Subtitle().c_str(), recording->ChannelID(), recording->Callsign().c_str());
+      case METHOD_NOOP:
+        return MSM_ERROR_SUCCESS;
 
-      if (!m_control->AddRecordSchedule(*(handle.GetPtr())))
-        return MSM_ERROR_FAILED;
-      node->m_overrideRules.push_back(handle); // sync node
-      //if (!m_con.UpdateSchedules(handle.RecordID()))
-      //  return MSM_ERROR_FAILED;
-      return MSM_ERROR_SUCCESS;
-    }
-    if (method == METHOD_FULL_UPDATE)
-    {
-      handle = newrule;
-      handle.SetRecordID(node->m_rule.RecordID());
-      if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
-        return MSM_ERROR_FAILED;
-      node->m_rule = handle; // sync node
-      //if (!m_con.UpdateSchedules(handle.RecordID()))
-      //  return MSM_ERROR_FAILED;
-      return MSM_ERROR_SUCCESS;
+      case METHOD_DISCREET_UPDATE:
+        if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
+          return MSM_ERROR_FAILED;
+        node->m_rule = handle; // sync node
+        return MSM_ERROR_SUCCESS;
+
+      case METHOD_CREATE_OVERRIDE:
+        handle = m_versionHelper->MakeOverride(handle, *recording);
+        XBMC->Log(LOG_DEBUG, "%s: %u : Creating Override for %u (%s: %s) on %u (%s)"
+                  , __FUNCTION__, index, (unsigned)node->m_rule.RecordID(), node->m_rule.Title().c_str(),
+                  node->m_rule.Subtitle().c_str(), recording->ChannelID(), recording->Callsign().c_str());
+
+        if (!m_control->AddRecordSchedule(*(handle.GetPtr())))
+          return MSM_ERROR_FAILED;
+        node->m_overrideRules.push_back(handle); // sync node
+        return MSM_ERROR_SUCCESS;
+
+      default:
+        return MSM_ERROR_NOT_IMPLEMENTED;
     }
   }
-
-  return MSM_ERROR_NOT_IMPLEMENTED;
+  return MSM_ERROR_FAILED;
 }
 
-RecordingRuleNodePtr MythScheduleManager::FindRuleById(uint32_t recordid) const
+MythScheduleManager::MSM_ERROR MythScheduleManager::AddRecordingRule(MythRecordingRule &rule)
+{
+  if (rule.Type() == Myth::RT_UNKNOWN || rule.Type() == Myth::RT_NotRecording)
+    return MSM_ERROR_FAILED;
+  if (!m_control->AddRecordSchedule(*(rule.GetPtr())))
+    return MSM_ERROR_FAILED;
+  return MSM_ERROR_SUCCESS;
+}
+
+MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteRecordingRule(uint32_t index)
+{
+  CLockObject lock(m_lock);
+
+  MythRecordingRuleNodePtr node = FindRuleByIndex(index);
+  if (node)
+  {
+    XBMC->Log(LOG_DEBUG, "%s: Found rule %u type %d", __FUNCTION__, (unsigned)node->m_rule.RecordID(), (int)node->m_rule.Type());
+
+    // Delete overrides and their related recording
+    if (node->HasOverrideRules())
+    {
+      for (MythRecordingRuleList::iterator ito = node->m_overrideRules.begin(); ito != node->m_overrideRules.end(); ++ito)
+      {
+        XBMC->Log(LOG_DEBUG, "%s: Found override rule %u type %d", __FUNCTION__, (unsigned)ito->RecordID(), (int)ito->Type());
+        MythScheduleList rec = FindUpComingByRuleId(ito->RecordID());
+        for (MythScheduleList::iterator itr = rec.begin(); itr != rec.end(); ++itr)
+        {
+          XBMC->Log(LOG_DEBUG, "%s: Found overriden recording %s status %d", __FUNCTION__, itr->second->UID().c_str(), itr->second->Status());
+          if (itr->second->Status() == Myth::RS_RECORDING || itr->second->Status() == Myth::RS_TUNING)
+          {
+            XBMC->Log(LOG_DEBUG, "%s: Stop recording %s", __FUNCTION__, itr->second->UID().c_str());
+            m_control->StopRecording(*(itr->second->GetPtr()));
+          }
+        }
+        XBMC->Log(LOG_DEBUG, "%s: Deleting recording rule %u (modifier of rule %u)", __FUNCTION__, (unsigned)ito->RecordID(), (unsigned)node->m_rule.RecordID());
+        if (!m_control->RemoveRecordSchedule(ito->RecordID()))
+          XBMC->Log(LOG_ERROR, "%s: Deleting recording rule failed", __FUNCTION__);
+      }
+    }
+    // Delete related recordings
+    MythScheduleList rec = FindUpComingByRuleId(node->m_rule.RecordID());
+    for (MythScheduleList::iterator itr = rec.begin(); itr != rec.end(); ++itr)
+    {
+      XBMC->Log(LOG_DEBUG, "%s: Found recording %s status %d", __FUNCTION__, itr->second->UID().c_str(), itr->second->Status());
+      if (itr->second->Status() == Myth::RS_RECORDING || itr->second->Status() == Myth::RS_TUNING)
+      {
+        XBMC->Log(LOG_DEBUG, "%s: Stop recording %s", __FUNCTION__, itr->second->UID().c_str());
+        m_control->StopRecording(*(itr->second->GetPtr()));
+      }
+    }
+    // Delete rule
+    XBMC->Log(LOG_DEBUG, "%s: Deleting recording rule %u", __FUNCTION__, node->m_rule.RecordID());
+    if (!m_control->RemoveRecordSchedule(node->m_rule.RecordID()))
+      XBMC->Log(LOG_ERROR, "%s: Deleting recording rule failed", __FUNCTION__);
+  }
+  // Another client could delete the rule at the same time. Therefore always SUCCESS even if database delete fails.
+  return MSM_ERROR_SUCCESS;
+}
+
+MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t index, MythRecordingRule& newrule)
+{
+  CLockObject lock(m_lock);
+
+  if (newrule.Type() == Myth::RT_UNKNOWN)
+    return MSM_ERROR_FAILED;
+
+  MythRecordingRuleNodePtr node = FindRuleByIndex(index);
+  if (node)
+  {
+    XBMC->Log(LOG_DEBUG, "%s: Found rule %u type %d",
+              __FUNCTION__, (unsigned)node->m_rule.RecordID(), (int)node->m_rule.Type());
+    int method = METHOD_UNKNOWN;
+    MythRecordingRule handle = node->m_rule.DuplicateRecordingRule();
+
+    switch (node->m_rule.Type())
+    {
+      case Myth::RT_NotRecording:
+      case Myth::RT_TemplateRecord:
+        method = METHOD_UNKNOWN;
+        break;
+
+      case Myth::RT_DontRecord:
+        method = METHOD_NOOP;
+        break;
+
+      case Myth::RT_OverrideRecord:
+        method = METHOD_DISCREET_UPDATE;
+        handle.SetInactive(newrule.Inactive());
+        handle.SetPriority(newrule.Priority());
+        handle.SetAutoExpire(newrule.AutoExpire());
+        handle.SetStartOffset(newrule.StartOffset());
+        handle.SetEndOffset(newrule.EndOffset());
+        handle.SetRecordingGroup(newrule.RecordingGroup());
+        break;
+
+      case Myth::RT_SingleRecord:
+        {
+          MythScheduleList recordings = FindUpComingByRuleId(handle.RecordID());
+          MythScheduleList::const_reverse_iterator it = recordings.rbegin();
+          if (it != recordings.rend())
+            return UpdateRecording(MakeIndex(*(it->second)), newrule);
+          method = METHOD_UNKNOWN;
+        }
+        break;
+
+      default:
+        method = METHOD_DISCREET_UPDATE;
+        switch (node->m_rule.SearchType())
+        {
+          case Myth::ST_NoSearch:
+          case Myth::ST_ManualSearch:
+            break;
+          default:
+            handle.SetDescription(newrule.Description());
+        }
+        handle.SetInactive(newrule.Inactive());
+        handle.SetPriority(newrule.Priority());
+        handle.SetAutoExpire(newrule.AutoExpire());
+        handle.SetStartOffset(newrule.StartOffset());
+        handle.SetEndOffset(newrule.EndOffset());
+        handle.SetRecordingGroup(newrule.RecordingGroup());
+        handle.SetCheckDuplicatesInType(newrule.CheckDuplicatesInType());
+        handle.SetDuplicateControlMethod(newrule.DuplicateControlMethod());
+    }
+
+    XBMC->Log(LOG_DEBUG, "%s: Dealing with the problem using method %d", __FUNCTION__, method);
+    switch (method)
+    {
+      case METHOD_NOOP:
+        return MSM_ERROR_SUCCESS;
+
+      case METHOD_DISCREET_UPDATE:
+        if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
+          return MSM_ERROR_FAILED;
+        node->m_rule = handle; // sync node
+        return MSM_ERROR_SUCCESS;
+
+      default:
+        return MSM_ERROR_NOT_IMPLEMENTED;
+    }
+  }
+  return MSM_ERROR_FAILED;
+}
+
+MythRecordingRuleNodePtr MythScheduleManager::FindRuleById(uint32_t recordid) const
 {
   CLockObject lock(m_lock);
 
   NodeById::const_iterator it = m_rulesById.find(recordid);
   if (it != m_rulesById.end())
     return it->second;
-  return RecordingRuleNodePtr();
+  return MythRecordingRuleNodePtr();
 }
 
-ScheduleList MythScheduleManager::FindUpComingByRuleId(uint32_t recordid) const
+MythRecordingRuleNodePtr MythScheduleManager::FindRuleByIndex(uint32_t index) const
 {
   CLockObject lock(m_lock);
 
-  ScheduleList found;
+  NodeByIndex::const_iterator it = m_rulesByIndex.find(index);
+  if (it != m_rulesByIndex.end())
+    return it->second;
+  return MythRecordingRuleNodePtr();
+}
+
+MythScheduleList MythScheduleManager::FindUpComingByRuleId(uint32_t recordid) const
+{
+  CLockObject lock(m_lock);
+
+  MythScheduleList found;
   std::pair<RecordingIndexByRuleId::const_iterator, RecordingIndexByRuleId::const_iterator> range = m_recordingIndexByRuleId.equal_range(recordid);
   if (range.first != m_recordingIndexByRuleId.end())
   {
@@ -669,14 +760,14 @@ ScheduleList MythScheduleManager::FindUpComingByRuleId(uint32_t recordid) const
   return found;
 }
 
-ScheduledPtr MythScheduleManager::FindUpComingByIndex(uint32_t index) const
+MythScheduledPtr MythScheduleManager::FindUpComingByIndex(uint32_t index) const
 {
   CLockObject lock(m_lock);
 
   RecordingList::const_iterator it = m_recordings.find(index);
   if (it != m_recordings.end())
     return it->second;
-  return ScheduledPtr();
+  return MythScheduledPtr();
 }
 
 bool MythScheduleManager::OpenControl()
@@ -701,18 +792,26 @@ void MythScheduleManager::Update()
   Myth::RecordScheduleListPtr records = m_control->GetRecordScheduleList();
   m_rules.clear();
   m_rulesById.clear();
+  m_rulesByIndex.clear();
   m_templates.clear();
   for (Myth::RecordScheduleList::iterator it = records->begin(); it != records->end(); ++it)
   {
     MythRecordingRule rule(*it);
-    RecordingRuleNodePtr node = RecordingRuleNodePtr(new MythRecordingRuleNode(rule));
-    m_rules.push_back(node);
-    m_rulesById.insert(NodeById::value_type(rule.RecordID(), node));
-    if (node->GetRule().Type() == Myth::RT_TemplateRecord)
-      m_templates.push_back(node);
+    if (rule.Type() == Myth::RT_TemplateRecord)
+    {
+      m_templates.push_back(rule);
+    }
+    else
+    {
+      MythRecordingRuleNodePtr node = MythRecordingRuleNodePtr(new MythRecordingRuleNode(rule));
+      m_rules.push_back(node);
+      m_rulesById.insert(NodeById::value_type(rule.RecordID(), node));
+      m_rulesByIndex.insert(NodeByIndex::value_type(MakeIndex(rule), node));
+    }
   }
 
   for (NodeList::iterator it = m_rules.begin(); it != m_rules.end(); ++it)
+  {
     // Is override rule ? Then find main rule and link to it
     if ((*it)->IsOverrideRule())
     {
@@ -734,6 +833,7 @@ void MythScheduleManager::Update()
 
       }
     }
+  }
 
   m_recordings.clear();
   m_recordingIndexByRuleId.clear();
@@ -741,82 +841,166 @@ void MythScheduleManager::Update()
   Myth::ProgramListPtr recordings = m_control->GetUpcomingList();
   for (Myth::ProgramList::iterator it = recordings->begin(); it != recordings->end(); ++it)
   {
-    ScheduledPtr scheduled = ScheduledPtr(new MythProgramInfo(*it));
-    uint32_t index = MakeIndex(scheduled);
+    MythScheduledPtr scheduled = MythScheduledPtr(new MythProgramInfo(*it));
+    uint32_t index = MakeIndex(*scheduled);
     m_recordings.insert(RecordingList::value_type(index, scheduled));
     m_recordingIndexByRuleId.insert(RecordingIndexByRuleId::value_type(scheduled->RecordID(), index));
   }
 
-  // Add missed programs (NOT RECORDING) to upcoming recordings. User could delete them as needed.
-  /*
-  if (m_showNotRecording)
-  {
-    Myth::ProgramList norec = m_control->???;
-    for (Myth::ProgramList::iterator it = norec.begin(); it != norec.end(); ++it)
-    {
-      if (m_recordingIndexByRuleId.count(it->second.RecordID()) == 0)
-      {
-        NodeById::const_iterator itr = m_rulesById.find(it->second.RecordID());
-        if (itr != m_rulesById.end() && !itr->second->HasOverrideRules())
-        {
-          ScheduledPtr scheduled = ScheduledPtr(new MythProgramInfo(*it));
-          uint32_t index = MakeIndex(scheduled);
-          m_recordings.insert(RecordingList::value_type(index, scheduled));
-          m_recordingIndexByRuleId.insert(RecordingIndexByRuleId::value_type(scheduled->RecordID(), index));
-        }
-      }
-    }
-  }
-  */
-
   if (g_bExtraDebug)
   {
     for (NodeList::iterator it = m_rules.begin(); it != m_rules.end(); ++it)
-      XBMC->Log(LOG_DEBUG, "%s - Rule node - recordid: %u, parentid: %u, type: %d, overriden: %s", __FUNCTION__,
+      XBMC->Log(LOG_DEBUG, "%s: Rule node - recordid: %u, parentid: %u, type: %d, overriden: %s", __FUNCTION__,
               (unsigned)(*it)->m_rule.RecordID(), (unsigned)(*it)->m_rule.ParentID(),
               (int)(*it)->m_rule.Type(), ((*it)->HasOverrideRules() ? "Yes" : "No"));
     for (RecordingList::iterator it = m_recordings.begin(); it != m_recordings.end(); ++it)
-      XBMC->Log(LOG_DEBUG, "%s - Recording - recordid: %u, index: %u, status: %d, title: %s", __FUNCTION__,
+      XBMC->Log(LOG_DEBUG, "%s: Recording - recordid: %u, index: %u, status: %d, title: %s", __FUNCTION__,
               (unsigned)it->second->RecordID(), (unsigned)it->first, it->second->Status(), it->second->Title().c_str());
   }
 }
 
-RuleMetadata MythScheduleManager::GetMetadata(const MythRecordingRule &rule) const
+MythScheduleManager::TimerType::TimerType(TimerTypeId id, unsigned attributes, const std::string& description,
+            const RulePriorityList& priorityList, int priorityDefault,
+            const RuleDupMethodList& dupMethodList, int dupMethodDefault,
+            const RuleExpirationList& expirationList, int expirationDefault,
+            const RuleRecordingGroupList& recGroupList, int recGroupDefault)
 {
-  return m_versionHelper->GetMetadata(rule);
+  iId = id;
+  iAttributes = attributes;
+  PVR_STRCPY(strDescription, description.c_str());
+  // Initialize priorities
+  iPrioritiesSize = priorityList.size();
+  assert(iPrioritiesSize <= PVR_ADDON_TIMERTYPE_VALUES_ARRAY_SIZE);
+  unsigned index = 0;
+  for (MythScheduleManager::RulePriorityList::const_iterator it = priorityList.begin(); it != priorityList.end(); ++it, ++index)
+  {
+    priorities[index].iValue = it->first;
+    PVR_STRCPY(priorities[index].strDescription, it->second.c_str());
+  }
+  iPrioritiesDefault = priorityDefault;
+  // Initialize duplicate methodes
+  iPreventDuplicateEpisodesSize = dupMethodList.size();
+  assert(iPreventDuplicateEpisodesSize <= PVR_ADDON_TIMERTYPE_VALUES_ARRAY_SIZE);
+  index = 0;
+  for (MythScheduleManager::RuleDupMethodList::const_iterator it = dupMethodList.begin(); it != dupMethodList.end(); ++it, ++index)
+  {
+    preventDuplicateEpisodes[index].iValue = it->first;
+    PVR_STRCPY(preventDuplicateEpisodes[index].strDescription, XBMC->GetLocalizedString(it->second));
+  }
+  iPreventDuplicateEpisodesDefault = dupMethodDefault;
+  // Initialize expirations
+  iLifetimesSize = expirationList.size();
+  assert(iLifetimesSize <= PVR_ADDON_TIMERTYPE_VALUES_ARRAY_SIZE);
+  index = 0;
+  for (MythScheduleManager::RuleExpirationList::const_iterator it = expirationList.begin(); it != expirationList.end(); ++it, ++index)
+  {
+    lifetimes[index].iValue = it->first;
+    PVR_STRCPY(lifetimes[index].strDescription, XBMC->GetLocalizedString(it->second));
+  }
+  iLifetimesDefault = expirationDefault;
+  // Initialize recording groups
+  iRecordingGroupSize = recGroupList.size();
+  assert(iRecordingGroupSize <= PVR_ADDON_TIMERTYPE_VALUES_ARRAY_SIZE);
+  index = 0;
+  for (MythScheduleManager::RuleRecordingGroupList::const_iterator it = recGroupList.begin(); it != recGroupList.end(); ++it, ++index)
+  {
+    recordingGroup[index].iValue = it->first;
+    PVR_STRCPY(recordingGroup[index].strDescription, it->second.c_str());
+  }
+  iRecordingGroupDefault = recGroupDefault;
 }
 
-MythRecordingRule MythScheduleManager::NewFromTemplate(MythEPGInfo &epgInfo)
+const std::vector<MythScheduleManager::TimerType>& MythScheduleManager::GetTimerTypes()
 {
-  return m_versionHelper->NewFromTemplate(epgInfo);
+  return m_versionHelper->GetTimerTypes();
 }
 
-MythRecordingRule MythScheduleManager::NewSingleRecord(MythEPGInfo &epgInfo)
+const MythScheduleManager::RulePriorityList& MythScheduleManager::GetRulePriorityList()
+{
+  return m_versionHelper->GetRulePriorityList();
+}
+
+int MythScheduleManager::GetRulePriorityDefault()
+{
+  return m_versionHelper->GetRulePriorityDefault();
+}
+
+const MythScheduleManager::RuleDupMethodList& MythScheduleManager::GetRuleDupMethodList()
+{
+  return m_versionHelper->GetRuleDupMethodList();
+}
+
+int MythScheduleManager::GetRuleDupMethodDefault()
+{
+  return m_versionHelper->GetRuleDupMethodDefault();
+}
+
+const MythScheduleManager::RuleExpirationList& MythScheduleManager::GetRuleExpirationList()
+{
+  return m_versionHelper->GetRuleExpirationList();
+}
+
+int MythScheduleManager::GetRuleExpirationDefault()
+{
+  return m_versionHelper->GetRuleExpirationDefault();
+}
+
+const MythScheduleManager::RuleRecordingGroupList& MythScheduleManager::GetRuleRecordingGroupList()
+{
+  return m_versionHelper->GetRuleRecordingGroupList();
+}
+
+int MythScheduleManager::GetRuleRecordingGroupDefault()
+{
+  return m_versionHelper->GetRuleRecordingGroupDefault();
+}
+
+bool MythScheduleManager::FillTimerEntry(MythTimerEntry& entry, const MythRecordingRuleNode& node) const
+{
+  return m_versionHelper->FillTimerEntry(entry, node);
+}
+
+bool MythScheduleManager::FillTimerEntry(MythTimerEntry& entry, const MythProgramInfo& recording) const
+{
+  return m_versionHelper->FillTimerEntry(entry, recording);
+}
+
+MythRecordingRule MythScheduleManager::NewFromTimer(const MythTimerEntry& entry, bool withTemplate)
+{
+  return m_versionHelper->NewFromTimer(entry, withTemplate);
+}
+
+MythScheduleManager::RuleSummaryInfo MythScheduleManager::GetSummaryInfo(const MythRecordingRule &rule) const
+{
+  return m_versionHelper->GetSummaryInfo(rule);
+}
+
+MythRecordingRule MythScheduleManager::NewSingleRecord(const MythEPGInfo& epgInfo)
 {
   return m_versionHelper->NewSingleRecord(epgInfo);
 }
 
-MythRecordingRule MythScheduleManager::NewDailyRecord(MythEPGInfo &epgInfo)
+MythRecordingRule MythScheduleManager::NewDailyRecord(const MythEPGInfo& epgInfo)
 {
   return m_versionHelper->NewDailyRecord(epgInfo);
 }
 
-MythRecordingRule MythScheduleManager::NewWeeklyRecord(MythEPGInfo &epgInfo)
+MythRecordingRule MythScheduleManager::NewWeeklyRecord(const MythEPGInfo& epgInfo)
 {
   return m_versionHelper->NewWeeklyRecord(epgInfo);
 }
 
-MythRecordingRule MythScheduleManager::NewChannelRecord(MythEPGInfo &epgInfo)
+MythRecordingRule MythScheduleManager::NewChannelRecord(const MythEPGInfo& epgInfo)
 {
   return m_versionHelper->NewChannelRecord(epgInfo);
 }
 
-MythRecordingRule MythScheduleManager::NewOneRecord(MythEPGInfo &epgInfo)
+MythRecordingRule MythScheduleManager::NewOneRecord(const MythEPGInfo& epgInfo)
 {
   return m_versionHelper->NewOneRecord(epgInfo);
 }
 
-TemplateRuleList MythScheduleManager::GetTemplateRules() const
+MythRecordingRuleList MythScheduleManager::GetTemplateRules() const
 {
   return m_templates;
 }
@@ -827,656 +1011,3 @@ bool MythScheduleManager::ToggleShowNotRecording()
   return m_showNotRecording;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-////
-//// Version Helper for unknown version (no helper)
-////
-
-bool MythScheduleHelperNoHelper::SameTimeslot(MythRecordingRule &first, MythRecordingRule &second) const
-{
-  (void)first;
-  (void)second;
-  return false;
-}
-
-RuleMetadata MythScheduleHelperNoHelper::GetMetadata(const MythRecordingRule &rule) const
-{
-  RuleMetadata meta;
-  (void)rule;
-  meta.isRepeating = false;
-  meta.weekDays = 0;
-  meta.marker = "";
-  return meta;
-}
-
-MythRecordingRule MythScheduleHelperNoHelper::NewFromTemplate(MythEPGInfo &epgInfo)
-{
-  (void)epgInfo;
-  return MythRecordingRule();
-}
-
-MythRecordingRule MythScheduleHelperNoHelper::NewSingleRecord(MythEPGInfo &epgInfo)
-{
-  (void)epgInfo;
-  return MythRecordingRule();
-}
-
-MythRecordingRule MythScheduleHelperNoHelper::NewDailyRecord(MythEPGInfo &epgInfo)
-{
-  (void)epgInfo;
-  return MythRecordingRule();
-}
-
-MythRecordingRule MythScheduleHelperNoHelper::NewWeeklyRecord(MythEPGInfo &epgInfo)
-{
-  (void)epgInfo;
-  return MythRecordingRule();
-}
-
-MythRecordingRule MythScheduleHelperNoHelper::NewChannelRecord(MythEPGInfo &epgInfo)
-{
-  (void)epgInfo;
-  return MythRecordingRule();
-}
-
-MythRecordingRule MythScheduleHelperNoHelper::NewOneRecord(MythEPGInfo &epgInfo)
-{
-  (void)epgInfo;
-  return MythRecordingRule();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-////
-//// Version helper for backend version 75 (0.26)
-////
-
-bool MythScheduleHelper75::SameTimeslot(MythRecordingRule &first, MythRecordingRule &second) const
-{
-  time_t first_st = first.StartTime();
-  time_t second_st = second.StartTime();
-
-  switch (first.Type())
-  {
-  case Myth::RT_NotRecording:
-  case Myth::RT_SingleRecord:
-  case Myth::RT_OverrideRecord:
-  case Myth::RT_DontRecord:
-    return
-    second_st == first_st &&
-            second.EndTime() == first.EndTime() &&
-            second.ChannelID() == first.ChannelID() &&
-            second.Filter() == first.Filter();
-
-  case Myth::RT_OneRecord: // FindOneRecord
-    return
-    second.Title() == first.Title() &&
-            second.ChannelID() == first.ChannelID() &&
-            second.Filter() == first.Filter();
-
-  case Myth::RT_DailyRecord: // TimeslotRecord
-    return
-    second.Title() == first.Title() &&
-            daytime(&first_st) == daytime(&second_st) &&
-            second.ChannelID() == first.ChannelID() &&
-            second.Filter() == first.Filter();
-
-  case Myth::RT_WeeklyRecord: // WeekslotRecord
-    return
-    second.Title() == first.Title() &&
-            daytime(&first_st) == daytime(&second_st) &&
-            weekday(&first_st) == weekday(&second_st) &&
-            second.ChannelID() == first.ChannelID() &&
-            second.Filter() == first.Filter();
-
-  case Myth::RT_FindDailyRecord:
-    return
-    second.Title() == first.Title() &&
-            second.ChannelID() == first.ChannelID() &&
-            second.Filter() == first.Filter();
-
-  case Myth::RT_FindWeeklyRecord:
-    return
-    second.Title() == first.Title() &&
-            weekday(&first_st) == weekday(&second_st) &&
-            second.ChannelID() == first.ChannelID() &&
-            second.Filter() == first.Filter();
-
-  case Myth::RT_ChannelRecord:
-    return
-    second.Title() == first.Title() &&
-            second.ChannelID() == first.ChannelID() &&
-            second.Filter() == first.Filter();
-
-  case Myth::RT_AllRecord:
-    return
-    second.Title() == first.Title() &&
-            second.Filter() == first.Filter();
-
-  default:
-    break;
-  }
-  return false;
-}
-
-RuleMetadata MythScheduleHelper75::GetMetadata(const MythRecordingRule &rule) const
-{
-  RuleMetadata meta;
-  time_t st = rule.StartTime();
-  meta.isRepeating = false;
-  meta.weekDays = 0;
-  meta.marker = "";
-  switch (rule.Type())
-  {
-    case Myth::RT_DailyRecord:
-    case Myth::RT_FindDailyRecord:
-      meta.isRepeating = true;
-      meta.weekDays = 0x7F;
-      meta.marker = "d";
-      break;
-    case Myth::RT_WeeklyRecord:
-    case Myth::RT_FindWeeklyRecord:
-      meta.isRepeating = true;
-      meta.weekDays = 1 << ((weekday(&st) + 6) % 7);
-      meta.marker = "w";
-      break;
-    case Myth::RT_ChannelRecord:
-      meta.isRepeating = true;
-      meta.weekDays = 0x7F;
-      meta.marker = "C";
-      break;
-    case Myth::RT_AllRecord:
-      meta.isRepeating = true;
-      meta.weekDays = 0x7F;
-      meta.marker = "A";
-      break;
-    case Myth::RT_OneRecord:
-      meta.isRepeating = false;
-      meta.weekDays = 0;
-      meta.marker = "1";
-      break;
-    case Myth::RT_DontRecord:
-      meta.isRepeating = false;
-      meta.weekDays = 0;
-      meta.marker = "x";
-      break;
-    case Myth::RT_OverrideRecord:
-      meta.isRepeating = false;
-      meta.weekDays = 0;
-      meta.marker = "o";
-      break;
-    default:
-      break;
-  }
-  return meta;
-}
-
-MythRecordingRule MythScheduleHelper75::NewFromTemplate(MythEPGInfo &epgInfo)
-{
-  MythRecordingRule rule;
-  // Load rule template from selected provider
-  switch (g_iRecTemplateType)
-  {
-  case 1: // Template provider is 'MythTV', then load the template from backend.
-    if (!epgInfo.IsNull())
-    {
-      TemplateRuleList templates = m_manager->GetTemplateRules();
-      TemplateRuleList::const_iterator tplIt = templates.end();
-      for (TemplateRuleList::const_iterator it = templates.begin(); it != templates.end(); ++it)
-      {
-        if ((*it)->GetRule().Category() == epgInfo.Category())
-        {
-          tplIt = it;
-          break;
-        }
-        if ((*it)->GetRule().Category() == epgInfo.CategoryType())
-        {
-          tplIt = it;
-          continue;
-        }
-        if ((*it)->GetRule().Category() == "Default" && tplIt == templates.end())
-          tplIt = it;
-      }
-      if (tplIt != templates.end())
-      {
-        XBMC->Log(LOG_INFO, "Overriding the rule with template %u '%s'", (unsigned)(*tplIt)->GetRule().RecordID(), (*tplIt)->GetRule().Title().c_str());
-        rule.SetPriority((*tplIt)->GetRule().Priority());
-        rule.SetStartOffset((*tplIt)->GetRule().StartOffset());
-        rule.SetEndOffset((*tplIt)->GetRule().EndOffset());
-        rule.SetSearchType((*tplIt)->GetRule().SearchType());
-        rule.SetDuplicateControlMethod((*tplIt)->GetRule().DuplicateControlMethod());
-        rule.SetCheckDuplicatesInType((*tplIt)->GetRule().CheckDuplicatesInType());
-        rule.SetRecordingGroup((*tplIt)->GetRule().RecordingGroup());
-        rule.SetRecordingProfile((*tplIt)->GetRule().RecordingProfile());
-        rule.SetStorageGroup((*tplIt)->GetRule().StorageGroup());
-        rule.SetPlaybackGroup((*tplIt)->GetRule().PlaybackGroup());
-        rule.SetUserJob(1, (*tplIt)->GetRule().UserJob(1));
-        rule.SetUserJob(2, (*tplIt)->GetRule().UserJob(2));
-        rule.SetUserJob(3, (*tplIt)->GetRule().UserJob(3));
-        rule.SetUserJob(4, (*tplIt)->GetRule().UserJob(4));
-        rule.SetAutoTranscode((*tplIt)->GetRule().AutoTranscode());
-        rule.SetAutoCommFlag((*tplIt)->GetRule().AutoCommFlag());
-        rule.SetAutoExpire((*tplIt)->GetRule().AutoExpire());
-        rule.SetAutoMetadata((*tplIt)->GetRule().AutoMetadata());
-        rule.SetMaxEpisodes((*tplIt)->GetRule().MaxEpisodes());
-        rule.SetNewExpiresOldRecord((*tplIt)->GetRule().NewExpiresOldRecord());
-        rule.SetFilter((*tplIt)->GetRule().Filter());
-      }
-      else
-        XBMC->Log(LOG_INFO, "No template found for the category '%s'", epgInfo.Category().c_str());
-    }
-    break;
-  case 0: // Template provider is 'Internal', then set rule with settings
-    rule.SetAutoCommFlag(g_bRecAutoCommFlag);
-    rule.SetAutoMetadata(g_bRecAutoMetadata);
-    rule.SetAutoTranscode(g_bRecAutoTranscode);
-    rule.SetUserJob(1, g_bRecAutoRunJob1);
-    rule.SetUserJob(2, g_bRecAutoRunJob2);
-    rule.SetUserJob(3, g_bRecAutoRunJob3);
-    rule.SetUserJob(4, g_bRecAutoRunJob4);
-    rule.SetAutoExpire(g_bRecAutoExpire);
-    rule.SetTranscoder(g_iRecTranscoder);
-  }
-
-  // Category override
-  if (!epgInfo.IsNull())
-  {
-    Myth::SettingPtr overTimeCategory = m_control->GetSetting("OverTimeCategory", false);
-    if (overTimeCategory && (overTimeCategory->value == epgInfo.Category() || overTimeCategory->value == epgInfo.CategoryType()))
-    {
-      Myth::SettingPtr categoryOverTime = m_control->GetSetting("CategoryOverTime", false);
-      if (categoryOverTime && !categoryOverTime->value.empty())
-      {
-        int offset = atoi(categoryOverTime->value.c_str());
-        XBMC->Log(LOG_DEBUG, "Overriding end offset for category %s: +%d", __FUNCTION__, overTimeCategory->value.c_str(), offset);
-        rule.SetEndOffset(offset);
-      }
-    }
-  }
-  return rule;
-}
-
-MythRecordingRule MythScheduleHelper75::NewSingleRecord(MythEPGInfo &epgInfo)
-{
-  MythRecordingRule rule = this->NewFromTemplate(epgInfo);
-
-  rule.SetType(Myth::RT_SingleRecord);
-
-  if (!epgInfo.IsNull())
-  {
-    rule.SetChannelID(epgInfo.ChannelID());
-    rule.SetStartTime(epgInfo.StartTime());
-    rule.SetEndTime(epgInfo.EndTime());
-    rule.SetSearchType(Myth::ST_NoSearch);
-    rule.SetTitle(epgInfo.Title());
-    rule.SetSubtitle(epgInfo.Subtitle());
-    rule.SetCategory(epgInfo.Category());
-    rule.SetDescription(epgInfo.Description());
-    rule.SetCallsign(epgInfo.Callsign());
-    rule.SetProgramID(epgInfo.ProgramID());
-    rule.SetSeriesID(epgInfo.SeriesID());
-  }
-  else
-  {
-    // kManualSearch = http://www.gossamer-threads.com/lists/mythtv/dev/155150?search_string=kManualSearch;#155150
-    rule.SetSearchType(Myth::ST_ManualSearch);
-  }
-  rule.SetDuplicateControlMethod(Myth::DM_CheckNone);
-  rule.SetCheckDuplicatesInType(Myth::DI_InAll);
-  rule.SetInactive(false);
-  return rule;
-}
-
-MythRecordingRule MythScheduleHelper75::NewDailyRecord(MythEPGInfo &epgInfo)
-{
-  MythRecordingRule rule = this->NewFromTemplate(epgInfo);
-
-  rule.SetType(Myth::RT_DailyRecord);
-
-  if (!epgInfo.IsNull())
-  {
-    rule.SetSearchType(Myth::ST_NoSearch);
-    rule.SetChannelID(epgInfo.ChannelID());
-    rule.SetStartTime(epgInfo.StartTime());
-    rule.SetEndTime(epgInfo.EndTime());
-    rule.SetTitle(epgInfo.Title());
-    rule.SetSubtitle(epgInfo.Subtitle());
-    rule.SetCategory(epgInfo.Category());
-    rule.SetDescription(epgInfo.Description());
-    rule.SetCallsign(epgInfo.Callsign());
-    rule.SetProgramID(epgInfo.ProgramID());
-    rule.SetSeriesID(epgInfo.SeriesID());
-  }
-  else
-  {
-    // kManualSearch = http://www.gossamer-threads.com/lists/mythtv/dev/155150?search_string=kManualSearch;#155150
-    rule.SetSearchType(Myth::ST_ManualSearch);
-  }
-  rule.SetDuplicateControlMethod(Myth::DM_CheckSubtitleAndDescription);
-  rule.SetCheckDuplicatesInType(Myth::DI_InAll);
-  rule.SetInactive(false);
-  return rule;
-}
-
-MythRecordingRule MythScheduleHelper75::NewWeeklyRecord(MythEPGInfo &epgInfo)
-{
-  MythRecordingRule rule = this->NewFromTemplate(epgInfo);
-
-  rule.SetType(Myth::RT_WeeklyRecord);
-
-  if (!epgInfo.IsNull())
-  {
-    rule.SetSearchType(Myth::ST_NoSearch);
-    rule.SetChannelID(epgInfo.ChannelID());
-    rule.SetStartTime(epgInfo.StartTime());
-    rule.SetEndTime(epgInfo.EndTime());
-    rule.SetTitle(epgInfo.Title());
-    rule.SetSubtitle(epgInfo.Subtitle());
-    rule.SetCategory(epgInfo.Category());
-    rule.SetDescription(epgInfo.Description());
-    rule.SetCallsign(epgInfo.Callsign());
-    rule.SetProgramID(epgInfo.ProgramID());
-    rule.SetSeriesID(epgInfo.SeriesID());
-  }
-  else
-  {
-    // kManualSearch = http://www.gossamer-threads.com/lists/mythtv/dev/155150?search_string=kManualSearch;#155150
-    rule.SetSearchType(Myth::ST_ManualSearch);
-  }
-  rule.SetDuplicateControlMethod(Myth::DM_CheckSubtitleAndDescription);
-  rule.SetCheckDuplicatesInType(Myth::DI_InAll);
-  rule.SetInactive(false);
-  return rule;
-}
-
-MythRecordingRule MythScheduleHelper75::NewChannelRecord(MythEPGInfo &epgInfo)
-{
-  MythRecordingRule rule = this->NewFromTemplate(epgInfo);
-
-  rule.SetType(Myth::RT_ChannelRecord);
-
-  if (!epgInfo.IsNull())
-  {
-    rule.SetSearchType(Myth::ST_TitleSearch);
-    rule.SetChannelID(epgInfo.ChannelID());
-    rule.SetStartTime(epgInfo.StartTime());
-    rule.SetEndTime(epgInfo.EndTime());
-    rule.SetTitle(epgInfo.Title());
-    // Backend use the description to find program by keywords or title
-    rule.SetSubtitle("");
-    rule.SetDescription(epgInfo.Title());
-    rule.SetCategory(epgInfo.Category());
-    rule.SetCallsign(epgInfo.Callsign());
-    rule.SetProgramID(epgInfo.ProgramID());
-    rule.SetSeriesID(epgInfo.SeriesID());
-  }
-  else
-  {
-    // Not feasible
-    rule.SetType(Myth::RT_NotRecording);
-  }
-  rule.SetDuplicateControlMethod(Myth::DM_CheckSubtitleAndDescription);
-  rule.SetCheckDuplicatesInType(Myth::DI_InAll);
-  rule.SetInactive(false);
-  return rule;
-}
-
-MythRecordingRule MythScheduleHelper75::NewOneRecord(MythEPGInfo &epgInfo)
-{
-  MythRecordingRule rule = this->NewFromTemplate(epgInfo);
-
-  rule.SetType(Myth::RT_OneRecord);
-
-  if (!epgInfo.IsNull())
-  {
-    rule.SetSearchType(Myth::ST_TitleSearch);
-    rule.SetChannelID(epgInfo.ChannelID());
-    rule.SetStartTime(epgInfo.StartTime());
-    rule.SetEndTime(epgInfo.EndTime());
-    rule.SetTitle(epgInfo.Title());
-    // Backend use the description to find program by keywords or title
-    rule.SetSubtitle("");
-    rule.SetDescription(epgInfo.Title());
-    rule.SetCategory(epgInfo.Category());
-    rule.SetCallsign(epgInfo.Callsign());
-    rule.SetProgramID(epgInfo.ProgramID());
-    rule.SetSeriesID(epgInfo.SeriesID());
-  }
-  else
-  {
-    // Not feasible
-    rule.SetType(Myth::RT_NotRecording);
-  }
-  rule.SetDuplicateControlMethod(Myth::DM_CheckSubtitleAndDescription);
-  rule.SetCheckDuplicatesInType(Myth::DI_InAll);
-  rule.SetInactive(false);
-  return rule;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-////
-//// Version helper for database up to 1309 (0.27)
-////
-//// Remove the Timeslot and Weekslot recording rule types. These rule
-//// types are too rigid and don't work when a broadcaster shifts the
-//// starting time of a program by a few minutes. Users should now use
-//// Channel recording rules in place of Timeslot and Weekslot rules. To
-//// approximate the old functionality, two new schedule filters have been
-//// added. In addition, the new "This time" and "This day and time"
-//// filters are less strict and match any program starting within 10
-//// minutes of the recording rule time.
-//// Restrict the use of the FindDaily? and FindWeekly? recording rule types
-//// (now simply called Daily and Weekly) to search and manual recording
-//// rules. These rule types are rarely needed and limiting their use to
-//// the most powerful cases simplifies the user interface for the more
-//// common cases. Users should now use Daily and Weekly, custom search
-//// rules in place of FindDaily? and FindWeekly? rules.
-//// Any existing recording rules using the no longer supported or allowed
-//// types are automatically converted to the suggested alternatives.
-////
-
-RuleMetadata MythScheduleHelper76::GetMetadata(const MythRecordingRule &rule) const
-{
-  RuleMetadata meta;
-  time_t st = rule.StartTime();
-  meta.isRepeating = false;
-  meta.weekDays = 0;
-  meta.marker = "";
-  switch (rule.Type())
-  {
-    case Myth::RT_DailyRecord:
-    case Myth::RT_FindDailyRecord:
-      meta.isRepeating = true;
-      meta.weekDays = 0x7F;
-      meta.marker = "d";
-      break;
-    case Myth::RT_WeeklyRecord:
-    case Myth::RT_FindWeeklyRecord:
-      meta.isRepeating = true;
-      meta.weekDays = 1 << ((weekday(&st) + 6) % 7);
-      meta.marker = "w";
-      break;
-    case Myth::RT_ChannelRecord:
-      meta.isRepeating = true;
-      meta.weekDays = 0x7F;
-      meta.marker = "C";
-      break;
-    case Myth::RT_AllRecord:
-      meta.isRepeating = true;
-      if ((rule.Filter() & Myth::FM_ThisDayAndTime))
-      {
-        meta.weekDays = 1 << ((weekday(&st) + 6) % 7);
-        meta.marker = "w";
-      }
-      else if ((rule.Filter() & Myth::FM_ThisTime))
-      {
-        meta.weekDays = 0x7F;
-        meta.marker = "d";
-      }
-      else
-      {
-        meta.weekDays = 0x7F;
-        meta.marker = "A";
-      }
-      break;
-    case Myth::RT_OneRecord:
-      meta.isRepeating = false;
-      meta.weekDays = 0;
-      meta.marker = "1";
-      break;
-    case Myth::RT_DontRecord:
-      meta.isRepeating = false;
-      meta.weekDays = 0;
-      meta.marker = "x";
-      break;
-    case Myth::RT_OverrideRecord:
-      meta.isRepeating = false;
-      meta.weekDays = 0;
-      meta.marker = "o";
-      break;
-    default:
-      break;
-  }
-  return meta;
-}
-
-MythRecordingRule MythScheduleHelper76::NewDailyRecord(MythEPGInfo &epgInfo)
-{
-  unsigned int filter;
-  MythRecordingRule rule = this->NewFromTemplate(epgInfo);
-
-  rule.SetType(Myth::RT_AllRecord);
-  filter = Myth::FM_ThisChannel + Myth::FM_ThisTime;
-  rule.SetFilter(filter);
-
-  if (!epgInfo.IsNull())
-  {
-    rule.SetSearchType(Myth::ST_NoSearch);
-    rule.SetChannelID(epgInfo.ChannelID());
-    rule.SetStartTime(epgInfo.StartTime());
-    rule.SetEndTime(epgInfo.EndTime());
-    rule.SetTitle(epgInfo.Title());
-    rule.SetSubtitle(epgInfo.Subtitle());
-    rule.SetCategory(epgInfo.Category());
-    rule.SetDescription(epgInfo.Description());
-    rule.SetCallsign(epgInfo.Callsign());
-    rule.SetProgramID(epgInfo.ProgramID());
-    rule.SetSeriesID(epgInfo.SeriesID());
-  }
-  else
-  {
-    // No EPG! Create custom daily for this channel
-    rule.SetType(Myth::RT_DailyRecord);
-    rule.SetFilter(Myth::FM_ThisChannel);
-    // kManualSearch = http://www.gossamer-threads.com/lists/mythtv/dev/155150?search_string=kManualSearch;#155150
-    rule.SetSearchType(Myth::ST_ManualSearch);
-  }
-  rule.SetDuplicateControlMethod(Myth::DM_CheckSubtitleAndDescription);
-  rule.SetCheckDuplicatesInType(Myth::DI_InAll);
-  rule.SetInactive(false);
-  return rule;
-}
-
-MythRecordingRule MythScheduleHelper76::NewWeeklyRecord(MythEPGInfo &epgInfo)
-{
-  unsigned int filter;
-  MythRecordingRule rule = this->NewFromTemplate(epgInfo);
-
-  rule.SetType(Myth::RT_AllRecord);
-  filter = Myth::FM_ThisChannel + Myth::FM_ThisDayAndTime;
-  rule.SetFilter(filter);
-
-  if (!epgInfo.IsNull())
-  {
-    rule.SetSearchType(Myth::ST_NoSearch);
-    rule.SetChannelID(epgInfo.ChannelID());
-    rule.SetStartTime(epgInfo.StartTime());
-    rule.SetEndTime(epgInfo.EndTime());
-    rule.SetTitle(epgInfo.Title());
-    rule.SetSubtitle(epgInfo.Subtitle());
-    rule.SetCategory(epgInfo.Category());
-    rule.SetDescription(epgInfo.Description());
-    rule.SetCallsign(epgInfo.Callsign());
-    rule.SetProgramID(epgInfo.ProgramID());
-    rule.SetSeriesID(epgInfo.SeriesID());
-  }
-  else
-  {
-    // No EPG! Create custom weekly for this channel
-    rule.SetType(Myth::RT_WeeklyRecord);
-    rule.SetFilter(Myth::FM_ThisChannel);
-    // kManualSearch = http://www.gossamer-threads.com/lists/mythtv/dev/155150?search_string=kManualSearch;#155150
-    rule.SetSearchType(Myth::ST_ManualSearch);
-  }
-  rule.SetDuplicateControlMethod(Myth::DM_CheckSubtitleAndDescription);
-  rule.SetCheckDuplicatesInType(Myth::DI_InAll);
-  rule.SetInactive(false);
-  return rule;
-}
-
-MythRecordingRule MythScheduleHelper76::NewChannelRecord(MythEPGInfo &epgInfo)
-{
-  unsigned int filter;
-  MythRecordingRule rule = this->NewFromTemplate(epgInfo);
-
-  rule.SetType(Myth::RT_AllRecord);
-  filter = Myth::FM_ThisChannel;
-  rule.SetFilter(filter);
-
-  if (!epgInfo.IsNull())
-  {
-    rule.SetSearchType(Myth::ST_NoSearch);
-    rule.SetChannelID(epgInfo.ChannelID());
-    rule.SetStartTime(epgInfo.StartTime());
-    rule.SetEndTime(epgInfo.EndTime());
-    rule.SetTitle(epgInfo.Title());
-    rule.SetSubtitle(epgInfo.Subtitle());
-    rule.SetCategory(epgInfo.Category());
-    rule.SetDescription(epgInfo.Description());
-    rule.SetCallsign(epgInfo.Callsign());
-    rule.SetProgramID(epgInfo.ProgramID());
-    rule.SetSeriesID(epgInfo.SeriesID());
-  }
-  else
-  {
-    // Not feasible
-    rule.SetType(Myth::RT_NotRecording);
-  }
-  rule.SetDuplicateControlMethod(Myth::DM_CheckSubtitleAndDescription);
-  rule.SetCheckDuplicatesInType(Myth::DI_InAll);
-  rule.SetInactive(false);
-  return rule;
-}
-
-MythRecordingRule MythScheduleHelper76::NewOneRecord(MythEPGInfo &epgInfo)
-{
-  unsigned int filter;
-  MythRecordingRule rule = this->NewFromTemplate(epgInfo);
-
-  rule.SetType(Myth::RT_OneRecord);
-  filter = Myth::FM_ThisEpisode;
-  rule.SetFilter(filter);
-
-  if (!epgInfo.IsNull())
-  {
-    rule.SetSearchType(Myth::ST_NoSearch);
-    rule.SetChannelID(epgInfo.ChannelID());
-    rule.SetStartTime(epgInfo.StartTime());
-    rule.SetEndTime(epgInfo.EndTime());
-    rule.SetTitle(epgInfo.Title());
-    rule.SetSubtitle(epgInfo.Subtitle());
-    rule.SetCategory(epgInfo.Category());
-    rule.SetDescription(epgInfo.Description());
-    rule.SetCallsign(epgInfo.Callsign());
-    rule.SetProgramID(epgInfo.ProgramID());
-    rule.SetSeriesID(epgInfo.SeriesID());
-  }
-  else
-  {
-    // Not feasible
-    rule.SetType(Myth::RT_NotRecording);
-  }
-  rule.SetDuplicateControlMethod(Myth::DM_CheckSubtitleAndDescription);
-  rule.SetCheckDuplicatesInType(Myth::DI_InAll);
-  rule.SetInactive(false);
-  return rule;
-}

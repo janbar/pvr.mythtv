@@ -22,6 +22,7 @@
  */
 
 #include <platform/os.h>
+#include <math.h>
 
 #ifdef __WINDOWS__
 static inline struct tm *localtime_r(const time_t  *clock, struct tm *result)
@@ -53,4 +54,14 @@ static inline int weekday(time_t *time)
   localtime_r(time, &dtm);
   int retval = dtm.tm_wday;
   return retval;
+}
+
+static inline void timeadd(time_t *time, double diffsec)
+{
+  double dh = trunc(diffsec / 3600);
+  struct tm newtm;
+  localtime_r(time, &newtm);
+  newtm.tm_hour += (int)dh;
+  newtm.tm_sec += (int)(diffsec - dh * 3600);
+  *time = mktime(&newtm);
 }

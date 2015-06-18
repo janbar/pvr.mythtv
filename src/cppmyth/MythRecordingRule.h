@@ -140,6 +140,11 @@ public:
   uint16_t Episode() const;
   void SetEpisode(uint16_t episode);
 
+  time_t NextRecording() const;
+  time_t LastRecorded() const;
+  time_t LastDeleted() const;
+  uint32_t AverageDelay() const;
+
 private:
   Myth::RecordSchedulePtr m_recordSchedule;
 };
