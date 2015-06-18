@@ -27,7 +27,6 @@ typedef std::map<std::string, MythProgramInfo> ProgramInfoMap;
 class MythProgramInfo
 {
 public:
-  typedef Myth::RS_t RecordStatus;
 
   MythProgramInfo();
   MythProgramInfo(Myth::ProgramPtr proginfo);
@@ -73,7 +72,7 @@ public:
   uint32_t ChannelID() const;
   std::string ChannelName() const;
   std::string Callsign() const;
-  RecordStatus Status() const;
+  Myth::RS_t Status() const;
   std::string RecordingGroup() const;
   uint32_t RecordID() const;
   time_t RecordingStartTime() const;

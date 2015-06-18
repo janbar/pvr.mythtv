@@ -99,7 +99,7 @@ public:
   int GetTimersAmount();
   PVR_ERROR GetTimers(ADDON_HANDLE handle);
   PVR_ERROR AddTimer(const PVR_TIMER &timer);
-  PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForceDelete);
+  PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bDeleteScheduled);
   PVR_ERROR UpdateTimer(const PVR_TIMER &timer);
   PVR_ERROR GetTimerTypes(PVR_TIMER_TYPE types[], int *size);
 
@@ -188,8 +188,8 @@ private:
   bool IsMyLiveRecording(const MythProgramInfo& programInfo);
 
   // Timers
-  MythRecordingRule PVRtoMythRecordingRule(const PVR_TIMER &timer);
   std::map<unsigned int, MYTH_SHARED_PTR<PVR_TIMER> > m_PVRtimerMemorandum;
+  MythTimerEntry PVRtoTimerEntry(const PVR_TIMER &timer, bool checkEPG);
 
   /**
    * \brief Returns full title of MythTV program
@@ -198,13 +198,6 @@ private:
    * \see class MythProgramInfo , class MythEPGInfo
    */
   static std::string MakeProgramTitle(const std::string& title, const std::string& subtitle);
-
-  /**
-   *
-   * \brief Handle broadcast UID for MythTV program
-   */
-  static int MakeBroadcastID(unsigned int chanid, time_t starttime);
-  static void BreakBroadcastID(int broadcastid, unsigned int *chanid, time_t *starttime);
 
   /**
    *

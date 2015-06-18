@@ -45,6 +45,14 @@ public:
   std::string CategoryType() const;
   std::string ChannelNumber() const;
 
+  /**
+   *
+   * \brief Handle broadcast UID for MythTV program
+   */
+  static int MakeBroadcastID(unsigned int chanid, time_t starttime);
+  static void BreakBroadcastID(int broadcastid, unsigned int *chanid, time_t *starttime);
+  int MakeBroadcastID();
+
 private:
   Myth::ProgramPtr m_epginfo;
 };

@@ -316,3 +316,87 @@ msgstr ""
 msgctxt "#30435"
 msgid "Record all new episodes (this channel)"
 msgstr ""
+
+# empty strings from id 30436 to 30450
+
+msgctxt "#30451"
+msgid "Unhandled"
+msgstr ""
+
+msgctxt "#30452"
+msgid "Upcoming"
+msgstr ""
+
+msgctxt "#30453"
+msgid "Overriden"
+msgstr ""
+
+msgctxt "#30454"
+msgid "Don't record"
+msgstr ""
+
+msgctxt "#30455"
+msgid "Upcoming manual"
+msgstr ""
+
+msgctxt "#30456"
+msgid "Zombie"
+msgstr ""
+
+msgctxt "#30460"
+msgid "Manual"
+msgstr ""
+
+msgctxt "#30461"
+msgid "Record one"
+msgstr ""
+
+msgctxt "#30462"
+msgid "Record weekly"
+msgstr ""
+
+msgctxt "#30463"
+msgid "Record daily"
+msgstr ""
+
+msgctxt "#30464"
+msgid "Record all"
+msgstr ""
+
+msgctxt "#30465"
+msgid "Record this"
+msgstr ""
+
+msgctxt "#30466"
+msgid "Record series (EPG based)"
+msgstr ""
+
+# empty strings from id 30467 to 30500
+
+msgctxt "#30501"
+msgid "Don't match duplicates"
+msgstr ""
+
+msgctxt "#30502"
+msgid "Match duplicates using subtitle"
+msgstr ""
+
+msgctxt "#30503"
+msgid "Match duplicates using description"
+msgstr ""
+
+msgctxt "#30504"
+msgid "Match duplicates using subtitle & description"
+msgstr ""
+
+msgctxt "#30505"
+msgid "Match duplicates using subtitle then description"
+msgstr ""
+
+msgctxt "#30506"
+msgid "Recordings never expire"
+msgstr ""
+
+msgctxt "#30507"
+msgid "Allow recordings to expire"
+msgstr ""
