@@ -95,25 +95,26 @@ extern "C" {
   /*!
    * @brief PVR timer type attributes (PVR_TIMER_TYPE.iAttributes values)
    */
-  const unsigned int PVR_TIMER_TYPE_ATTRIBUTE_NONE                    = 0x0000;
+  const unsigned int PVR_TIMER_TYPE_ATTRIBUTE_NONE                    = 0x00000000;
 
-  const unsigned int PVR_TIMER_TYPE_IS_MANUAL                         = 0x0001; /*!< @brief defines whether this is a type for manual (time-based) or epg-based timers */
-  const unsigned int PVR_TIMER_TYPE_IS_REPEATING                      = 0x0002; /*!< @brief defines whether this is a type for repeating or one-shot timers */
-  const unsigned int PVR_TIMER_TYPE_IS_READONLY                       = 0x0004; /*!< @brief this type must not be edited by Kodi */
+  const unsigned int PVR_TIMER_TYPE_IS_MANUAL                         = 0x00000001; /*!< @brief defines whether this is a type for manual (time-based) or epg-based timers */
+  const unsigned int PVR_TIMER_TYPE_IS_REPEATING                      = 0x00000002; /*!< @brief defines whether this is a type for repeating or one-shot timers */
+  const unsigned int PVR_TIMER_TYPE_IS_READONLY                       = 0x00000004; /*!< @brief timers of this type must not be edited by Kodi */
+  const unsigned int PVR_TIMER_TYPE_FORBIDS_NEW_INSTANCES             = 0x00000008; /*!< @brief timers of this type must not be created by Kodi. All other operations are allowed, though */
 
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE           = 0x0008; /*!< @brief this type supports enabling/disabling of the timer (PVR_TIMER.state SCHEDULED|DISBALED) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_CHANNELS                 = 0x0010; /*!< @brief this type supports channels (PVR_TIMER.iClientChannelUid) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_START_END_TIME           = 0x0020; /*!< @brief this type supports start and end time (PVR_TIMER.startTime, PVR_TIMER.endTime) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_TITLE_EPG_MATCH          = 0x0040; /*!< @brief this type supports matching epg episode title using PVR_TIMER.strEpgSearchString */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_FULLTEXT_EPG_MATCH       = 0x0080; /*!< @brief this type supports matching "more" epg data (not just episode title) using PVR_TIMER.strEpgSearchString. Setting FULLTEXT_EPG_MATCH implies TITLE_EPG_MATCH */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_FIRST_DAY                = 0x0100; /*!< @brief this type supports a first day the timer gets active (PVR_TIMER.firstday) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_WEEKDAYS                 = 0x0200; /*!< @brief this type supports weekdays for defining the recording schedule (PVR_TIMER.iWeekdays) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_RECORD_ONLY_NEW_EPISODES = 0x0400; /*!< @brief this type supports the "record only new episodes" feature (PVR_TIMER.iPreventDuplicateEpisodes) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN         = 0x0800; /*!< @brief this type supports pre and post record time (PVR_TIMER.iMarginStart, PVR_TIMER.iMarginEnd) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_PRIORITY                 = 0x1000; /*!< @brief this type supports recording priority (PVR_TIMER.iPriority) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_LIFETIME                 = 0x2000; /*!< @brief this type supports recording lifetime (PVR_TIMER.iLifetime) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS        = 0x4000; /*!< @brief this type supports placing recordings in user defined folders (PVR_TIMER.strDirectory) */
-  const unsigned int PVR_TIMER_TYPE_SUPPORTS_RECORDING_GROUP          = 0x8000; /*!> @brief this type supports a list of recording groups (PVR_TIMER.iRecordingGroup) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE           = 0x00000010; /*!< @brief this type supports enabling/disabling of the timer (PVR_TIMER.state SCHEDULED|DISBALED) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_CHANNELS                 = 0x00000020; /*!< @brief this type supports channels (PVR_TIMER.iClientChannelUid) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_START_END_TIME           = 0x00000040; /*!< @brief this type supports start and end time (PVR_TIMER.startTime, PVR_TIMER.endTime) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_TITLE_EPG_MATCH          = 0x00000080; /*!< @brief this type supports matching epg episode title using PVR_TIMER.strEpgSearchString */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_FULLTEXT_EPG_MATCH       = 0x00000100; /*!< @brief this type supports matching "more" epg data (not just episode title) using PVR_TIMER.strEpgSearchString. Setting FULLTEXT_EPG_MATCH implies TITLE_EPG_MATCH */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_FIRST_DAY                = 0x00000200; /*!< @brief this type supports a first day the timer gets active (PVR_TIMER.firstday) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_WEEKDAYS                 = 0x00000400; /*!< @brief this type supports weekdays for defining the recording schedule (PVR_TIMER.iWeekdays) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_RECORD_ONLY_NEW_EPISODES = 0x00000800; /*!< @brief this type supports the "record only new episodes" feature (PVR_TIMER.iPreventDuplicateEpisodes) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN         = 0x00001000; /*!< @brief this type supports pre and post record time (PVR_TIMER.iMarginStart, PVR_TIMER.iMarginEnd) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_PRIORITY                 = 0x00002000; /*!< @brief this type supports recording priority (PVR_TIMER.iPriority) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_LIFETIME                 = 0x00004000; /*!< @brief this type supports recording lifetime (PVR_TIMER.iLifetime) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS        = 0x00008000; /*!< @brief this type supports placing recordings in user defined folders (PVR_TIMER.strDirectory) */
+  const unsigned int PVR_TIMER_TYPE_SUPPORTS_RECORDING_GROUP          = 0x00010000; /*!> @brief this type supports a list of recording groups (PVR_TIMER.iRecordingGroup) */
 
   /*!
    * @brief PVR timer weekdays (PVR_TIMER.iWeekdays values)
