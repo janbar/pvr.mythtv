@@ -51,10 +51,32 @@ using namespace ADDON;
 
 bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecordingRuleNode& node) const
 {
-  // Assign timer type regarding rule attributes. The match SHOULD be opposite to
-  // that which is applied in function 'NewFromTimer'
+  // Assign timer type using rule attributes.
+  // This SHOULD match what was applied in function 'NewFromTimer'
 
   MythRecordingRule rule = node.GetRule();
+
+  if (true /*!m_showNotRecording*/)
+  {
+    time_t ruleNextActive;
+    if (difftime(rule.NextRecording(), 0) > 0) 
+      ruleNextActive = rule.NextRecording();
+    else if (difftime(rule.LastRecorded(), 0) > 0) 
+      ruleNextActive = rule.LastRecorded();
+    else 
+      ruleNextActive = rule.StartTime();
+
+     time_t now = time(NULL);
+    if (difftime(ruleNextActive, now) < -72000 ) //60s*60min*24h = 7200
+    {
+      XBMC->Log(LOG_DEBUG, "%s: Skipping Rule %s on %s as more than 24h old", 
+        __FUNCTION__, rule.Title().c_str(), rule.Callsign().c_str());
+      return false;
+    }
+  }
+
+  XBMC->Log(LOG_DEBUG,"%s (MythScheduleHelper76): MythRecordingRuleNode-> %u (%s:%s)", __FUNCTION__
+            , rule.RecordID(), rule.Title().c_str(), rule.Subtitle().c_str());
 
   switch (rule.Type())
   {
@@ -76,6 +98,8 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
 
     case Myth::RT_OneRecord:
       entry.timerType = TIMER_TYPE_RECORD_ONE;
+      if (!(rule.Filter() & Myth::FM_ThisChannel))
+        entry.isAnyChannel = true; // Identify this as an AnyChannel rule
       break;
 
     case Myth::RT_DailyRecord:
@@ -93,10 +117,25 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         entry.timerType = TIMER_TYPE_RECORD_DAILY;
       else
       {
-        entry.timerType = TIMER_TYPE_RECORD_ALL;
-        if (rule.SearchType() == Myth::ST_NoSearch)
-          entry.epgSearch = rule.Title(); // EPG based
+        if (rule.SearchType() == Myth::ST_NoSearch) 
+        {
+          entry.timerType = TIMER_TYPE_RECORD_ALL;
+        }
+        else if (rule.SearchType() == Myth::ST_TitleSearch)
+        {
+          entry.timerType = TIMER_TYPE_TEXT_SEARCH;
+          entry.epgSearch = rule.Description();
+          entry.isFullTextSearch = false;
+        }
+        else if (rule.SearchType() == Myth::ST_KeywordSearch)
+        {
+          entry.timerType = TIMER_TYPE_TEXT_SEARCH;
+          entry.epgSearch = rule.Description();
+          entry.isFullTextSearch = true;
+        }
       }
+      if (!(rule.Filter() & Myth::FM_ThisChannel))
+        entry.isAnyChannel = true; // Identify this as an AnyChannel rule
       break;
 
     case Myth::RT_OverrideRecord:
@@ -114,15 +153,13 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
 
   switch (rule.SearchType())
   {
-    case Myth::ST_TitleSearch:
-      entry.epgSearch = rule.Description();
-      break;
-    case Myth::ST_KeywordSearch:
     case Myth::ST_PeopleSearch:
     case Myth::ST_PowerSearch:
       entry.epgSearch = rule.Description();
       entry.timerType = TIMER_TYPE_UNHANDLED;
       break;
+    case Myth::ST_TitleSearch:
+    case Myth::ST_KeywordSearch:
     case Myth::ST_NoSearch:
     case Myth::ST_ManualSearch:
     default:
@@ -133,34 +170,54 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   entry.callsign = rule.Callsign();
 
   // For all repeating fix timeslot as needed
+  MythScheduleList recordings;
   switch (entry.timerType)
   {
     case TIMER_TYPE_RECORD_ONE:
     case TIMER_TYPE_RECORD_WEEKLY:
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
+    case TIMER_TYPE_TEXT_SEARCH:
     case TIMER_TYPE_UNHANDLED:
       if (difftime(rule.NextRecording(), 0) > 0)
       {
         // fill timeslot starting at next recording
         entry.startTime = entry.endTime = rule.NextRecording();
         timeadd(&entry.endTime, difftime(rule.EndTime(), rule.StartTime()));
-        break;
       }
       else if (difftime(rule.LastRecorded(), 0) > 0)
       {
         // fill timeslot starting at last recorded
         entry.startTime = entry.endTime = rule.LastRecorded();
         timeadd(&entry.endTime, difftime(rule.EndTime(), rule.StartTime()));
-        break;
       }
+      else
+      {
+        entry.startTime = rule.StartTime();
+        entry.endTime = rule.EndTime();
+      }
+      //Mythbackend (0.27) doesn't appear to consider currently active recordings, so check for one
+      recordings = m_manager->FindUpComingByRuleId(rule.RecordID());
+      for (MythScheduleList::const_reverse_iterator it = recordings.rbegin(); it !=recordings.rend(); ++it)
+      {
+        if ( (it->second->Status() == Myth::RS_RECORDING) ||
+             (it->second->Status() == Myth::RS_TUNING) )
+        {
+            
+            entry.recordingStatus = it->second->Status();
+            entry.startTime = it->second->StartTime();
+            entry.endTime = it->second->EndTime();
+            XBMC->Log(LOG_DEBUG,"%s: Found active recording for rule %u", __FUNCTION__, rule.RecordID());
+            break;
+        }
+      }
+      break;
     default:
       entry.startTime = rule.StartTime();
       entry.endTime = rule.EndTime();
   }
 
   // fill others
-  entry.title = rule.Title();
   entry.startOffset = rule.StartOffset();
   entry.endOffset = rule.EndOffset();
   entry.dupMethod = rule.DuplicateControlMethod();
@@ -217,7 +274,7 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
   {
     case TIMER_TYPE_MANUAL_SEARCH:
     {
-      if (entry.HasChannel() && entry.HasTimeSlot())
+      if (entry.HasChannel() && entry.HasTimeSlot()) //Manual only
       {
         rule.SetType(Myth::RT_SingleRecord);
         rule.SetSearchType(Myth::ST_ManualSearch); // Using timeslot
@@ -226,6 +283,7 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
         rule.SetStartTime(entry.startTime);
         rule.SetEndTime(entry.endTime);
         rule.SetTitle(entry.title);
+        rule.SetSubtitle(entry.subtitle);
         rule.SetDescription(entry.description);
         rule.SetInactive(entry.isInactive);
         return rule;
@@ -235,60 +293,74 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
 
     case TIMER_TYPE_THIS_SHOWING:
     {
-      if (!entry.epgInfo.IsNull())
+      rule.SetType(Myth::RT_SingleRecord);
+      rule.SetSearchType(Myth::ST_NoSearch);
+      rule.SetInactive(entry.isInactive);
+      if (!entry.epgInfo.IsNull()) //EPG initial entry
       {
-        rule.SetType(Myth::RT_SingleRecord);
-        rule.SetSearchType(Myth::ST_NoSearch);
         rule.SetChannelID(entry.epgInfo.ChannelID());
+        rule.SetCallsign(entry.epgInfo.Callsign());
         rule.SetStartTime(entry.epgInfo.StartTime());
         rule.SetEndTime(entry.epgInfo.EndTime());
         rule.SetTitle(entry.epgInfo.Title());
         rule.SetSubtitle(entry.epgInfo.Subtitle());
-        rule.SetDescription(entry.description);
-        rule.SetCallsign(entry.epgInfo.Callsign());
+        rule.SetDescription(entry.epgInfo.Description());
         rule.SetCategory(entry.epgInfo.Category());
         rule.SetProgramID(entry.epgInfo.ProgramID());
         rule.SetSeriesID(entry.epgInfo.SeriesID());
-        rule.SetInactive(entry.isInactive);
         return rule;
       }
+      if (!entry.isAnyChannel && entry.HasChannel() && entry.HasTimeSlot()) //Valid edit case
+      {
+        rule.SetChannelID(entry.chanid);
+        rule.SetCallsign(entry.callsign);
+        rule.SetStartTime(entry.startTime);
+        rule.SetEndTime(entry.endTime);
+        rule.SetTitle(entry.title);
+        rule.SetSubtitle(entry.subtitle);
+        rule.SetDescription(entry.description);
+        rule.SetCategory(entry.category);
+        return rule;
+      }
+      if (entry.isAnyChannel)
+        XBMC->Log(LOG_ERROR, "%s (MythScheduleHelper76) AnyChannel is not supported for this Timer Type.", __FUNCTION__);
       break;
     }
 
     case TIMER_TYPE_RECORD_ONE:
     {
-      if (!entry.epgInfo.IsNull())
+      rule.SetType(Myth::RT_OneRecord);
+      rule.SetSearchType(Myth::ST_NoSearch);
+      if (!entry.isAnyChannel) rule.SetFilter(Myth::FM_ThisChannel);
+      rule.SetInactive(entry.isInactive);
+
+      if (!entry.epgInfo.IsNull()) //EPG initial entry
       {
-        rule.SetType(Myth::RT_OneRecord);
-        rule.SetSearchType(Myth::ST_NoSearch);
-        rule.SetChannelID(entry.epgInfo.ChannelID());
         rule.SetStartTime(entry.epgInfo.StartTime());
         rule.SetEndTime(entry.epgInfo.EndTime());
+        if (entry.isAnyChannel) //Grab channel info while we still have it
+        {
+          rule.SetChannelID(entry.epgInfo.ChannelID());
+          rule.SetCallsign(entry.epgInfo.Callsign());
+        }
         rule.SetTitle(entry.epgInfo.Title());
         rule.SetSubtitle(entry.epgInfo.Subtitle());
-        rule.SetDescription(entry.description);
-        rule.SetCallsign(entry.epgInfo.Callsign());
+        rule.SetDescription(entry.epgInfo.Description());
         rule.SetCategory(entry.epgInfo.Category());
         rule.SetProgramID(entry.epgInfo.ProgramID());
         rule.SetSeriesID(entry.epgInfo.SeriesID());
-        rule.SetInactive(entry.isInactive);
         return rule;
       }
-      if (!entry.epgSearch.empty())
+      if (entry.HasChannel() || entry.isAnyChannel) //Valid edit case
       {
-        rule.SetType(Myth::RT_OneRecord);
-        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
-        if (entry.HasChannel())
-        {
-          rule.SetFilter(Myth::FM_ThisChannel);
-          rule.SetChannelID(entry.chanid);
-          rule.SetCallsign(entry.callsign);
-        }
+        rule.SetChannelID(entry.chanid);
+        rule.SetCallsign(entry.callsign);
+        rule.SetStartTime(entry.startTime);
+        rule.SetEndTime(entry.endTime);
         rule.SetTitle(entry.title);
-        // Backend use the subtitle/description to find program by keywords or title
-        rule.SetSubtitle("");
-        rule.SetDescription(entry.epgSearch);
-        rule.SetInactive(entry.isInactive);
+        rule.SetSubtitle(entry.subtitle);
+        rule.SetDescription(entry.description);
+        rule.SetCategory(entry.category);
         return rule;
       }
       break;
@@ -296,152 +368,143 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
 
     case TIMER_TYPE_RECORD_WEEKLY:
     {
-      if (!entry.epgInfo.IsNull())
+      rule.SetType(Myth::RT_AllRecord);
+      rule.SetFilter(Myth::FM_ThisChannel + Myth::FM_ThisDayAndTime);
+      rule.SetSearchType(Myth::ST_NoSearch);
+      rule.SetInactive(entry.isInactive);
+      rule.SetDuplicateControlMethod(Myth::DM_CheckNone);
+      if (!entry.epgInfo.IsNull()) //EPG Version
       {
-        rule.SetType(Myth::RT_AllRecord);
-        rule.SetFilter(Myth::FM_ThisChannel + Myth::FM_ThisDayAndTime);
-        rule.SetSearchType(Myth::ST_NoSearch);
         rule.SetChannelID(entry.epgInfo.ChannelID());
+        rule.SetCallsign(entry.epgInfo.Callsign());
         rule.SetStartTime(entry.epgInfo.StartTime());
         rule.SetEndTime(entry.epgInfo.EndTime());
         rule.SetTitle(entry.epgInfo.Title());
         rule.SetSubtitle(entry.epgInfo.Subtitle());
-        rule.SetDescription(entry.description);
-        rule.SetCallsign(entry.epgInfo.Callsign());
+        rule.SetDescription(entry.epgInfo.Description());
         rule.SetCategory(entry.epgInfo.Category());
         rule.SetProgramID(entry.epgInfo.ProgramID());
         rule.SetSeriesID(entry.epgInfo.SeriesID());
-        rule.SetInactive(entry.isInactive);
-        rule.SetDuplicateControlMethod(Myth::DM_CheckNone);
         return rule;
       }
-      if (!entry.epgSearch.empty())
+      if (!entry.isAnyChannel && entry.HasChannel() && entry.HasTimeSlot()) //Manual Version and edit case
       {
-        rule.SetType(Myth::RT_WeeklyRecord);
-        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
-        if (entry.HasChannel())
-        {
-          rule.SetFilter(Myth::FM_ThisChannel);
-          rule.SetChannelID(entry.chanid);
-          rule.SetCallsign(entry.callsign);
-        }
-        rule.SetTitle(entry.title);
-        // Backend use the subtitle/description to find program by keywords or title
-        rule.SetSubtitle("");
-        rule.SetDescription(entry.epgSearch);
-        rule.SetInactive(entry.isInactive);
-        rule.SetDuplicateControlMethod(Myth::DM_CheckNone);
-        return rule;
-      }
-      if (entry.HasChannel() && entry.HasTimeSlot())
-      {
-        rule.SetType(Myth::RT_WeeklyRecord);
-        rule.SetSearchType(Myth::ST_ManualSearch); // Using timeslot
         rule.SetChannelID(entry.chanid);
         rule.SetCallsign(entry.callsign);
         rule.SetStartTime(entry.startTime);
         rule.SetEndTime(entry.endTime);
         rule.SetTitle(entry.title);
+        rule.SetSubtitle(entry.subtitle);
         rule.SetDescription(entry.description);
-        rule.SetInactive(entry.isInactive);
-        rule.SetDuplicateControlMethod(Myth::DM_CheckNone);
+        rule.SetCategory(entry.category);
         return rule;
       }
+      if (entry.isAnyChannel)
+        XBMC->Log(LOG_ERROR, "%s (MythScheduleHelper76) AnyChannel is not supported for this Timer Type.", __FUNCTION__);
       break;
     }
 
     case TIMER_TYPE_RECORD_DAILY:
     {
-      if (!entry.epgInfo.IsNull())
+      rule.SetType(Myth::RT_AllRecord);
+      rule.SetFilter(Myth::FM_ThisChannel + Myth::FM_ThisTime);
+      rule.SetSearchType(Myth::ST_NoSearch);
+      rule.SetInactive(entry.isInactive);
+      rule.SetDuplicateControlMethod(Myth::DM_CheckNone);
+      if (!entry.epgInfo.IsNull()) //EPG Version
       {
-        rule.SetType(Myth::RT_AllRecord);
-        rule.SetFilter(Myth::FM_ThisChannel + Myth::FM_ThisTime);
-        rule.SetSearchType(Myth::ST_NoSearch);
         rule.SetChannelID(entry.epgInfo.ChannelID());
+        rule.SetCallsign(entry.epgInfo.Callsign());
         rule.SetStartTime(entry.epgInfo.StartTime());
         rule.SetEndTime(entry.epgInfo.EndTime());
         rule.SetTitle(entry.epgInfo.Title());
         rule.SetSubtitle(entry.epgInfo.Subtitle());
-        rule.SetDescription(entry.description);
-        rule.SetCallsign(entry.epgInfo.Callsign());
+//        rule.SetDescription(entry.epgInfo.Description()); TODO Invalid Overloaded Type??
         rule.SetCategory(entry.epgInfo.Category());
         rule.SetProgramID(entry.epgInfo.ProgramID());
         rule.SetSeriesID(entry.epgInfo.SeriesID());
-        rule.SetInactive(entry.isInactive);
-        rule.SetDuplicateControlMethod(Myth::DM_CheckNone);
         return rule;
       }
-      if (!entry.epgSearch.empty())
+      if (!entry.isAnyChannel && entry.HasChannel() && entry.HasTimeSlot()) //Manual version and edit case
       {
-        rule.SetType(Myth::RT_DailyRecord);
-        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
-        if (entry.HasChannel())
-        {
-          rule.SetFilter(Myth::FM_ThisChannel);
-          rule.SetChannelID(entry.chanid);
-          rule.SetCallsign(entry.callsign);
-        }
-        rule.SetTitle(entry.title);
-        // Backend use the subtitle/description to find program by keywords or title
-        rule.SetSubtitle("");
-        rule.SetDescription(entry.epgSearch);
-        rule.SetInactive(entry.isInactive);
-        return rule;
-      }
-      if (entry.HasChannel() && entry.HasTimeSlot())
-      {
-        rule.SetType(Myth::RT_DailyRecord);
-        rule.SetSearchType(Myth::ST_ManualSearch); // Using timeslot
         rule.SetChannelID(entry.chanid);
         rule.SetCallsign(entry.callsign);
         rule.SetStartTime(entry.startTime);
         rule.SetEndTime(entry.endTime);
         rule.SetTitle(entry.title);
+        rule.SetSubtitle(entry.subtitle);
         rule.SetDescription(entry.description);
-        rule.SetInactive(entry.isInactive);
-        rule.SetDuplicateControlMethod(Myth::DM_CheckNone);
+        rule.SetCategory(entry.category);
         return rule;
       }
+      if (entry.isAnyChannel)
+        XBMC->Log(LOG_ERROR, "%s (MythScheduleHelper76) AnyChannel is not supported for this Timer Type.", __FUNCTION__);
       break;
     }
 
     case TIMER_TYPE_RECORD_ALL:
     {
-      if (!entry.epgInfo.IsNull())
+      rule.SetType(Myth::RT_AllRecord);
+      rule.SetSearchType(Myth::ST_NoSearch);
+      if (!entry.isAnyChannel) rule.SetFilter(Myth::FM_ThisChannel);
+      rule.SetInactive(entry.isInactive);
+      if (!entry.epgInfo.IsNull()) // EPG only
       {
-        rule.SetType(Myth::RT_AllRecord);
-        rule.SetFilter(Myth::FM_ThisChannel);
-        rule.SetSearchType(Myth::ST_NoSearch);
-        rule.SetChannelID(entry.epgInfo.ChannelID());
+        if (entry.isAnyChannel) //Grab channel info while we still have it
+        {
+          rule.SetChannelID(entry.epgInfo.ChannelID());
+          rule.SetCallsign(entry.epgInfo.Callsign());
+        }
         rule.SetStartTime(entry.epgInfo.StartTime());
         rule.SetEndTime(entry.epgInfo.EndTime());
         rule.SetTitle(entry.epgInfo.Title());
         rule.SetSubtitle(entry.epgInfo.Subtitle());
-        rule.SetDescription(entry.description);
-        rule.SetCallsign(entry.epgInfo.Callsign());
+//        rule.SetDescription(entry.epgInfo.Description()); TODO Invalid Overloaded Type??
         rule.SetCategory(entry.epgInfo.Category());
         rule.SetProgramID(entry.epgInfo.ProgramID());
         rule.SetSeriesID(entry.epgInfo.SeriesID());
-        rule.SetInactive(entry.isInactive);
         return rule;
       }
+      if (entry.HasChannel() || entry.isAnyChannel) //Valid edit case
+      {
+        rule.SetChannelID(entry.chanid);
+        rule.SetCallsign(entry.callsign);
+        rule.SetStartTime(entry.startTime);
+        rule.SetEndTime(entry.endTime);
+        rule.SetTitle(entry.title);
+        rule.SetSubtitle(entry.subtitle);
+        rule.SetDescription(entry.description);
+        rule.SetCategory(entry.category);
+        return rule;
+      }
+      break;
+    }
+
+    case TIMER_TYPE_TEXT_SEARCH: //Manual only but fields pre-populated by Kodi Core usng EPG data
+    {
+      rule.SetType(Myth::RT_AllRecord);
+      if (!entry.isAnyChannel) 
+      {
+        rule.SetFilter(Myth::FM_ThisChannel);
+        rule.SetChannelID(entry.chanid);
+        rule.SetCallsign(entry.callsign);
+      }
+      rule.SetTitle(entry.title);
+      if (entry.isFullTextSearch)
+        rule.SetSearchType(Myth::ST_KeywordSearch);
+      else
+        rule.SetSearchType(Myth::ST_TitleSearch);
+      rule.SetInactive(entry.isInactive);
+
       if (!entry.epgSearch.empty())
       {
-        rule.SetType(Myth::RT_AllRecord);
-        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
-        if (entry.HasChannel())
-        {
-          rule.SetFilter(Myth::FM_ThisChannel);
-          rule.SetChannelID(entry.chanid);
-          rule.SetCallsign(entry.callsign);
-        }
-        rule.SetTitle(entry.title);
-        // Backend use the subtitle/description to find program by keywords or title
-        rule.SetSubtitle("");
-        rule.SetDescription(entry.epgSearch);
-        rule.SetInactive(entry.isInactive);
+        // Backend uses subtitle/description to store search parameters
+        rule.SetSubtitle(""); // Backend uses Subtitle for table join SQL for power searches (not needed for keyword or title)
+        rule.SetDescription(entry.epgSearch); // Backend uses description to store Keyword or Title search string and SQL for Power Search
         return rule;
       }
+      else
+        XBMC->Log(LOG_ERROR, "%s (MythScheduleHelper76) Empty search string not supported.", __FUNCTION__);
       break;
     }
 
@@ -457,6 +520,7 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
       rule.SetStartTime(entry.startTime);
       rule.SetEndTime(entry.endTime);
       rule.SetTitle(entry.title);
+      rule.SetSubtitle(entry.subtitle);
       rule.SetDescription(entry.description);
       rule.SetInactive(entry.isInactive);
       return rule;
@@ -465,7 +529,7 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
       break;
   }
   rule.SetType(Myth::RT_UNKNOWN);
-  XBMC->Log(LOG_ERROR, "%s - Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
+  XBMC->Log(LOG_ERROR, "%s (MythScheduleHelper76) - Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
           entry.timerType, entry.chanid, entry.callsign.c_str(), (unsigned)entry.startTime, (unsigned)entry.endTime);
   return rule;
 }

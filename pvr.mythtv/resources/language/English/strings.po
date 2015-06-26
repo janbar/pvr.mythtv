@@ -348,26 +348,30 @@ msgid "Manual"
 msgstr ""
 
 msgctxt "#30461"
-msgid "Record one"
+msgid "Once (This title)"
 msgstr ""
 
 msgctxt "#30462"
-msgid "Record weekly"
+msgid "Weekly (This day and time)"
 msgstr ""
 
 msgctxt "#30463"
-msgid "Record daily"
+msgid "Daily (This time)"
 msgstr ""
 
 msgctxt "#30464"
-msgid "Record all"
+msgid "Series (Any time)"
 msgstr ""
 
 msgctxt "#30465"
-msgid "Record this"
+msgid "This Showing"
 msgstr ""
 
-# empty strings from id 30466 to 30500
+msgctxt "#30466"
+msgid "Text Search"
+msgstr ""
+
+# empty strings from id 30467 to 30500
 
 msgctxt "#30501"
 msgid "Don't match duplicates"

@@ -1438,7 +1438,10 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
 
     tag.iClientIndex = (*it)->entryIndex;
     tag.iParentClientIndex = (*it)->parentIndex;
-    tag.iClientChannelUid = FindPVRChannelUid((*it)->chanid);
+    if ((*it)->isAnyChannel)
+      tag.iClientChannelUid = -1; //How PVR core identifies an 'Any Channel' rule
+    else
+      tag.iClientChannelUid = FindPVRChannelUid((*it)->chanid);
     tag.startTime = (*it)->startTime;
     tag.endTime = (*it)->endTime;
 
@@ -1488,7 +1491,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
     tag.iTimerType = static_cast<unsigned>((*it)->timerType);
     PVR_STRCPY(tag.strTitle, (*it)->title.c_str());
     PVR_STRCPY(tag.strEpgSearchString, (*it)->epgSearch.c_str());
-    tag.bFullTextEpgSearch = false;
+    tag.bFullTextEpgSearch = (*it)->isFullTextSearch;
     PVR_STRCPY(tag.strDirectory, ""); // not implemented
     PVR_STRCPY(tag.strSummary, (*it)->description.c_str());
     tag.iPriority = (*it)->priority;
@@ -1708,8 +1711,8 @@ MythTimerEntry PVRClientMythTV::PVRtoTimerEntry(const PVR_TIMER& timer, bool che
       hasEpg = false;
     }
   }
-  // Fill channel
-  if (!hasEpg && hasChannel)
+  // Fill channel (User selected channel should over-ride EPG channel if rule was edited)
+  if (hasChannel)
   {
     MythChannel channel = FindChannel(timer.iClientChannelUid);
     if (!channel.IsNull())
@@ -1724,6 +1727,11 @@ MythTimerEntry PVRClientMythTV::PVRtoTimerEntry(const PVR_TIMER& timer, bool che
       hasChannel = false;
     }
   }
+  else
+  {
+    entry.isAnyChannel = true; //Create an 'Any Channel' rule
+  }
+
   // Fill others
   if (hasTimeslot)
   {
@@ -1732,6 +1740,7 @@ MythTimerEntry PVRClientMythTV::PVRtoTimerEntry(const PVR_TIMER& timer, bool che
   }
   if (hasEpgSearch)
   {
+    entry.isFullTextSearch = timer.bFullTextEpgSearch;
     unsigned i = 0;
     while (timer.strEpgSearchString[i] && isspace(timer.strEpgSearchString[i] != 0)) ++i;
     if (timer.strEpgSearchString[i])

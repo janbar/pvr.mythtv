@@ -37,12 +37,12 @@ enum
 {
   METHOD_UNKNOWN            = 0,
   METHOD_NOOP               = 1,
-  METHOD_UPDATE_INACTIVE,
-  METHOD_CREATE_OVERRIDE,
-  METHOD_CREATE_DONTRECORD,
-  METHOD_DELETE,
-  METHOD_DISCREET_UPDATE,
-  METHOD_FULL_UPDATE
+  METHOD_UPDATE_INACTIVE    = 2,
+  METHOD_CREATE_OVERRIDE    = 3,
+  METHOD_CREATE_DONTRECORD  = 4,
+  METHOD_DELETE             = 5,
+  METHOD_DISCREET_UPDATE    = 6,
+  METHOD_FULL_UPDATE        = 7
 };
 
 static uint_fast32_t hashvalue(uint_fast32_t maxsize, const char *value)
@@ -204,6 +204,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::SubmitTimer(const MythTimerE
     case TIMER_TYPE_RECORD_WEEKLY:
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
+    case TIMER_TYPE_TEXT_SEARCH:
       break;
     default:
       return MSM_ERROR_NOT_IMPLEMENTED;
@@ -230,6 +231,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateTimer(const MythTimerE
     case TIMER_TYPE_RECORD_WEEKLY:
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
+    case TIMER_TYPE_TEXT_SEARCH:
     {
       MythRecordingRule newrule = m_versionHelper->NewFromTimer(entry, false);
       return UpdateRecordingRule(entry.entryIndex, newrule);
@@ -256,6 +258,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteTimer(const MythTimerE
     case TIMER_TYPE_RECORD_WEEKLY:
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
+    case TIMER_TYPE_TEXT_SEARCH:
       if (force)
         return DeleteRecordingRule(entry.entryIndex);
       return MSM_ERROR_SUCCESS;
@@ -268,6 +271,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteTimer(const MythTimerE
 MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteModifier(uint32_t index)
 {
   CLockObject lock(m_lock);
+  MythTimerEntryList entries;
 
   MythScheduledPtr recording = FindUpComingByIndex(index);
   if (!recording)
@@ -683,6 +687,13 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t
           handle.SetRecordingGroup(newrule.RecordingGroup());
           handle.SetCheckDuplicatesInType(newrule.CheckDuplicatesInType());
           handle.SetDuplicateControlMethod(newrule.DuplicateControlMethod());
+          handle.SetFilter(newrule.Filter());
+          handle.SetChannelID(newrule.ChannelID());
+          handle.SetCallsign(newrule.Callsign());
+          handle.SetSearchType(newrule.SearchType());
+          handle.SetTitle(newrule.Title());
+          handle.SetSubtitle(newrule.Subtitle());
+          handle.SetDescription(newrule.Description());
         }
         break;
     }
