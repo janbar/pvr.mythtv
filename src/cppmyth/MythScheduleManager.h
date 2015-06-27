@@ -40,6 +40,7 @@ typedef enum
   TIMER_TYPE_RECORD_WEEKLY,       // Record one showing every week
   TIMER_TYPE_RECORD_DAILY,        // Record one showing every day
   TIMER_TYPE_RECORD_ALL,          // Record all showings
+  TIMER_TYPE_RECORD_SERIES,        // Record serie
   // Keep last
   TIMER_TYPE_UPCOMING,            // Upcoming
   TIMER_TYPE_OVERRIDE,            // Override

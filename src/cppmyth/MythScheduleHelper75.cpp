@@ -160,6 +160,24 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRuleRecordingGroupList(),
             GetRuleRecordingGroupDefault()));
 
+    typeList.push_back(MythScheduleManager::TimerType(TIMER_TYPE_RECORD_SERIES,
+            PVR_TIMER_TYPE_IS_REPEATING |
+            PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+            PVR_TIMER_TYPE_SUPPORTS_RECORD_ONLY_NEW_EPISODES |
+            PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+            PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+            PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+            PVR_TIMER_TYPE_SUPPORTS_RECORDING_GROUP,
+            XBMC->GetLocalizedString(30466),
+            GetRulePriorityList(),
+            GetRulePriorityDefault(),
+            GetRuleDupMethodList(),
+            GetRuleDupMethodDefault(),
+            GetRuleExpirationList(),
+            GetRuleExpirationDefault(),
+            GetRuleRecordingGroupList(),
+            GetRuleRecordingGroupDefault()));
+
     ///////////////////////////////////////////////////////////////////////////
     //// KEEP LAST
     ///////////////////////////////////////////////////////////////////////////
@@ -438,7 +456,10 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       break;
 
     case Myth::RT_ChannelRecord:
-      entry.timerType = TIMER_TYPE_RECORD_ALL;
+      if ((rule.Filter() & Myth::FM_ThisSeries))
+        entry.timerType = TIMER_TYPE_RECORD_SERIES;
+      else
+        entry.timerType = TIMER_TYPE_RECORD_ALL;
       break;
 
     case Myth::RT_AllRecord:
@@ -963,6 +984,29 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
         // Backend use the subtitle/description to find program by keywords or title
         rule.SetSubtitle("");
         rule.SetDescription(entry.epgSearch);
+        rule.SetInactive(entry.isInactive);
+        return rule;
+      }
+      break;
+    }
+
+    case TIMER_TYPE_RECORD_SERIES:
+    {
+      if (!entry.epgInfo.IsNull())
+      {
+        rule.SetType(Myth::RT_ChannelRecord);
+        rule.SetFilter(Myth::FM_ThisSeries);
+        rule.SetSearchType(Myth::ST_NoSearch);
+        rule.SetChannelID(entry.epgInfo.ChannelID());
+        rule.SetStartTime(entry.epgInfo.StartTime());
+        rule.SetEndTime(entry.epgInfo.EndTime());
+        rule.SetTitle(entry.epgInfo.Title());
+        rule.SetSubtitle(entry.epgInfo.Subtitle());
+        rule.SetDescription(entry.description);
+        rule.SetCallsign(entry.epgInfo.Callsign());
+        rule.SetCategory(entry.epgInfo.Category());
+        rule.SetProgramID(entry.epgInfo.ProgramID());
+        rule.SetSeriesID(entry.epgInfo.SeriesID());
         rule.SetInactive(entry.isInactive);
         return rule;
       }
