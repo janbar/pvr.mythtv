@@ -92,11 +92,7 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       else if ((rule.Filter() & Myth::FM_ThisTime))
         entry.timerType = TIMER_TYPE_RECORD_DAILY;
       else
-      {
         entry.timerType = TIMER_TYPE_RECORD_ALL;
-        if (rule.SearchType() == Myth::ST_NoSearch)
-          entry.epgSearch = rule.Title(); // EPG based
-      }
       break;
 
     case Myth::RT_OverrideRecord:
@@ -123,8 +119,10 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       entry.epgSearch = rule.Description();
       entry.timerType = TIMER_TYPE_UNHANDLED;
       break;
-    case Myth::ST_NoSearch:
-    case Myth::ST_ManualSearch:
+    case Myth::ST_NoSearch: // EPG based
+      entry.epgCheck = true;
+      entry.epgSearch = rule.Title();
+      break;    case Myth::ST_ManualSearch:
     default:
       break;
   }

@@ -1502,18 +1502,8 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
     tag.firstDay = 0; // using startTime
     tag.iWeekdays = PVR_WEEKDAY_NONE; // not implemented
     tag.iPreventDuplicateEpisodes = (*it)->dupMethod;
-
-    switch ((*it)->timerType)
-    {
-      case TIMER_TYPE_UPCOMING:
-      case TIMER_TYPE_OVERRIDE:
-      case TIMER_TYPE_UPCOMING_MANUAL:
-        tag.iEpgUid = MythEPGInfo::MakeBroadcastID(FindPVRChannelUid((*it)->chanid), (*it)->startTime);
-        break;
-      default:
-        tag.iEpgUid = 0;
-    }
-
+    if ((*it)->epgCheck)
+      tag.iEpgUid = MythEPGInfo::MakeBroadcastID(FindPVRChannelUid((*it)->chanid), (*it)->startTime);
     tag.iMarginStart = (*it)->startOffset;
     tag.iMarginEnd = (*it)->endOffset;
     int genre = m_categories.Category((*it)->category);
@@ -1625,7 +1615,7 @@ PVR_ERROR PVRClientMythTV::DeleteTimer(const PVR_TIMER &timer, bool bDeleteSched
 
   // Otherwise delete timer
   XBMC->Log(LOG_DEBUG, "%s: Deleting timer %u force %s", __FUNCTION__, timer.iClientIndex, (bDeleteScheduled ? "true" : "false"));
-  MythTimerEntry entry = PVRtoTimerEntry(timer);
+  MythTimerEntry entry = PVRtoTimerEntry(timer, false);
   MythScheduleManager::MSM_ERROR ret = m_scheduleManager->DeleteTimer(entry, bDeleteScheduled);
   if (ret == MythScheduleManager::MSM_ERROR_FAILED)
     return PVR_ERROR_FAILED;
@@ -1649,6 +1639,7 @@ MythTimerEntry PVRClientMythTV::PVRtoTimerEntry(const PVR_TIMER& timer, bool che
 
   if (checkEPG && (timer.iEpgUid > 0 || timer.iEpgUid < -1))
   {
+    entry.epgCheck = true;
     hasEpg = true;
   }
   if (timer.iClientChannelUid > 0)
@@ -1786,10 +1777,18 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
   XBMC->Log(LOG_DEBUG, "TIMER: iRecordingGroup = %d",timer.iRecordingGroup);
 
   XBMC->Log(LOG_DEBUG, "%s: title: %s, start: %ld, end: %ld, chanID: %u", __FUNCTION__, timer.strTitle, timer.startTime, timer.endTime, timer.iClientChannelUid);
-
-  MythScheduleManager::MSM_ERROR ret = MythScheduleManager::MSM_ERROR_NOT_IMPLEMENTED;
-  MythTimerEntry entry = PVRtoTimerEntry(timer, false);
-  ret = m_scheduleManager->UpdateTimer(entry);
+  MythTimerEntry entry;
+  // Restore discarded info by PVR manager from our saved timer
+  {
+    CLockObject lock(m_lock);
+    std::map<unsigned int, MYTH_SHARED_PTR<PVR_TIMER> >::const_iterator it = m_PVRtimerMemorandum.find(timer.iClientIndex);
+    if (it == m_PVRtimerMemorandum.end())
+      return PVR_ERROR_INVALID_PARAMETERS;
+    PVR_TIMER newTimer = timer;
+    newTimer.iEpgUid = it->second->iEpgUid;
+    entry = PVRtoTimerEntry(newTimer, true);
+  }
+  MythScheduleManager::MSM_ERROR ret = m_scheduleManager->UpdateTimer(entry);
   if (ret == MythScheduleManager::MSM_ERROR_FAILED)
     return PVR_ERROR_FAILED;
   if (ret == MythScheduleManager::MSM_ERROR_NOT_IMPLEMENTED)

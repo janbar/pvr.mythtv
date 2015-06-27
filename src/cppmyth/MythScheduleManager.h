@@ -53,6 +53,7 @@ struct MythTimerEntry
 {
   bool          isInactive;
   TimerTypeId   timerType;
+  bool          epgCheck;
   MythEPGInfo   epgInfo;
   uint32_t      chanid;
   std::string   callsign;
@@ -73,7 +74,7 @@ struct MythTimerEntry
   uint32_t      parentIndex;
   Myth::RS_t    recordingStatus;
   MythTimerEntry()
-  : isInactive(false), timerType(TIMER_TYPE_UNHANDLED)
+  : isInactive(false), timerType(TIMER_TYPE_UNHANDLED), epgCheck(false)
   , chanid(0), startTime(0), endTime(0), startOffset(0), endOffset(0), priority(0)
   , dupMethod(Myth::DM_CheckNone), autoExpire(false), firstShowing(false), recordingGroup(0)
   , entryIndex(0), parentIndex(0), recordingStatus(Myth::RS_UNKNOWN) { }

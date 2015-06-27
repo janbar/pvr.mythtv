@@ -88,6 +88,17 @@ bool MythScheduleHelper85::FillTimerEntry(MythTimerEntry& entry, const MythProgr
   else
     entry.timerType = TIMER_TYPE_ZOMBIE;
 
+  switch (entry.timerType)
+  {
+    case TIMER_TYPE_UPCOMING:
+    case TIMER_TYPE_OVERRIDE:
+    case TIMER_TYPE_UPCOMING_MANUAL:
+      entry.epgCheck = true;
+      break;
+    default:
+      entry.epgCheck = false;
+  }
+
   entry.description = "";
   entry.chanid = recording.ChannelID();
   entry.callsign = recording.Callsign();

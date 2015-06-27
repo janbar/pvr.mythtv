@@ -439,14 +439,10 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
 
     case Myth::RT_ChannelRecord:
       entry.timerType = TIMER_TYPE_RECORD_ALL;
-      if (rule.SearchType() == Myth::ST_NoSearch)
-        entry.epgSearch = rule.Title(); // EPG based
       break;
 
     case Myth::RT_AllRecord:
       entry.timerType = TIMER_TYPE_RECORD_ALL;
-      if (rule.SearchType() == Myth::ST_NoSearch)
-        entry.epgSearch = rule.Title(); // EPG based
       break;
 
     case Myth::RT_OverrideRecord:
@@ -473,7 +469,10 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       entry.epgSearch = rule.Description();
       entry.timerType = TIMER_TYPE_UNHANDLED;
       break;
-    case Myth::ST_NoSearch:
+    case Myth::ST_NoSearch: // EPG based
+      entry.epgCheck = true;
+      entry.epgSearch = rule.Title();
+      break;
     case Myth::ST_ManualSearch:
     default:
       break;
@@ -587,6 +586,17 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythProgr
   }
   else
     entry.timerType = TIMER_TYPE_ZOMBIE;
+
+  switch (entry.timerType)
+  {
+    case TIMER_TYPE_UPCOMING:
+    case TIMER_TYPE_OVERRIDE:
+    case TIMER_TYPE_UPCOMING_MANUAL:
+      entry.epgCheck = true;
+      break;
+    default:
+      entry.epgCheck = false;
+  }
 
   entry.description = "";
   entry.chanid = recording.ChannelID();
