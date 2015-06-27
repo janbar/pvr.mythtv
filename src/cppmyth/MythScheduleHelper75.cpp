@@ -441,18 +441,32 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         entry.timerType = TIMER_TYPE_MANUAL_SEARCH;
       else
         entry.timerType = TIMER_TYPE_THIS_SHOWING;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
 
     case Myth::RT_OneRecord:
       entry.timerType = TIMER_TYPE_RECORD_ONE;
       break;
 
+    case Myth::RT_FindDailyRecord:
+      entry.timerType = TIMER_TYPE_RECORD_DAILY;
+      break;
+
     case Myth::RT_DailyRecord:
       entry.timerType = TIMER_TYPE_RECORD_DAILY;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
+      break;
+
+    case Myth::RT_FindWeeklyRecord:
+      entry.timerType = TIMER_TYPE_RECORD_WEEKLY;
       break;
 
     case Myth::RT_WeeklyRecord:
       entry.timerType = TIMER_TYPE_RECORD_WEEKLY;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
 
     case Myth::RT_ChannelRecord:
@@ -460,6 +474,8 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         entry.timerType = TIMER_TYPE_RECORD_SERIES;
       else
         entry.timerType = TIMER_TYPE_RECORD_ALL;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
 
     case Myth::RT_AllRecord:
@@ -468,14 +484,20 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
 
     case Myth::RT_OverrideRecord:
       entry.timerType = TIMER_TYPE_OVERRIDE;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
 
     case Myth::RT_DontRecord:
       entry.timerType = TIMER_TYPE_DONT_RECORD;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
 
     default:
       entry.timerType = TIMER_TYPE_UNHANDLED;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
   }
 
@@ -498,9 +520,6 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
     default:
       break;
   }
-  entry.title = rule.Title();
-  entry.chanid = rule.ChannelID();
-  entry.callsign = rule.Callsign();
 
   // For all repeating fix timeslot as needed
   switch (entry.timerType)
@@ -515,15 +534,14 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         // fill timeslot starting at next recording
         entry.startTime = entry.endTime = rule.NextRecording();
         timeadd(&entry.endTime, difftime(rule.EndTime(), rule.StartTime()));
-        break;
       }
       else if (difftime(rule.LastRecorded(), 0) > 0)
       {
         // fill timeslot starting at last recorded
         entry.startTime = entry.endTime = rule.LastRecorded();
         timeadd(&entry.endTime, difftime(rule.EndTime(), rule.StartTime()));
-        break;
       }
+      break;
     default:
       entry.startTime = rule.StartTime();
       entry.endTime = rule.EndTime();
@@ -823,14 +841,15 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
       }
       if (!entry.epgSearch.empty())
       {
-        rule.SetType(Myth::RT_OneRecord);
-        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
         if (entry.HasChannel())
         {
-          rule.SetFilter(Myth::FM_ThisChannel);
+          rule.SetType(Myth::RT_ChannelRecord);
           rule.SetChannelID(entry.chanid);
           rule.SetCallsign(entry.callsign);
         }
+        else
+          rule.SetType(Myth::RT_OneRecord);
+        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
         rule.SetTitle(entry.title);
         // Backend use the subtitle/description to find program by keywords or title
         rule.SetSubtitle("");
@@ -863,14 +882,15 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
       }
       if (!entry.epgSearch.empty())
       {
-        rule.SetType(Myth::RT_WeeklyRecord);
-        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
         if (entry.HasChannel())
         {
-          rule.SetFilter(Myth::FM_ThisChannel);
+          rule.SetType(Myth::RT_WeeklyRecord);
           rule.SetChannelID(entry.chanid);
           rule.SetCallsign(entry.callsign);
         }
+        else
+          rule.SetType(Myth::RT_FindWeeklyRecord);
+        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
         rule.SetTitle(entry.title);
         // Backend use the subtitle/description to find program by keywords or title
         rule.SetSubtitle("");
@@ -918,14 +938,15 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
       }
       if (!entry.epgSearch.empty())
       {
-        rule.SetType(Myth::RT_DailyRecord);
-        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
         if (entry.HasChannel())
         {
-          rule.SetFilter(Myth::FM_ThisChannel);
+          rule.SetType(Myth::RT_DailyRecord);
           rule.SetChannelID(entry.chanid);
           rule.SetCallsign(entry.callsign);
         }
+        else
+          rule.SetType(Myth::RT_FindDailyRecord);
+        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
         rule.SetTitle(entry.title);
         // Backend use the subtitle/description to find program by keywords or title
         rule.SetSubtitle("");
@@ -971,14 +992,14 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
       }
       if (!entry.epgSearch.empty())
       {
-        if (!entry.HasChannel())
-          rule.SetType(Myth::RT_AllRecord);
-        else
+        if (entry.HasChannel())
         {
           rule.SetType(Myth::RT_ChannelRecord);
           rule.SetChannelID(entry.chanid);
           rule.SetCallsign(entry.callsign);
         }
+        else
+          rule.SetType(Myth::RT_AllRecord);
         rule.SetSearchType(Myth::ST_TitleSearch); // Search title
         rule.SetTitle(entry.title);
         // Backend use the subtitle/description to find program by keywords or title

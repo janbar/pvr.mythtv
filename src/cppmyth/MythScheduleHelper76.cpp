@@ -72,18 +72,35 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         entry.timerType = TIMER_TYPE_MANUAL_SEARCH;
       else
         entry.timerType = TIMER_TYPE_THIS_SHOWING;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
 
     case Myth::RT_OneRecord:
       entry.timerType = TIMER_TYPE_RECORD_ONE;
+      if (rule.Filter() & Myth::FM_ThisChannel)
+      {
+        entry.chanid = rule.ChannelID();
+        entry.callsign = rule.Callsign();
+      }
       break;
 
     case Myth::RT_DailyRecord:
       entry.timerType = TIMER_TYPE_RECORD_DAILY;
+      if (rule.Filter() & Myth::FM_ThisChannel)
+      {
+        entry.chanid = rule.ChannelID();
+        entry.callsign = rule.Callsign();
+      }
       break;
 
     case Myth::RT_WeeklyRecord:
       entry.timerType = TIMER_TYPE_RECORD_WEEKLY;
+      if (rule.Filter() & Myth::FM_ThisChannel)
+      {
+        entry.chanid = rule.ChannelID();
+        entry.callsign = rule.Callsign();
+      }
       break;
 
     case Myth::RT_AllRecord:
@@ -95,18 +112,29 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         entry.timerType = TIMER_TYPE_RECORD_SERIES;
       else
         entry.timerType = TIMER_TYPE_RECORD_ALL;
+      if (rule.Filter() & Myth::FM_ThisChannel)
+      {
+        entry.chanid = rule.ChannelID();
+        entry.callsign = rule.Callsign();
+      }
       break;
 
     case Myth::RT_OverrideRecord:
       entry.timerType = TIMER_TYPE_OVERRIDE;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
 
     case Myth::RT_DontRecord:
       entry.timerType = TIMER_TYPE_DONT_RECORD;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
 
     default:
       entry.timerType = TIMER_TYPE_UNHANDLED;
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
       break;
   }
 
@@ -124,13 +152,11 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
     case Myth::ST_NoSearch: // EPG based
       entry.epgCheck = true;
       entry.epgSearch = rule.Title();
-      break;    case Myth::ST_ManualSearch:
+      break;
+    case Myth::ST_ManualSearch:
     default:
       break;
   }
-  entry.title = rule.Title();
-  entry.chanid = rule.ChannelID();
-  entry.callsign = rule.Callsign();
 
   // For all repeating fix timeslot as needed
   switch (entry.timerType)
@@ -145,15 +171,14 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         // fill timeslot starting at next recording
         entry.startTime = entry.endTime = rule.NextRecording();
         timeadd(&entry.endTime, difftime(rule.EndTime(), rule.StartTime()));
-        break;
       }
       else if (difftime(rule.LastRecorded(), 0) > 0)
       {
         // fill timeslot starting at last recorded
         entry.startTime = entry.endTime = rule.LastRecorded();
         timeadd(&entry.endTime, difftime(rule.EndTime(), rule.StartTime()));
-        break;
       }
+      break;
     default:
       entry.startTime = rule.StartTime();
       entry.endTime = rule.EndTime();
