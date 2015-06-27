@@ -42,7 +42,6 @@ enum
   METHOD_CREATE_DONTRECORD,
   METHOD_DELETE,
   METHOD_DISCREET_UPDATE,
-  METHOD_FULL_UPDATE
 };
 
 static uint_fast32_t hashvalue(uint_fast32_t maxsize, const char *value)
@@ -493,7 +492,6 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecording(uint32_t ind
           case Myth::RS_RECORDING:
           case Myth::RS_TUNING:
             method = METHOD_DISCREET_UPDATE;
-            handle.SetEndTime(newrule.EndTime());
             handle.SetEndOffset(newrule.EndOffset());
             break;
           case Myth::RS_NEVER_RECORD:
@@ -509,7 +507,13 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecording(uint32_t ind
             handle.SetRecordingGroup(newrule.RecordingGroup());
             break;
           default:
-            method = METHOD_FULL_UPDATE;
+            method = METHOD_DISCREET_UPDATE;
+            handle.SetInactive(newrule.Inactive());
+            handle.SetPriority(newrule.Priority());
+            handle.SetAutoExpire(newrule.AutoExpire());
+            handle.SetStartOffset(newrule.StartOffset());
+            handle.SetEndOffset(newrule.EndOffset());
+            handle.SetRecordingGroup(newrule.RecordingGroup());
           break;
         }
         break;
@@ -545,16 +549,6 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecording(uint32_t ind
         if (!m_control->AddRecordSchedule(*(handle.GetPtr())))
           return MSM_ERROR_FAILED;
         node->m_overrideRules.push_back(handle); // sync node
-        //if (!m_con.UpdateSchedules(handle.RecordID()))
-        //  return MSM_ERROR_FAILED;
-        return MSM_ERROR_SUCCESS;
-
-      case METHOD_FULL_UPDATE:
-        handle = newrule;
-        handle.SetRecordID(node->m_rule.RecordID());
-        if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
-          return MSM_ERROR_FAILED;
-        node->m_rule = handle; // sync node
         return MSM_ERROR_SUCCESS;
 
       default:
@@ -670,21 +664,23 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t
         break;
 
       default:
-        // When inactive we can replace with the new rule
-        if (handle.Inactive() || newrule.Inactive())
-          method = METHOD_FULL_UPDATE;
-        else
+        method = METHOD_DISCREET_UPDATE;
+        switch (node->m_rule.SearchType())
         {
-          method = METHOD_DISCREET_UPDATE;
-          handle.SetPriority(newrule.Priority());
-          handle.SetAutoExpire(newrule.AutoExpire());
-          handle.SetStartOffset(newrule.StartOffset());
-          handle.SetEndOffset(newrule.EndOffset());
-          handle.SetRecordingGroup(newrule.RecordingGroup());
-          handle.SetCheckDuplicatesInType(newrule.CheckDuplicatesInType());
-          handle.SetDuplicateControlMethod(newrule.DuplicateControlMethod());
+          case Myth::ST_NoSearch:
+          case Myth::ST_ManualSearch:
+            break;
+          default:
+            handle.SetDescription(newrule.Description());
         }
-        break;
+        handle.SetInactive(newrule.Inactive());
+        handle.SetPriority(newrule.Priority());
+        handle.SetAutoExpire(newrule.AutoExpire());
+        handle.SetStartOffset(newrule.StartOffset());
+        handle.SetEndOffset(newrule.EndOffset());
+        handle.SetRecordingGroup(newrule.RecordingGroup());
+        handle.SetCheckDuplicatesInType(newrule.CheckDuplicatesInType());
+        handle.SetDuplicateControlMethod(newrule.DuplicateControlMethod());
     }
 
     XBMC->Log(LOG_DEBUG, "%s - Dealing with the problem using method %d", __FUNCTION__, method);
@@ -694,14 +690,6 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t
         return MSM_ERROR_SUCCESS;
 
       case METHOD_DISCREET_UPDATE:
-        if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
-          return MSM_ERROR_FAILED;
-        node->m_rule = handle; // sync node
-        return MSM_ERROR_SUCCESS;
-
-      case METHOD_FULL_UPDATE:
-        handle = newrule;
-        handle.SetRecordID(node->m_rule.RecordID());
         if (!m_control->UpdateRecordSchedule(*(handle.GetPtr())))
           return MSM_ERROR_FAILED;
         node->m_rule = handle; // sync node
