@@ -232,6 +232,11 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateTimer(const MythTimerE
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
     {
+      if (entry.epgCheck && entry.epgInfo.IsNull())
+      {
+        XBMC->Log(LOG_ERROR, "%s - index %u requires valid EPG info", __FUNCTION__, entry.entryIndex);
+        return MSM_ERROR_NOT_IMPLEMENTED;
+      }
       MythRecordingRule newrule = m_versionHelper->NewFromTimer(entry, false);
       return UpdateRecordingRule(entry.entryIndex, newrule);
     }
