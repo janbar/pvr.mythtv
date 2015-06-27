@@ -36,11 +36,11 @@ typedef enum
 {
   TIMER_TYPE_MANUAL_SEARCH  = 1,  // Manual record
   TIMER_TYPE_THIS_SHOWING   = 2,  // Record This showing
-  TIMER_TYPE_RECORD_ONE,          // Record one showning
+  TIMER_TYPE_RECORD_ONE,          // Record one showing
   TIMER_TYPE_RECORD_WEEKLY,       // Record one showing every week
   TIMER_TYPE_RECORD_DAILY,        // Record one showing every day
   TIMER_TYPE_RECORD_ALL,          // Record all showings
-  TIMER_TYPE_RECORD_SERIES,        // Record serie
+  TIMER_TYPE_RECORD_SERIES,       // Record series
   // Keep last
   TIMER_TYPE_UPCOMING,            // Upcoming
   TIMER_TYPE_OVERRIDE,            // Override
