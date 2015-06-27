@@ -29,7 +29,6 @@
 #include <time.h>
 #include <set>
 #include <assert.h>
-#include <xbmc/xbmc_pvr_types.h>
 
 using namespace ADDON;
 using namespace PLATFORM;
