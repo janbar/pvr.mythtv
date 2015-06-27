@@ -443,6 +443,12 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         entry.epgSearch = rule.Title(); // EPG based
       break;
 
+    case Myth::RT_AllRecord:
+      entry.timerType = TIMER_TYPE_RECORD_ALL;
+      if (rule.SearchType() == Myth::ST_NoSearch)
+        entry.epgSearch = rule.Title(); // EPG based
+      break;
+
     case Myth::RT_OverrideRecord:
       entry.timerType = TIMER_TYPE_OVERRIDE;
       break;
@@ -934,13 +940,15 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
       }
       if (!entry.epgSearch.empty())
       {
-        rule.SetType(Myth::RT_ChannelRecord);
-        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
-        if (entry.HasChannel())
+        if (!entry.HasChannel())
+          rule.SetType(Myth::RT_AllRecord);
+        else
         {
+          rule.SetType(Myth::RT_ChannelRecord);
           rule.SetChannelID(entry.chanid);
           rule.SetCallsign(entry.callsign);
         }
+        rule.SetSearchType(Myth::ST_TitleSearch); // Search title
         rule.SetTitle(entry.title);
         // Backend use the subtitle/description to find program by keywords or title
         rule.SetSubtitle("");
