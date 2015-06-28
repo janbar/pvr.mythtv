@@ -186,6 +186,7 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
 
   // fill others
   entry.title = rule.Title();
+  entry.category = rule.Category();
   entry.startOffset = rule.StartOffset();
   entry.endOffset = rule.EndOffset();
   entry.dupMethod = rule.DuplicateControlMethod();
@@ -230,6 +231,7 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
   }
   else
   {
+    rule.SetCategory(entry.category);
     rule.SetStartOffset(entry.startOffset);
     rule.SetEndOffset(entry.endOffset);
     rule.SetDuplicateControlMethod(entry.dupMethod);

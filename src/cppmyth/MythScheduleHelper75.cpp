@@ -549,6 +549,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
 
   // fill others
   entry.title = rule.Title();
+  entry.category = rule.Category();
   entry.startOffset = rule.StartOffset();
   entry.endOffset = rule.EndOffset();
   entry.dupMethod = rule.DuplicateControlMethod();
@@ -702,6 +703,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTemplate(const MythEPGInfo& epgIn
         rule.SetMaxEpisodes(tplIt->MaxEpisodes());
         rule.SetNewExpiresOldRecord(tplIt->NewExpiresOldRecord());
         rule.SetFilter(tplIt->Filter());
+        rule.SetCategory(tplIt->Category());
       }
       else
         XBMC->Log(LOG_INFO, "No template found for the category '%s'", epgInfo.Category().c_str());
@@ -770,6 +772,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
   }
   else
   {
+    rule.SetCategory(entry.category);
     rule.SetStartOffset(entry.startOffset);
     rule.SetEndOffset(entry.endOffset);
     rule.SetDuplicateControlMethod(entry.dupMethod);
