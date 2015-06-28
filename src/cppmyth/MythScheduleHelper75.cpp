@@ -795,7 +795,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
   // that which is applied in function 'FillTimerEntry'
 
   MythRecordingRule rule;
-
+  XBMC->Log(LOG_DEBUG, "75::%s", __FUNCTION__);
   if (withTemplate)
   {
     // Base on template
