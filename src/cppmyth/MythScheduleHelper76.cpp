@@ -153,7 +153,12 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       entry.epgCheck = true;
       entry.epgSearch = rule.Title();
       break;
-    case Myth::ST_ManualSearch:
+    case Myth::ST_ManualSearch: // Manual
+      entry.chanid = rule.ChannelID();
+      entry.callsign = rule.Callsign();
+      entry.startTime = rule.StartTime();
+      entry.endTime = rule.EndTime();
+      break;
     default:
       break;
   }
@@ -165,6 +170,7 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
     case TIMER_TYPE_RECORD_WEEKLY:
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
+    case TIMER_TYPE_RECORD_SERIES:
     case TIMER_TYPE_UNHANDLED:
       if (difftime(rule.NextRecording(), 0) > 0)
       {
