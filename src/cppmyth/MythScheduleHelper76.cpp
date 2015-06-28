@@ -197,6 +197,11 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         entry.startTime = entry.endTime = rule.LastRecorded();
         timeadd(&entry.endTime, difftime(rule.EndTime(), rule.StartTime()));
       }
+      else
+      {
+        entry.startTime = rule.StartTime();
+        entry.endTime = rule.EndTime();
+      }
       break;
     default:
       entry.startTime = rule.StartTime();
