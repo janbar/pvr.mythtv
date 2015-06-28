@@ -615,9 +615,9 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythProgr
     case Myth::RS_PREVIOUS_RECORDING: //Previoulsy recorded but no longer in the library
       if (true /*!m_showNotRecording*/)
       {
-        XBMC->Log(LOG_DEBUG, "%s: Skipping %s:%s on %s because status %d and m_showNotRecording=%d", __FUNCTION__,
+        XBMC->Log(LOG_DEBUG, "%s: Skipping %s:%s on %s because status %d", __FUNCTION__,
                   recording.Title().c_str(), recording.Subtitle().c_str(), recording.ChannelName().c_str(),
-                  recording.Status(), 0 /*m_showNotRecording*/);
+                  recording.Status());
         return false;
       }
     default:

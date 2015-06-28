@@ -55,6 +55,7 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   // that which is applied in function 'NewFromTimer'
 
   MythRecordingRule rule = node.GetRule();
+  XBMC->Log(LOG_DEBUG, "76::%s: RecordID %u", __FUNCTION__, rule.RecordID());
 
   switch (rule.Type())
   {
@@ -563,13 +564,14 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
       break;
   }
   rule.SetType(Myth::RT_UNKNOWN);
-  XBMC->Log(LOG_ERROR, "%s - Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
+  XBMC->Log(LOG_ERROR, "76::%s - Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
           entry.timerType, entry.chanid, entry.callsign.c_str(), (unsigned)entry.startTime, (unsigned)entry.endTime);
   return rule;
 }
 
 MythScheduleManager::RuleSummaryInfo MythScheduleHelper76::GetSummaryInfo(const MythRecordingRule &rule) const
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   MythScheduleManager::RuleSummaryInfo meta;
   time_t st = rule.StartTime();
   meta.isRepeating = false;
@@ -635,6 +637,7 @@ MythScheduleManager::RuleSummaryInfo MythScheduleHelper76::GetSummaryInfo(const 
 
 MythRecordingRule MythScheduleHelper76::NewDailyRecord(const MythEPGInfo& epgInfo)
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   unsigned int filter;
   MythRecordingRule rule = this->NewFromTemplate(epgInfo);
 
@@ -672,6 +675,7 @@ MythRecordingRule MythScheduleHelper76::NewDailyRecord(const MythEPGInfo& epgInf
 
 MythRecordingRule MythScheduleHelper76::NewWeeklyRecord(const MythEPGInfo& epgInfo)
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   unsigned int filter;
   MythRecordingRule rule = this->NewFromTemplate(epgInfo);
 
@@ -709,6 +713,7 @@ MythRecordingRule MythScheduleHelper76::NewWeeklyRecord(const MythEPGInfo& epgIn
 
 MythRecordingRule MythScheduleHelper76::NewChannelRecord(const MythEPGInfo& epgInfo)
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   unsigned int filter;
   MythRecordingRule rule = this->NewFromTemplate(epgInfo);
 
@@ -743,6 +748,7 @@ MythRecordingRule MythScheduleHelper76::NewChannelRecord(const MythEPGInfo& epgI
 
 MythRecordingRule MythScheduleHelper76::NewOneRecord(const MythEPGInfo& epgInfo)
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   unsigned int filter;
   MythRecordingRule rule = this->NewFromTemplate(epgInfo);
 
