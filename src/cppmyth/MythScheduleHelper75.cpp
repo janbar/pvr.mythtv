@@ -445,7 +445,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   // that which is applied in function 'NewFromTimer'
 
   MythRecordingRule rule = node.GetRule();
-
+  XBMC->Log(LOG_DEBUG, "75::%s: Rule %u", __FUNCTION__, rule.RecordID());
   switch (rule.Type())
   {
     case Myth::RT_SingleRecord:
@@ -620,7 +620,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythProgr
     case Myth::RS_PREVIOUS_RECORDING: //Previoulsy recorded but no longer in the library
       if (true /*!m_showNotRecording*/)
       {
-        XBMC->Log(LOG_DEBUG, "%s: Skipping %s:%s on %s because status %d", __FUNCTION__,
+        XBMC->Log(LOG_DEBUG, "75::%s: Skipping %s:%s on %s because status %d", __FUNCTION__,
                   recording.Title().c_str(), recording.Subtitle().c_str(), recording.ChannelName().c_str(),
                   recording.Status());
         return false;
@@ -726,7 +726,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTemplate(const MythEPGInfo& epgIn
       }
       if (tplIt != templates.end())
       {
-        XBMC->Log(LOG_INFO, "Overriding the rule with template %u '%s'", (unsigned)tplIt->RecordID(), tplIt->Title().c_str());
+        XBMC->Log(LOG_INFO, "75::%s: Overriding the rule with template %u '%s'", __FUNCTION__, (unsigned)tplIt->RecordID(), tplIt->Title().c_str());
         rule.SetPriority(tplIt->Priority());
         rule.SetStartOffset(tplIt->StartOffset());
         rule.SetEndOffset(tplIt->EndOffset());
@@ -751,7 +751,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTemplate(const MythEPGInfo& epgIn
         rule.SetCategory(tplIt->Category());
       }
       else
-        XBMC->Log(LOG_INFO, "No template found for the category '%s'", epgInfo.Category().c_str());
+        XBMC->Log(LOG_INFO, "75::%s: No template found for the category '%s'", __FUNCTION__, epgInfo.Category().c_str());
     }
     break;
   case 0: // Template provider is 'Internal', then set rule with settings
@@ -781,7 +781,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTemplate(const MythEPGInfo& epgIn
       Myth::SettingPtr categoryOverTime = m_control->GetSetting("CategoryOverTime", false);
       if (categoryOverTime)
       {
-        XBMC->Log(LOG_DEBUG, "Overriding end offset for category %s: +%s", overTimeCategory->value.c_str(), categoryOverTime->value.c_str());
+        XBMC->Log(LOG_DEBUG, "75::%s: Overriding end offset for category %s: +%s", __FUNCTION__, overTimeCategory->value.c_str(), categoryOverTime->value.c_str());
         rule.SetEndOffset(atoi(categoryOverTime->value.c_str()));
       }
     }
@@ -1133,7 +1133,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
       break;
   }
   rule.SetType(Myth::RT_UNKNOWN);
-  XBMC->Log(LOG_ERROR, "%s - Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
+  XBMC->Log(LOG_ERROR, "75::%s: Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
           entry.timerType, entry.chanid, entry.callsign.c_str(), (unsigned)entry.startTime, (unsigned)entry.endTime);
   return rule;
 }
