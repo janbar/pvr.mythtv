@@ -204,6 +204,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::SubmitTimer(const MythTimerE
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
       break;
     default:
       return MSM_ERROR_NOT_IMPLEMENTED;
@@ -231,6 +232,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateTimer(const MythTimerE
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
     {
       if (entry.epgCheck && entry.epgInfo.IsNull())
       {
@@ -263,6 +265,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteTimer(const MythTimerE
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
       if (force)
         return DeleteRecordingRule(entry.entryIndex);
       return MSM_ERROR_SUCCESS;

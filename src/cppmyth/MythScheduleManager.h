@@ -41,6 +41,7 @@ typedef enum
   TIMER_TYPE_RECORD_DAILY,        // Record one showing every day
   TIMER_TYPE_RECORD_ALL,          // Record all showings
   TIMER_TYPE_RECORD_SERIES,       // Record series
+  TIMER_TYPE_TEXT_SEARCH,         // Text Search
   // Keep last
   TIMER_TYPE_UPCOMING,            // Upcoming
   TIMER_TYPE_OVERRIDE,            // Override
@@ -61,6 +62,7 @@ struct MythTimerEntry
   time_t        startTime;
   time_t        endTime;
   std::string   epgSearch;
+  bool          isFullTextSearch;
   std::string   title;
   std::string   description;
   std::string   category;

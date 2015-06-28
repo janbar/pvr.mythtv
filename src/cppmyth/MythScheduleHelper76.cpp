@@ -111,7 +111,14 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       else if ((rule.Filter() & Myth::FM_ThisSeries))
         entry.timerType = TIMER_TYPE_RECORD_SERIES;
       else
-        entry.timerType = TIMER_TYPE_RECORD_ALL;
+      {
+        if (rule.SearchType() == Myth::ST_NoSearch)
+          entry.timerType = TIMER_TYPE_RECORD_ALL;
+        else if (rule.SearchType() == Myth::ST_TitleSearch)
+          entry.timerType = TIMER_TYPE_TEXT_SEARCH;
+        else if (rule.SearchType() == Myth::ST_KeywordSearch)
+          entry.timerType = TIMER_TYPE_TEXT_SEARCH;
+      }
       if (rule.Filter() & Myth::FM_ThisChannel)
       {
         entry.chanid = rule.ChannelID();
@@ -142,8 +149,12 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   {
     case Myth::ST_TitleSearch:
       entry.epgSearch = rule.Description();
+      entry.isFullTextSearch = false;
       break;
     case Myth::ST_KeywordSearch:
+      entry.epgSearch = rule.Description();
+      entry.isFullTextSearch = true;
+      break;
     case Myth::ST_PeopleSearch:
     case Myth::ST_PowerSearch:
       entry.epgSearch = rule.Description();
@@ -171,6 +182,7 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
     case TIMER_TYPE_UNHANDLED:
       if (difftime(rule.NextRecording(), 0) > 0)
       {
@@ -480,7 +492,7 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
 
     case TIMER_TYPE_RECORD_SERIES:
     {
-      if (!entry.epgInfo.IsNull())
+      if (!entry.epgInfo.IsNull()) //Question - how does epgInfo get to be populated if this is an 'old' timer.
       {
         rule.SetType(Myth::RT_AllRecord);
         rule.SetFilter(Myth::FM_ThisChannel | Myth::FM_ThisSeries);
@@ -496,6 +508,36 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
         rule.SetProgramID(entry.epgInfo.ProgramID());
         rule.SetSeriesID(entry.epgInfo.SeriesID());
         rule.SetInactive(entry.isInactive);
+        return rule;
+      }
+      break;
+    }
+
+    case TIMER_TYPE_TEXT_SEARCH:
+    {
+      if (entry.HasChannel())
+      {
+        rule.SetFilter(Myth::FM_ThisChannel);
+        rule.SetChannelID(entry.chanid);
+        rule.SetCallsign(entry.callsign);
+      }
+      rule.SetType(Myth::RT_AllRecord);
+      rule.SetInactive(entry.isInactive);
+      rule.SetTitle(entry.title);
+      if (!entry.epgInfo.IsNull())
+      {
+        rule.SetStartTime(entry.epgInfo.StartTime());
+        rule.SetEndTime(entry.epgInfo.EndTime());
+        rule.SetCategory(entry.epgInfo.Category());
+      }
+      if (!entry.epgSearch.empty())
+      {
+        if (entry.isFullTextSearch)
+          rule.SetSearchType(Myth::ST_KeywordSearch);
+        else
+          rule.SetSearchType(Myth::ST_TitleSearch);
+        rule.SetSubtitle("");                 // Backend uses Subtitle as table join SQL for power searches (not needed for keyword or title)
+        rule.SetDescription(entry.epgSearch); // Backend uses description to find program by keywords or title and SQL for power searches
         return rule;
       }
       break;

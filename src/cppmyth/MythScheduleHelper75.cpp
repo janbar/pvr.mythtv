@@ -178,6 +178,27 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRuleRecordingGroupList(),
             GetRuleRecordingGroupDefault()));
 
+    typeList.push_back(MythScheduleManager::TimerType(TIMER_TYPE_TEXT_SEARCH,
+            PVR_TIMER_TYPE_IS_REPEATING |
+            PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+            PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+            PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+            PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+            PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+            PVR_TIMER_TYPE_SUPPORTS_RECORDING_GROUP |
+            PVR_TIMER_TYPE_SUPPORTS_RECORD_ONLY_NEW_EPISODES |
+            PVR_TIMER_TYPE_SUPPORTS_TITLE_EPG_MATCH |
+            PVR_TIMER_TYPE_SUPPORTS_FULLTEXT_EPG_MATCH,
+            XBMC->GetLocalizedString(30467),
+            GetRulePriorityList(),
+            GetRulePriorityDefault(),
+            GetRuleDupMethodList(),
+            GetRuleDupMethodDefault(),
+            GetRuleExpirationList(),
+            GetRuleExpirationDefault(),
+            GetRuleRecordingGroupList(),
+            GetRuleRecordingGroupDefault()));
+
     ///////////////////////////////////////////////////////////////////////////
     //// KEEP LAST
     ///////////////////////////////////////////////////////////////////////////
@@ -479,7 +500,12 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       break;
 
     case Myth::RT_AllRecord:
-      entry.timerType = TIMER_TYPE_RECORD_ALL;
+      if (rule.SearchType() == Myth::ST_NoSearch)
+        entry.timerType = TIMER_TYPE_RECORD_ALL;
+      else if (rule.SearchType() == Myth::ST_TitleSearch)
+        entry.timerType = TIMER_TYPE_TEXT_SEARCH;
+      else if (rule.SearchType() == Myth::ST_KeywordSearch)
+        entry.timerType = TIMER_TYPE_TEXT_SEARCH;
       break;
 
     case Myth::RT_OverrideRecord:
@@ -505,8 +531,12 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   {
     case Myth::ST_TitleSearch:
       entry.epgSearch = rule.Description();
+      entry.isFullTextSearch = false;
       break;
     case Myth::ST_KeywordSearch:
+      entry.epgSearch = rule.Description();
+      entry.isFullTextSearch = true;
+      break;
     case Myth::ST_PeopleSearch:
     case Myth::ST_PowerSearch:
       entry.epgSearch = rule.Description();
@@ -534,6 +564,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
     case TIMER_TYPE_UNHANDLED:
       if (difftime(rule.NextRecording(), 0) > 0)
       {
@@ -1041,6 +1072,37 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
         rule.SetProgramID(entry.epgInfo.ProgramID());
         rule.SetSeriesID(entry.epgInfo.SeriesID());
         rule.SetInactive(entry.isInactive);
+        return rule;
+      }
+      break;
+    }
+
+    case TIMER_TYPE_TEXT_SEARCH:
+    {
+      if (entry.HasChannel())
+      {
+        rule.SetType(Myth::RT_ChannelRecord);
+        rule.SetChannelID(entry.chanid);
+        rule.SetCallsign(entry.callsign);
+      }
+      else
+        rule.SetType(Myth::RT_AllRecord);
+      rule.SetInactive(entry.isInactive);
+      rule.SetTitle(entry.title);
+      if (!entry.epgInfo.IsNull())
+      {
+        rule.SetStartTime(entry.epgInfo.StartTime());
+        rule.SetEndTime(entry.epgInfo.EndTime());
+        rule.SetCategory(entry.epgInfo.Category());
+      }
+      if (!entry.epgSearch.empty())
+      {
+        if (entry.isFullTextSearch)
+          rule.SetSearchType(Myth::ST_KeywordSearch);
+        else
+          rule.SetSearchType(Myth::ST_TitleSearch);
+        rule.SetSubtitle("");                 // Backend uses Subtitle as table join SQL for power searches (not needed for keyword or title)
+        rule.SetDescription(entry.epgSearch); // Backend uses description to find program by keywords or title and SQL for power searches
         return rule;
       }
       break;

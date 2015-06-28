@@ -371,7 +371,11 @@ msgctxt "#30466"
 msgid "Record series (EPG based)"
 msgstr ""
 
-# empty strings from id 30467 to 30500
+msgctxt "#30467"
+msgid "Text Search"
+msgstr ""
+
+# empty strings from id 30468 to 30500
 
 msgctxt "#30501"
 msgid "Don't match duplicates"
