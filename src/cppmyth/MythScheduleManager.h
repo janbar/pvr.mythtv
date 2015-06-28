@@ -185,7 +185,8 @@ public:
   const RuleRecordingGroupList& GetRuleRecordingGroupList();
   int GetRuleRecordingGroupDefault();
 
-
+  bool FillTimerEntry(MythTimerEntry& entry, const MythRecordingRuleNode& node) const;
+  bool FillTimerEntry(MythTimerEntry& entry, const MythProgramInfo& recording) const;
   MythRecordingRule NewFromTimer(const MythTimerEntry& entry, bool withTemplate);
 
   // deprecated

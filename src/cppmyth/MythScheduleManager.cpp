@@ -943,6 +943,16 @@ int MythScheduleManager::GetRuleRecordingGroupDefault()
   return m_versionHelper->GetRuleRecordingGroupDefault();
 }
 
+bool MythScheduleManager::FillTimerEntry(MythTimerEntry& entry, const MythRecordingRuleNode& node) const
+{
+  return m_versionHelper->FillTimerEntry(entry, node);
+}
+
+bool MythScheduleManager::FillTimerEntry(MythTimerEntry& entry, const MythProgramInfo& recording) const
+{
+  return m_versionHelper->FillTimerEntry(entry, recording);
+}
+
 MythRecordingRule MythScheduleManager::NewFromTimer(const MythTimerEntry& entry, bool withTemplate)
 {
   return m_versionHelper->NewFromTimer(entry, withTemplate);
