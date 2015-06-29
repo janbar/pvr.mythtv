@@ -706,6 +706,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t
         handle.SetChannelID(newrule.ChannelID());
         handle.SetCallsign(newrule.Callsign());
         handle.SetFilter(newrule.Filter());
+        handle.SetSearchType(newrule.SearchType());
     }
 
     XBMC->Log(LOG_DEBUG, "%s - Dealing with the problem using method %d", __FUNCTION__, method);
