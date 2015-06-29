@@ -603,6 +603,9 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythProgr
     {
       case Myth::RT_SingleRecord:
         return false; // Discard upcoming. We show only main rule.
+
+      // API Dvr/1.9: Type OverrideRecord is use to qualify all modifers.
+      // So I use the recording status to choose the right type
       case Myth::RT_DontRecord:
       case Myth::RT_OverrideRecord:
         entry.recordingStatus = Myth::RS_UNKNOWN; // Show modifier status
