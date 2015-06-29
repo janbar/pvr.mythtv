@@ -222,6 +222,8 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::SubmitTimer(const MythTimerE
       return MSM_ERROR_NOT_IMPLEMENTED;
   }
   MythRecordingRule rule = m_versionHelper->NewFromTimer(entry, true);
+  XBMC->Log(LOG_DEBUG, "%s: Channel: %s(%u), Filter: %u, Type: %u, Search: %u",__FUNCTION__,
+            rule.Callsign().c_str(), rule.ChannelID(), rule.Filter(), rule.Type(), rule.SearchType());
   MSM_ERROR ret = AddRecordingRule(rule);
   return ret;
 }
@@ -246,12 +248,9 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateTimer(const MythTimerE
     case TIMER_TYPE_RECORD_SERIES:
     case TIMER_TYPE_TEXT_SEARCH:
     {
-      if (entry.epgCheck && entry.epgInfo.IsNull())
-      {
-        XBMC->Log(LOG_ERROR, "%s - index %u requires valid EPG info", __FUNCTION__, entry.entryIndex);
-        return MSM_ERROR_NOT_IMPLEMENTED;
-      }
       MythRecordingRule newrule = m_versionHelper->NewFromTimer(entry, false);
+      XBMC->Log(LOG_DEBUG, "%s: Channel: %s(%u), Filter: %u, Type: %u, Search: %u",__FUNCTION__,
+               newrule.Callsign().c_str(), newrule.ChannelID(), newrule.Filter(), newrule.Type(), newrule.SearchType());
       return UpdateRecordingRule(entry.entryIndex, newrule);
     }
     default:
@@ -704,6 +703,9 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t
         handle.SetRecordingGroup(newrule.RecordingGroup());
         handle.SetCheckDuplicatesInType(newrule.CheckDuplicatesInType());
         handle.SetDuplicateControlMethod(newrule.DuplicateControlMethod());
+        handle.SetChannelID(newrule.ChannelID());
+        handle.SetCallsign(newrule.Callsign());
+        handle.SetFilter(newrule.Filter());
     }
 
     XBMC->Log(LOG_DEBUG, "%s - Dealing with the problem using method %d", __FUNCTION__, method);
