@@ -139,7 +139,7 @@ void MythScheduleManager::Setup()
     SAFE_DELETE(m_versionHelper);
     if (m_protoVersion >= 85)
       m_versionHelper = new MythScheduleHelper85(this, m_control);
-    if (m_protoVersion >= 76)
+    else if (m_protoVersion >= 76)
       m_versionHelper = new MythScheduleHelper76(this, m_control);
     else if (m_protoVersion >= 75)
       m_versionHelper = new MythScheduleHelper75(this, m_control);
