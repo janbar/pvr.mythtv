@@ -178,6 +178,27 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRuleRecordingGroupList(),
             GetRuleRecordingGroupDefault()));
 
+    typeList.push_back(MythScheduleManager::TimerType(TIMER_TYPE_TEXT_SEARCH,
+            PVR_TIMER_TYPE_IS_REPEATING |
+            PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+            PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+            PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+            PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+            PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+            PVR_TIMER_TYPE_SUPPORTS_RECORDING_GROUP |
+            PVR_TIMER_TYPE_SUPPORTS_RECORD_ONLY_NEW_EPISODES |
+            PVR_TIMER_TYPE_SUPPORTS_TITLE_EPG_MATCH |
+            PVR_TIMER_TYPE_SUPPORTS_FULLTEXT_EPG_MATCH,
+            XBMC->GetLocalizedString(30467),
+            GetRulePriorityList(),
+            GetRulePriorityDefault(),
+            GetRuleDupMethodList(),
+            GetRuleDupMethodDefault(),
+            GetRuleExpirationList(),
+            GetRuleExpirationDefault(),
+            GetRuleRecordingGroupList(),
+            GetRuleRecordingGroupDefault()));
+
     ///////////////////////////////////////////////////////////////////////////
     //// KEEP LAST
     ///////////////////////////////////////////////////////////////////////////
@@ -424,7 +445,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   // that which is applied in function 'NewFromTimer'
 
   MythRecordingRule rule = node.GetRule();
-
+  XBMC->Log(LOG_DEBUG, "75::%s: Rule %u", __FUNCTION__, rule.RecordID());
   switch (rule.Type())
   {
     case Myth::RT_SingleRecord:
@@ -479,7 +500,12 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       break;
 
     case Myth::RT_AllRecord:
-      entry.timerType = TIMER_TYPE_RECORD_ALL;
+      if (rule.SearchType() == Myth::ST_NoSearch)
+        entry.timerType = TIMER_TYPE_RECORD_ALL;
+      else if (rule.SearchType() == Myth::ST_TitleSearch)
+        entry.timerType = TIMER_TYPE_TEXT_SEARCH;
+      else if (rule.SearchType() == Myth::ST_KeywordSearch)
+        entry.timerType = TIMER_TYPE_TEXT_SEARCH;
       break;
 
     case Myth::RT_OverrideRecord:
@@ -505,8 +531,12 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   {
     case Myth::ST_TitleSearch:
       entry.epgSearch = rule.Description();
+      entry.isFullTextSearch = false;
       break;
     case Myth::ST_KeywordSearch:
+      entry.epgSearch = rule.Description();
+      entry.isFullTextSearch = true;
+      break;
     case Myth::ST_PeopleSearch:
     case Myth::ST_PowerSearch:
       entry.epgSearch = rule.Description();
@@ -534,6 +564,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
     case TIMER_TYPE_UNHANDLED:
       if (difftime(rule.NextRecording(), 0) > 0)
       {
@@ -546,6 +577,11 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         // fill timeslot starting at last recorded
         entry.startTime = entry.endTime = rule.LastRecorded();
         timeadd(&entry.endTime, difftime(rule.EndTime(), rule.StartTime()));
+      }
+      else
+      {
+        entry.startTime = rule.StartTime();
+        entry.endTime = rule.EndTime();
       }
       break;
     default:
@@ -584,9 +620,9 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythProgr
     case Myth::RS_PREVIOUS_RECORDING: //Previoulsy recorded but no longer in the library
       if (true /*!m_showNotRecording*/)
       {
-        XBMC->Log(LOG_DEBUG, "%s: Skipping %s:%s on %s because status %d and m_showNotRecording=%d", __FUNCTION__,
+        XBMC->Log(LOG_DEBUG, "75::%s: Skipping %s:%s on %s because status %d", __FUNCTION__,
                   recording.Title().c_str(), recording.Subtitle().c_str(), recording.ChannelName().c_str(),
-                  recording.Status(), 0 /*m_showNotRecording*/);
+                  recording.Status());
         return false;
       }
     default:
@@ -690,7 +726,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTemplate(const MythEPGInfo& epgIn
       }
       if (tplIt != templates.end())
       {
-        XBMC->Log(LOG_INFO, "Overriding the rule with template %u '%s'", (unsigned)tplIt->RecordID(), tplIt->Title().c_str());
+        XBMC->Log(LOG_INFO, "75::%s: Overriding the rule with template %u '%s'", __FUNCTION__, (unsigned)tplIt->RecordID(), tplIt->Title().c_str());
         rule.SetPriority(tplIt->Priority());
         rule.SetStartOffset(tplIt->StartOffset());
         rule.SetEndOffset(tplIt->EndOffset());
@@ -715,7 +751,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTemplate(const MythEPGInfo& epgIn
         rule.SetCategory(tplIt->Category());
       }
       else
-        XBMC->Log(LOG_INFO, "No template found for the category '%s'", epgInfo.Category().c_str());
+        XBMC->Log(LOG_INFO, "75::%s: No template found for the category '%s'", __FUNCTION__, epgInfo.Category().c_str());
     }
     break;
   case 0: // Template provider is 'Internal', then set rule with settings
@@ -745,7 +781,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTemplate(const MythEPGInfo& epgIn
       Myth::SettingPtr categoryOverTime = m_control->GetSetting("CategoryOverTime", false);
       if (categoryOverTime)
       {
-        XBMC->Log(LOG_DEBUG, "Overriding end offset for category %s: +%s", overTimeCategory->value.c_str(), categoryOverTime->value.c_str());
+        XBMC->Log(LOG_DEBUG, "75::%s: Overriding end offset for category %s: +%s", __FUNCTION__, overTimeCategory->value.c_str(), categoryOverTime->value.c_str());
         rule.SetEndOffset(atoi(categoryOverTime->value.c_str()));
       }
     }
@@ -759,7 +795,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
   // that which is applied in function 'FillTimerEntry'
 
   MythRecordingRule rule;
-
+  XBMC->Log(LOG_DEBUG, "75::%s", __FUNCTION__);
   if (withTemplate)
   {
     // Base on template
@@ -1046,6 +1082,37 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
       break;
     }
 
+    case TIMER_TYPE_TEXT_SEARCH:
+    {
+      if (entry.HasChannel())
+      {
+        rule.SetType(Myth::RT_ChannelRecord);
+        rule.SetChannelID(entry.chanid);
+        rule.SetCallsign(entry.callsign);
+      }
+      else
+        rule.SetType(Myth::RT_AllRecord);
+      rule.SetInactive(entry.isInactive);
+      rule.SetTitle(entry.title);
+      if (!entry.epgInfo.IsNull())
+      {
+        rule.SetStartTime(entry.epgInfo.StartTime());
+        rule.SetEndTime(entry.epgInfo.EndTime());
+        rule.SetCategory(entry.epgInfo.Category());
+      }
+      if (!entry.epgSearch.empty())
+      {
+        if (entry.isFullTextSearch)
+          rule.SetSearchType(Myth::ST_KeywordSearch);
+        else
+          rule.SetSearchType(Myth::ST_TitleSearch);
+        rule.SetSubtitle("");                 // Backend uses Subtitle as table join SQL for power searches (not needed for keyword or title)
+        rule.SetDescription(entry.epgSearch); // Backend uses description to find program by keywords or title and SQL for power searches
+        return rule;
+      }
+      break;
+    }
+
     case TIMER_TYPE_DONT_RECORD:
     case TIMER_TYPE_OVERRIDE:
     case TIMER_TYPE_UPCOMING:
@@ -1066,7 +1133,7 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
       break;
   }
   rule.SetType(Myth::RT_UNKNOWN);
-  XBMC->Log(LOG_ERROR, "%s - Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
+  XBMC->Log(LOG_ERROR, "75::%s: Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
           entry.timerType, entry.chanid, entry.callsign.c_str(), (unsigned)entry.startTime, (unsigned)entry.endTime);
   return rule;
 }

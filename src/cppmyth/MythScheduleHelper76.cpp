@@ -55,6 +55,7 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   // that which is applied in function 'NewFromTimer'
 
   MythRecordingRule rule = node.GetRule();
+  XBMC->Log(LOG_DEBUG, "76::%s: RecordID %u", __FUNCTION__, rule.RecordID());
 
   switch (rule.Type())
   {
@@ -111,7 +112,14 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       else if ((rule.Filter() & Myth::FM_ThisSeries))
         entry.timerType = TIMER_TYPE_RECORD_SERIES;
       else
-        entry.timerType = TIMER_TYPE_RECORD_ALL;
+      {
+        if (rule.SearchType() == Myth::ST_NoSearch)
+          entry.timerType = TIMER_TYPE_RECORD_ALL;
+        else if (rule.SearchType() == Myth::ST_TitleSearch)
+          entry.timerType = TIMER_TYPE_TEXT_SEARCH;
+        else if (rule.SearchType() == Myth::ST_KeywordSearch)
+          entry.timerType = TIMER_TYPE_TEXT_SEARCH;
+      }
       if (rule.Filter() & Myth::FM_ThisChannel)
       {
         entry.chanid = rule.ChannelID();
@@ -142,8 +150,12 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   {
     case Myth::ST_TitleSearch:
       entry.epgSearch = rule.Description();
+      entry.isFullTextSearch = false;
       break;
     case Myth::ST_KeywordSearch:
+      entry.epgSearch = rule.Description();
+      entry.isFullTextSearch = true;
+      break;
     case Myth::ST_PeopleSearch:
     case Myth::ST_PowerSearch:
       entry.epgSearch = rule.Description();
@@ -171,6 +183,7 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
     case TIMER_TYPE_UNHANDLED:
       if (difftime(rule.NextRecording(), 0) > 0)
       {
@@ -183,6 +196,11 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
         // fill timeslot starting at last recorded
         entry.startTime = entry.endTime = rule.LastRecorded();
         timeadd(&entry.endTime, difftime(rule.EndTime(), rule.StartTime()));
+      }
+      else
+      {
+        entry.startTime = rule.StartTime();
+        entry.endTime = rule.EndTime();
       }
       break;
     default:
@@ -215,7 +233,7 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
   // that which is applied in function 'FillTimerEntry'
 
   MythRecordingRule rule;
-
+  XBMC->Log(LOG_DEBUG, "76::%s", __FUNCTION__);
   if (withTemplate)
   {
     // Base on template
@@ -480,7 +498,7 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
 
     case TIMER_TYPE_RECORD_SERIES:
     {
-      if (!entry.epgInfo.IsNull())
+      if (!entry.epgInfo.IsNull()) //Question - how does epgInfo get to be populated if this is an 'old' timer.
       {
         rule.SetType(Myth::RT_AllRecord);
         rule.SetFilter(Myth::FM_ThisChannel | Myth::FM_ThisSeries);
@@ -496,6 +514,36 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
         rule.SetProgramID(entry.epgInfo.ProgramID());
         rule.SetSeriesID(entry.epgInfo.SeriesID());
         rule.SetInactive(entry.isInactive);
+        return rule;
+      }
+      break;
+    }
+
+    case TIMER_TYPE_TEXT_SEARCH:
+    {
+      if (entry.HasChannel())
+      {
+        rule.SetFilter(Myth::FM_ThisChannel);
+        rule.SetChannelID(entry.chanid);
+        rule.SetCallsign(entry.callsign);
+      }
+      rule.SetType(Myth::RT_AllRecord);
+      rule.SetInactive(entry.isInactive);
+      rule.SetTitle(entry.title);
+      if (!entry.epgInfo.IsNull())
+      {
+        rule.SetStartTime(entry.epgInfo.StartTime());
+        rule.SetEndTime(entry.epgInfo.EndTime());
+        rule.SetCategory(entry.epgInfo.Category());
+      }
+      if (!entry.epgSearch.empty())
+      {
+        if (entry.isFullTextSearch)
+          rule.SetSearchType(Myth::ST_KeywordSearch);
+        else
+          rule.SetSearchType(Myth::ST_TitleSearch);
+        rule.SetSubtitle("");                 // Backend uses Subtitle as table join SQL for power searches (not needed for keyword or title)
+        rule.SetDescription(entry.epgSearch); // Backend uses description to find program by keywords or title and SQL for power searches
         return rule;
       }
       break;
@@ -521,13 +569,14 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
       break;
   }
   rule.SetType(Myth::RT_UNKNOWN);
-  XBMC->Log(LOG_ERROR, "%s - Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
+  XBMC->Log(LOG_ERROR, "76::%s - Invalid timer %u: TYPE=%d CHANID=%u SIGN=%s ST=%u ET=%u", __FUNCTION__, entry.entryIndex,
           entry.timerType, entry.chanid, entry.callsign.c_str(), (unsigned)entry.startTime, (unsigned)entry.endTime);
   return rule;
 }
 
 MythScheduleManager::RuleSummaryInfo MythScheduleHelper76::GetSummaryInfo(const MythRecordingRule &rule) const
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   MythScheduleManager::RuleSummaryInfo meta;
   time_t st = rule.StartTime();
   meta.isRepeating = false;
@@ -593,6 +642,7 @@ MythScheduleManager::RuleSummaryInfo MythScheduleHelper76::GetSummaryInfo(const 
 
 MythRecordingRule MythScheduleHelper76::NewDailyRecord(const MythEPGInfo& epgInfo)
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   unsigned int filter;
   MythRecordingRule rule = this->NewFromTemplate(epgInfo);
 
@@ -630,6 +680,7 @@ MythRecordingRule MythScheduleHelper76::NewDailyRecord(const MythEPGInfo& epgInf
 
 MythRecordingRule MythScheduleHelper76::NewWeeklyRecord(const MythEPGInfo& epgInfo)
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   unsigned int filter;
   MythRecordingRule rule = this->NewFromTemplate(epgInfo);
 
@@ -667,6 +718,7 @@ MythRecordingRule MythScheduleHelper76::NewWeeklyRecord(const MythEPGInfo& epgIn
 
 MythRecordingRule MythScheduleHelper76::NewChannelRecord(const MythEPGInfo& epgInfo)
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   unsigned int filter;
   MythRecordingRule rule = this->NewFromTemplate(epgInfo);
 
@@ -701,6 +753,7 @@ MythRecordingRule MythScheduleHelper76::NewChannelRecord(const MythEPGInfo& epgI
 
 MythRecordingRule MythScheduleHelper76::NewOneRecord(const MythEPGInfo& epgInfo)
 {
+  XBMC->Log(LOG_DEBUG, "76::%s:", __FUNCTION__);
   unsigned int filter;
   MythRecordingRule rule = this->NewFromTemplate(epgInfo);
 

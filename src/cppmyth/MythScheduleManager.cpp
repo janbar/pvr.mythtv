@@ -138,13 +138,25 @@ void MythScheduleManager::Setup()
   {
     SAFE_DELETE(m_versionHelper);
     if (m_protoVersion >= 85)
+    {
       m_versionHelper = new MythScheduleHelper85(this, m_control);
+      XBMC->Log(LOG_DEBUG, "Using MythScheduleHelper85 and inherited functions");
+    }
     else if (m_protoVersion >= 76)
+    {
       m_versionHelper = new MythScheduleHelper76(this, m_control);
+      XBMC->Log(LOG_DEBUG, "Using MythScheduleHelper76 and inherited functions");
+    }
     else if (m_protoVersion >= 75)
+    {
       m_versionHelper = new MythScheduleHelper75(this, m_control);
+      XBMC->Log(LOG_DEBUG, "Using MythScheduleHelper75 and inherited functions");
+    }
     else
+    {
       m_versionHelper = new MythScheduleHelperNoHelper();
+      XBMC->Log(LOG_DEBUG, "Using MythScheduleHelperNoHelper");
+    }
   }
 }
 
@@ -204,11 +216,14 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::SubmitTimer(const MythTimerE
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
       break;
     default:
       return MSM_ERROR_NOT_IMPLEMENTED;
   }
   MythRecordingRule rule = m_versionHelper->NewFromTimer(entry, true);
+  XBMC->Log(LOG_DEBUG, "%s: Channel: %s(%u), Filter: %u, Type: %u, Search: %u",__FUNCTION__,
+            rule.Callsign().c_str(), rule.ChannelID(), rule.Filter(), rule.Type(), rule.SearchType());
   MSM_ERROR ret = AddRecordingRule(rule);
   return ret;
 }
@@ -231,13 +246,11 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateTimer(const MythTimerE
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
     {
-      if (entry.epgCheck && entry.epgInfo.IsNull())
-      {
-        XBMC->Log(LOG_ERROR, "%s - index %u requires valid EPG info", __FUNCTION__, entry.entryIndex);
-        return MSM_ERROR_NOT_IMPLEMENTED;
-      }
       MythRecordingRule newrule = m_versionHelper->NewFromTimer(entry, false);
+      XBMC->Log(LOG_DEBUG, "%s: Channel: %s(%u), Filter: %u, Type: %u, Search: %u",__FUNCTION__,
+               newrule.Callsign().c_str(), newrule.ChannelID(), newrule.Filter(), newrule.Type(), newrule.SearchType());
       return UpdateRecordingRule(entry.entryIndex, newrule);
     }
     default:
@@ -263,6 +276,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteTimer(const MythTimerE
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_TEXT_SEARCH:
       if (force)
         return DeleteRecordingRule(entry.entryIndex);
       return MSM_ERROR_SUCCESS;
@@ -689,6 +703,10 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t
         handle.SetRecordingGroup(newrule.RecordingGroup());
         handle.SetCheckDuplicatesInType(newrule.CheckDuplicatesInType());
         handle.SetDuplicateControlMethod(newrule.DuplicateControlMethod());
+        handle.SetChannelID(newrule.ChannelID());
+        handle.SetCallsign(newrule.Callsign());
+        handle.SetFilter(newrule.Filter());
+        handle.SetSearchType(newrule.SearchType());
     }
 
     XBMC->Log(LOG_DEBUG, "%s - Dealing with the problem using method %d", __FUNCTION__, method);
