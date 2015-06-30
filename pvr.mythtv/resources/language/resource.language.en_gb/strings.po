@@ -371,6 +371,10 @@ msgctxt "#30466"
 msgid "Record series (EPG based)"
 msgstr ""
 
+msgctxt "#30467"
+msgid "Search keyword"
+msgstr ""
+
 # empty strings from id 30467 to 30500
 
 msgctxt "#30501"
