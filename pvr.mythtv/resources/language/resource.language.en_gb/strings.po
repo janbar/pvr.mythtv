@@ -375,7 +375,11 @@ msgctxt "#30467"
 msgid "Search keyword"
 msgstr ""
 
-# empty strings from id 30467 to 30500
+msgctxt "#30468"
+msgid "Search people"
+msgstr ""
+
+# empty strings from id 30469 to 30500
 
 msgctxt "#30501"
 msgid "Don't match duplicates"

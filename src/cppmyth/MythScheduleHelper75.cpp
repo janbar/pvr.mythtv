@@ -198,6 +198,26 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRuleRecordingGroupList(),
             GetRuleRecordingGroupDefault()));
 
+    typeList.push_back(MythScheduleManager::TimerType(TIMER_TYPE_SEARCH_PEOPLE,
+            PVR_TIMER_TYPE_IS_REPEATING |
+            PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+            PVR_TIMER_TYPE_SUPPORTS_TITLE_EPG_MATCH |
+            PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+            PVR_TIMER_TYPE_SUPPORTS_RECORD_ONLY_NEW_EPISODES |
+            PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+            PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+            PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+            PVR_TIMER_TYPE_SUPPORTS_RECORDING_GROUP,
+            XBMC->GetLocalizedString(30468),
+            GetRulePriorityList(),
+            GetRulePriorityDefault(),
+            GetRuleDupMethodList(),
+            GetRuleDupMethodDefault(),
+            GetRuleExpirationList(),
+            GetRuleExpirationDefault(),
+            GetRuleRecordingGroupList(),
+            GetRuleRecordingGroupDefault()));
+
     ///////////////////////////////////////////////////////////////////////////
     //// KEEP LAST
     ///////////////////////////////////////////////////////////////////////////
@@ -531,6 +551,9 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       entry.timerType = TIMER_TYPE_SEARCH_KEYWORD;
       break;
     case Myth::ST_PeopleSearch:
+      entry.epgSearch = rule.Description();
+      entry.timerType = TIMER_TYPE_SEARCH_PEOPLE;
+      break;
     case Myth::ST_PowerSearch:
       entry.epgSearch = rule.Description();
       entry.timerType = TIMER_TYPE_UNHANDLED;
@@ -558,6 +581,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
     case TIMER_TYPE_SEARCH_KEYWORD:
+    case TIMER_TYPE_SEARCH_PEOPLE:
     case TIMER_TYPE_UNHANDLED:
       if (difftime(rule.NextRecording(), 0) > 0)
       {
@@ -1089,6 +1113,29 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
         else
           rule.SetType(Myth::RT_AllRecord);
         rule.SetSearchType(Myth::ST_KeywordSearch); // Search keyword
+        rule.SetTitle(entry.title);
+        // Backend use the subtitle/description to find program by keywords or title
+        rule.SetSubtitle("");
+        rule.SetDescription(entry.epgSearch);
+        rule.SetInactive(entry.isInactive);
+        return rule;
+      }
+      break;
+    }
+
+    case TIMER_TYPE_SEARCH_PEOPLE:
+    {
+      if (!entry.epgSearch.empty())
+      {
+        if (entry.HasChannel())
+        {
+          rule.SetType(Myth::RT_ChannelRecord);
+          rule.SetChannelID(entry.chanid);
+          rule.SetCallsign(entry.callsign);
+        }
+        else
+          rule.SetType(Myth::RT_AllRecord);
+        rule.SetSearchType(Myth::ST_PeopleSearch); // Search People
         rule.SetTitle(entry.title);
         // Backend use the subtitle/description to find program by keywords or title
         rule.SetSubtitle("");
