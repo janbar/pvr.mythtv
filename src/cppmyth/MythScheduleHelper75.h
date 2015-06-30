@@ -46,13 +46,6 @@ public:
   virtual MythRecordingRule MakeDontRecord(const MythRecordingRule& rule, const MythProgramInfo& recording);
   virtual MythRecordingRule MakeOverride(const MythRecordingRule& rule, const MythProgramInfo& recording);
 
-  // deprecated
-  virtual MythScheduleManager::RuleSummaryInfo GetSummaryInfo(const MythRecordingRule& rule) const;
-  virtual MythRecordingRule NewSingleRecord(const MythEPGInfo& epgInfo);
-  virtual MythRecordingRule NewDailyRecord(const MythEPGInfo& epgInfo);
-  virtual MythRecordingRule NewWeeklyRecord(const MythEPGInfo& epgInfo);
-  virtual MythRecordingRule NewChannelRecord(const MythEPGInfo& epgInfo);
-  virtual MythRecordingRule NewOneRecord(const MythEPGInfo& epgInfo);
 protected:
   MythScheduleManager *m_manager;
   Myth::Control *m_control;

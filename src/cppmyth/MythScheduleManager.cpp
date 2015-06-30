@@ -976,36 +976,6 @@ MythRecordingRule MythScheduleManager::NewFromTimer(const MythTimerEntry& entry,
   return m_versionHelper->NewFromTimer(entry, withTemplate);
 }
 
-MythScheduleManager::RuleSummaryInfo MythScheduleManager::GetSummaryInfo(const MythRecordingRule &rule) const
-{
-  return m_versionHelper->GetSummaryInfo(rule);
-}
-
-MythRecordingRule MythScheduleManager::NewSingleRecord(const MythEPGInfo& epgInfo)
-{
-  return m_versionHelper->NewSingleRecord(epgInfo);
-}
-
-MythRecordingRule MythScheduleManager::NewDailyRecord(const MythEPGInfo& epgInfo)
-{
-  return m_versionHelper->NewDailyRecord(epgInfo);
-}
-
-MythRecordingRule MythScheduleManager::NewWeeklyRecord(const MythEPGInfo& epgInfo)
-{
-  return m_versionHelper->NewWeeklyRecord(epgInfo);
-}
-
-MythRecordingRule MythScheduleManager::NewChannelRecord(const MythEPGInfo& epgInfo)
-{
-  return m_versionHelper->NewChannelRecord(epgInfo);
-}
-
-MythRecordingRule MythScheduleManager::NewOneRecord(const MythEPGInfo& epgInfo)
-{
-  return m_versionHelper->NewOneRecord(epgInfo);
-}
-
 MythRecordingRuleList MythScheduleManager::GetTemplateRules() const
 {
   return m_templates;

@@ -32,11 +32,4 @@ public:
   virtual bool FillTimerEntry(MythTimerEntry& entry, const MythRecordingRuleNode& node) const;
   //virtual bool FillTimerEntry(MythTimerEntry& entry, const MythProgramInfo& recording) const;
   virtual MythRecordingRule NewFromTimer(const MythTimerEntry& entry, bool withTemplate);
-
-  // deprecated
-  virtual MythScheduleManager::RuleSummaryInfo GetSummaryInfo(const MythRecordingRule& rule) const;
-  virtual MythRecordingRule NewDailyRecord(const MythEPGInfo& epgInfo);
-  virtual MythRecordingRule NewWeeklyRecord(const MythEPGInfo& epgInfo);
-  virtual MythRecordingRule NewChannelRecord(const MythEPGInfo& epgInfo);
-  virtual MythRecordingRule NewOneRecord(const MythEPGInfo& epgInfo);
 };
