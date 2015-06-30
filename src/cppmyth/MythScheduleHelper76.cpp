@@ -145,6 +145,9 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       entry.epgSearch = rule.Description();
       break;
     case Myth::ST_KeywordSearch:
+      entry.epgSearch = rule.Description();
+      entry.timerType = TIMER_TYPE_SEARCH_KEYWORD;
+      break;
     case Myth::ST_PeopleSearch:
     case Myth::ST_PowerSearch:
       entry.epgSearch = rule.Description();
@@ -172,6 +175,7 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
     case TIMER_TYPE_RECORD_DAILY:
     case TIMER_TYPE_RECORD_ALL:
     case TIMER_TYPE_RECORD_SERIES:
+    case TIMER_TYPE_SEARCH_KEYWORD:
     case TIMER_TYPE_UNHANDLED:
       if (difftime(rule.NextRecording(), 0) > 0)
       {
@@ -501,6 +505,28 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
         rule.SetCategory(entry.epgInfo.Category());
         rule.SetProgramID(entry.epgInfo.ProgramID());
         rule.SetSeriesID(entry.epgInfo.SeriesID());
+        rule.SetInactive(entry.isInactive);
+        return rule;
+      }
+      break;
+    }
+
+    case TIMER_TYPE_SEARCH_KEYWORD:
+    {
+      if (!entry.epgSearch.empty())
+      {
+        rule.SetType(Myth::RT_AllRecord);
+        rule.SetSearchType(Myth::ST_KeywordSearch); // Search keyword
+        if (entry.HasChannel())
+        {
+          rule.SetFilter(Myth::FM_ThisChannel);
+          rule.SetChannelID(entry.chanid);
+          rule.SetCallsign(entry.callsign);
+        }
+        rule.SetTitle(entry.title);
+        // Backend use the subtitle/description to find program by keywords or title
+        rule.SetSubtitle("");
+        rule.SetDescription(entry.epgSearch);
         rule.SetInactive(entry.isInactive);
         return rule;
       }
