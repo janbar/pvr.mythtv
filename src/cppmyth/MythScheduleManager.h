@@ -191,14 +191,6 @@ public:
   bool FillTimerEntry(MythTimerEntry& entry, const MythProgramInfo& recording) const;
   MythRecordingRule NewFromTimer(const MythTimerEntry& entry, bool withTemplate);
 
-  // deprecated
-  RuleSummaryInfo GetSummaryInfo(const MythRecordingRule &rule) const;
-  MythRecordingRule NewSingleRecord(const MythEPGInfo& epgInfo);
-  MythRecordingRule NewDailyRecord(const MythEPGInfo& epgInfo);
-  MythRecordingRule NewWeeklyRecord(const MythEPGInfo& epgInfo);
-  MythRecordingRule NewChannelRecord(const MythEPGInfo& epgInfo);
-  MythRecordingRule NewOneRecord(const MythEPGInfo& epgInfo);
-
   MythRecordingRuleList GetTemplateRules() const;
 
   bool ToggleShowNotRecording();
@@ -228,14 +220,6 @@ public:
     virtual MythRecordingRule NewFromTimer(const MythTimerEntry& entry, bool withTemplate) = 0;
     virtual MythRecordingRule MakeDontRecord(const MythRecordingRule& rule, const MythProgramInfo& recording) = 0;
     virtual MythRecordingRule MakeOverride(const MythRecordingRule& rule, const MythProgramInfo& recording) = 0;
-
-    // deprecated
-    virtual RuleSummaryInfo GetSummaryInfo(const MythRecordingRule& rule) const = 0;
-    virtual MythRecordingRule NewSingleRecord(const MythEPGInfo& epgInfo) = 0;
-    virtual MythRecordingRule NewDailyRecord(const MythEPGInfo& epgInfo) = 0;
-    virtual MythRecordingRule NewWeeklyRecord(const MythEPGInfo& epgInfo) = 0;
-    virtual MythRecordingRule NewChannelRecord(const MythEPGInfo& epgInfo) = 0;
-    virtual MythRecordingRule NewOneRecord(const MythEPGInfo& epgInfo) = 0;
   };
 
   static uint32_t MakeIndex(const MythProgramInfo& recording);
