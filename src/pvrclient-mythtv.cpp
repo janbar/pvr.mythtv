@@ -2309,29 +2309,18 @@ PVR_ERROR PVRClientMythTV::CallMenuHook(const PVR_MENUHOOK &menuhook, const PVR_
       // Scheduling actions
       if (m_scheduleManager)
       {
-        MythRecordingRule rule;
+        MythTimerEntry entry;
         switch(menuhook.iHookId)
         {
-          case MENUHOOK_EPG_REC_CHAN_ALL_SHOWINGS:
-            rule = m_scheduleManager->NewChannelRecord(epgInfo);
-            break;
-          case MENUHOOK_EPG_REC_CHAN_WEEKLY:
-            rule = m_scheduleManager->NewWeeklyRecord(epgInfo);
-            break;
-          case MENUHOOK_EPG_REC_CHAN_DAILY:
-            rule = m_scheduleManager->NewDailyRecord(epgInfo);
-            break;
-          case MENUHOOK_EPG_REC_ONE_SHOWING:
-            rule = m_scheduleManager->NewOneRecord(epgInfo);
-            break;
-          case MENUHOOK_EPG_REC_NEW_EPISODES:
-            rule = m_scheduleManager->NewChannelRecord(epgInfo);
-            rule.SetFilter(rule.Filter() | Myth::FM_FirstShowing);
-            break;
+          //case MENUHOOK_EPG_REC_CHAN_ALL_SHOWINGS:
+          //case MENUHOOK_EPG_REC_CHAN_WEEKLY:
+          //case MENUHOOK_EPG_REC_CHAN_DAILY:
+          //case MENUHOOK_EPG_REC_ONE_SHOWING:
+          //case MENUHOOK_EPG_REC_NEW_EPISODES:
           default:
             return PVR_ERROR_NOT_IMPLEMENTED;
         }
-        if (m_scheduleManager->AddRecordingRule(rule) == MythScheduleManager::MSM_ERROR_SUCCESS)
+        if (m_scheduleManager->SubmitTimer(entry) == MythScheduleManager::MSM_ERROR_SUCCESS)
           return PVR_ERROR_NO_ERROR;
       }
     }
