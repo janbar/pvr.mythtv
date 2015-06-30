@@ -1496,7 +1496,41 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
     PVR_STRCPY(tag.strDirectory, ""); // not implemented
     PVR_STRCPY(tag.strSummary, (*it)->description.c_str());
     tag.iPriority = (*it)->priority;
-    tag.iLifetime = (*it)->autoExpire;
+
+    if ((*it)->autoExpire == false)
+      tag.iLifetime = RULE_EXPIRE_DISABLE_ID;
+    else if ((*it)->keepNewExpireOld == false)
+    {
+      switch ((*it)->recordingsToKeep)
+      {
+        case 0:
+          tag.iLifetime = RULE_EXPIRE_ENABLE_ID;
+          break;
+        case 2:
+        case 7:
+        case 14:
+          tag.iLifetime = (*it)->recordingsToKeep;
+          break;
+        default:
+          tag.iLifetime = RULE_EXPIRE_UNKNOWN_ID;
+          break;
+      }
+    }
+    else
+    {
+      switch ((*it)->recordingsToKeep)
+      {
+        case 2:
+        case 7:
+        case 14:
+          tag.iLifetime = -((*it)->recordingsToKeep);
+          break;
+        default:
+          tag.iLifetime = RULE_EXPIRE_OLD_UNKNOWN_ID;
+          break;
+      }
+    }
+
     tag.iRecordingGroup = (*it)->recordingGroup;
     tag.firstDay = 0; // using startTime
     tag.iWeekdays = PVR_WEEKDAY_NONE; // not implemented
@@ -1743,7 +1777,31 @@ MythTimerEntry PVRClientMythTV::PVRtoTimerEntry(const PVR_TIMER& timer, bool che
   entry.endOffset = timer.iMarginEnd;
   entry.dupMethod = static_cast<Myth::DM_t>(timer.iPreventDuplicateEpisodes);
   entry.priority = timer.iPriority;
-  entry.autoExpire = (timer.iLifetime ? true : false);
+  if (timer.iLifetime == RULE_EXPIRE_DISABLE_ID)
+    entry.autoExpire = false;
+  else
+    entry.autoExpire = true;
+  if ((timer.iLifetime < 0) && (timer.iLifetime != RULE_EXPIRE_ENABLE_ID))
+    entry.keepNewExpireOld = true;
+  else
+    entry.keepNewExpireOld = false;
+  if (
+      (timer.iLifetime != RULE_EXPIRE_ENABLE_ID) &&
+      (timer.iLifetime != RULE_EXPIRE_DISABLE_ID) &&
+      (timer.iLifetime != RULE_EXPIRE_UNKNOWN_ID) &&
+      (timer.iLifetime != RULE_EXPIRE_OLD_UNKNOWN_ID)
+     )
+  {
+    entry.recordingsToKeep = abs(timer.iLifetime);
+  }
+  else
+  {
+    //The value is an 'UNKNOWN' one so the safe solution is not to change it.
+    //As this isn't possible from here, set the value to 'RULE_RECORDINGS_TO_KEEP_SKIP_UPDATE'
+    //Deal with it later as a special case in MythScheduleManager::UpdateRecordingRule
+    entry.recordingsToKeep = RULE_RECORDINGS_TO_KEEP_SKIP_UPDATE;
+  }
+
   entry.firstShowing = false;
   entry.recordingGroup = timer.iRecordingGroup;
   entry.isInactive = (timer.state == PVR_TIMER_STATE_DISABLED ? true : false);

@@ -212,6 +212,8 @@ bool MythScheduleHelper76::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   entry.dupMethod = rule.DuplicateControlMethod();
   entry.priority = rule.Priority();
   entry.autoExpire = rule.AutoExpire();
+  entry.recordingsToKeep = rule.MaxEpisodes();
+  entry.keepNewExpireOld = rule.NewExpiresOldRecord();
   entry.isInactive = rule.Inactive();
   entry.firstShowing = (rule.Filter() & Myth::FM_FirstShowing ? true : false);
   entry.recordingGroup = GetRuleRecordingGroupId(rule.RecordingGroup());
@@ -257,6 +259,8 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
     rule.SetDuplicateControlMethod(entry.dupMethod);
     rule.SetPriority(entry.priority);
     rule.SetAutoExpire(entry.autoExpire);
+    rule.SetMaxEpisodes(entry.recordingsToKeep);
+    rule.SetNewExpiresOldRecord(entry.keepNewExpireOld);
     rule.SetRecordingGroup(GetRuleRecordingGroupName(entry.recordingGroup));
   }
 
