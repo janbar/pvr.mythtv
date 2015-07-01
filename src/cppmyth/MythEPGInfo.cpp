@@ -19,6 +19,7 @@
  */
 
 #include "MythEPGInfo.h"
+#include "../tools.h"
 
 MythEPGInfo::MythEPGInfo()
   : m_epginfo()
