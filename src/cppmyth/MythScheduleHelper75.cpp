@@ -30,6 +30,8 @@
 #include <cstdio>
 #include <cassert>
 
+#include "platform/util/StdString.h"
+
 using namespace ADDON;
 
 const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTimerTypes() const
@@ -358,11 +360,28 @@ const MythScheduleManager::RuleExpirationList& MythScheduleHelper75::GetRuleExpi
 {
   static bool _init = false;
   static MythScheduleManager::RuleExpirationList _list;
+  CStdString str;
   if (!_init)
   {
     _init = true;
-    _list.push_back(std::make_pair(0, 30506));
-    _list.push_back(std::make_pair(1, 30507));
+    str.Format(XBMC->GetLocalizedString(30508), "?");
+    _list.push_back(std::make_pair(RULE_EXPIRE_UNKNOWN_ID, str.c_str()));
+    str.Format(XBMC->GetLocalizedString(30508), "14");
+    _list.push_back(std::make_pair(14, str.c_str()));
+    str.Format(XBMC->GetLocalizedString(30508), "7");
+    _list.push_back(std::make_pair(7, str.c_str()));
+    str.Format(XBMC->GetLocalizedString(30508), "2");
+    _list.push_back(std::make_pair(2, str.c_str()));
+    _list.push_back(std::make_pair(RULE_EXPIRE_DISABLE_ID, XBMC->GetLocalizedString(30506)));
+    _list.push_back(std::make_pair(RULE_EXPIRE_ENABLE_ID, XBMC->GetLocalizedString(30507)));
+    str.Format(XBMC->GetLocalizedString(30509), "2");
+    _list.push_back(std::make_pair(-2, str.c_str()));
+    str.Format(XBMC->GetLocalizedString(30509), "7");
+    _list.push_back(std::make_pair(-7, str.c_str()));
+    str.Format(XBMC->GetLocalizedString(30509), "14");
+    _list.push_back(std::make_pair(-14, str.c_str()));
+    str.Format(XBMC->GetLocalizedString(30509), "?");
+    _list.push_back(std::make_pair(RULE_EXPIRE_OLD_UNKNOWN_ID, str.c_str()));
   }
   return _list;
 }
@@ -614,6 +633,8 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   entry.dupMethod = rule.DuplicateControlMethod();
   entry.priority = rule.Priority();
   entry.autoExpire = rule.AutoExpire();
+  entry.recordingsToKeep = rule.MaxEpisodes();
+  entry.keepNewExpireOld = rule.NewExpiresOldRecord();
   entry.isInactive = rule.Inactive();
   entry.firstShowing = (rule.Filter() & Myth::FM_FirstShowing ? true : false);
   entry.recordingGroup = GetRuleRecordingGroupId(rule.RecordingGroup());
@@ -841,6 +862,8 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
     rule.SetDuplicateControlMethod(entry.dupMethod);
     rule.SetPriority(entry.priority);
     rule.SetAutoExpire(entry.autoExpire);
+    rule.SetMaxEpisodes(entry.recordingsToKeep);
+    rule.SetNewExpiresOldRecord(entry.keepNewExpireOld);
     rule.SetRecordingGroup(GetRuleRecordingGroupName(entry.recordingGroup));
   }
 

@@ -24,6 +24,7 @@
 ////
 
 #include "MythScheduleHelperNoHelper.h"
+#include "../client.h"
 
 const std::vector<MythScheduleManager::TimerType>& MythScheduleHelperNoHelper::GetTimerTypes() const
 {
@@ -62,7 +63,7 @@ const MythScheduleManager::RuleExpirationList& MythScheduleHelperNoHelper::GetRu
   if (!_init)
   {
     _init = true;
-    _list.push_back(std::make_pair(0, 30506));
+    _list.push_back(std::make_pair(0, XBMC->GetLocalizedString(30506)));
   }
   return _list;
 }

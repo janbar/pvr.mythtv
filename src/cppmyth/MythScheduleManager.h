@@ -52,6 +52,12 @@ typedef enum
   TIMER_TYPE_ZOMBIE,              // Zombie
 } TimerTypeId;
 
+#define RULE_EXPIRE_UNKNOWN_ID 999
+#define RULE_EXPIRE_OLD_UNKNOWN_ID -999
+#define RULE_EXPIRE_ENABLE_ID 998
+#define RULE_EXPIRE_DISABLE_ID 0
+#define RULE_RECORDINGS_TO_KEEP_SKIP_UPDATE 0
+
 struct MythTimerEntry
 {
   bool          isInactive;
@@ -71,16 +77,33 @@ struct MythTimerEntry
   int           priority;
   Myth::DM_t    dupMethod;
   bool          autoExpire;
+  uint32_t      recordingsToKeep;
+  bool          keepNewExpireOld;
   bool          firstShowing;
   unsigned      recordingGroup;
   uint32_t      entryIndex;
   uint32_t      parentIndex;
   Myth::RS_t    recordingStatus;
   MythTimerEntry()
-  : isInactive(false), timerType(TIMER_TYPE_UNHANDLED), epgCheck(false)
-  , chanid(0), startTime(0), endTime(0), startOffset(0), endOffset(0), priority(0)
-  , dupMethod(Myth::DM_CheckNone), autoExpire(false), firstShowing(false), recordingGroup(0)
-  , entryIndex(0), parentIndex(0), recordingStatus(Myth::RS_UNKNOWN) { }
+  : isInactive(false)
+  , timerType(TIMER_TYPE_UNHANDLED)
+  , epgCheck(false)
+  , chanid(0)
+  , startTime(0)
+  , endTime(0)
+  , startOffset(0)
+  , endOffset(0)
+  , priority(0)
+  , dupMethod(Myth::DM_CheckNone)
+  , autoExpire(false)
+  , recordingsToKeep(0)
+  , keepNewExpireOld(false)
+  , firstShowing(false)
+  , recordingGroup(0)
+  , entryIndex(0)
+  , parentIndex(0)
+  , recordingStatus(Myth::RS_UNKNOWN)
+  { }
   bool HasChannel() const { return (chanid > 0 && !callsign.empty() ? true : false); }
   bool HasTimeSlot() const { return (startTime > 0 && endTime >= startTime ? true : false); }
 };
@@ -134,7 +157,7 @@ public:
   } RuleSummaryInfo;
   typedef std::vector<std::pair<int, std::string> > RulePriorityList; // value & symbol
   typedef std::vector<std::pair<int, int> > RuleDupMethodList; // value & localized string id
-  typedef std::vector<std::pair<int, int> > RuleExpirationList; // value & localized string id
+  typedef std::vector<std::pair<int, std::string> > RuleExpirationList; // value & localized string
   typedef std::vector<std::pair<int, std::string> > RuleRecordingGroupList; // value & group name
 
   MythScheduleManager(const std::string& server, unsigned protoPort, unsigned wsapiPort, const std::string& wsapiSecurityPin);
