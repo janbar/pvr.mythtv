@@ -23,6 +23,7 @@
 
 #define RECGROUP_DFLT_ID    0
 #define RECGROUP_DFLT_NAME  "Default"
+#define EXPIRATION_DFLT_ID  0
 
 // No helper
 
@@ -36,7 +37,9 @@ public:
   virtual const MythScheduleManager::RuleDupMethodList& GetRuleDupMethodList() const;
   virtual int GetRuleDupMethodDefault() const { return Myth::DM_CheckNone; }
   virtual const MythScheduleManager::RuleExpirationList& GetRuleExpirationList() const;
-  virtual int GetRuleExpirationDefault() const { return 0; }
+  virtual int GetRuleExpirationId(bool autoexpire, int maxepisodes, bool newest) const;
+  virtual const MythScheduleManager::RuleExpiration& GetRuleExpiration(int id) const;
+  virtual int GetRuleExpirationDefault() const { return EXPIRATION_DFLT_ID; }
   virtual const MythScheduleManager::RuleRecordingGroupList& GetRuleRecordingGroupList() const;
   virtual int GetRuleRecordingGroupId(const std::string& name) const;
   virtual const std::string& GetRuleRecordingGroupName(int id) const;

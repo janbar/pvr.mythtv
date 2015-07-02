@@ -70,7 +70,7 @@ struct MythTimerEntry
   int           endOffset;
   int           priority;
   Myth::DM_t    dupMethod;
-  bool          autoExpire;
+  int           expiration;
   bool          firstShowing;
   unsigned      recordingGroup;
   uint32_t      entryIndex;
@@ -79,7 +79,7 @@ struct MythTimerEntry
   MythTimerEntry()
   : isInactive(false), timerType(TIMER_TYPE_UNHANDLED), epgCheck(false)
   , chanid(0), startTime(0), endTime(0), startOffset(0), endOffset(0), priority(0)
-  , dupMethod(Myth::DM_CheckNone), autoExpire(false), firstShowing(false), recordingGroup(0)
+  , dupMethod(Myth::DM_CheckNone), expiration(0), firstShowing(false), recordingGroup(0)
   , entryIndex(0), parentIndex(0), recordingStatus(Myth::RS_UNKNOWN) { }
   bool HasChannel() const { return (chanid > 0 && !callsign.empty() ? true : false); }
   bool HasTimeSlot() const { return (startTime > 0 && endTime >= startTime ? true : false); }
@@ -126,16 +126,18 @@ public:
     MSM_ERROR_SUCCESS = 1
   };
 
-  typedef struct
+  struct RuleExpiration
   {
-    bool        isRepeating;
-    int         weekDays;
-    const char  *marker;
-  } RuleSummaryInfo;
-  typedef std::vector<std::pair<int, std::string> > RulePriorityList; // value & symbol
-  typedef std::vector<std::pair<int, int> > RuleDupMethodList; // value & localized string id
-  typedef std::vector<std::pair<int, int> > RuleExpirationList; // value & localized string id
-  typedef std::vector<std::pair<int, std::string> > RuleRecordingGroupList; // value & group name
+    bool  autoExpire;
+    int   maxEpisodes;
+    bool  maxNewest;
+    RuleExpiration(bool autoexpire, int maxepisodes, bool newest)
+    : autoExpire(autoexpire), maxEpisodes(maxepisodes), maxNewest(newest) { }
+  };
+  typedef std::vector<std::pair<int, std::string> > RulePriorityList;
+  typedef std::vector<std::pair<int, std::string> > RuleDupMethodList;
+  typedef std::vector<std::pair<int, std::pair<RuleExpiration, std::string> > > RuleExpirationList;
+  typedef std::vector<std::pair<int, std::string> > RuleRecordingGroupList;
 
   MythScheduleManager(const std::string& server, unsigned protoPort, unsigned wsapiPort, const std::string& wsapiSecurityPin);
   ~MythScheduleManager();

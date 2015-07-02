@@ -345,11 +345,11 @@ const MythScheduleManager::RuleDupMethodList& MythScheduleHelper75::GetRuleDupMe
   if (!_init)
   {
     _init = true;
-    _list.push_back(std::make_pair(Myth::DM_CheckNone, 30501));
-    _list.push_back(std::make_pair(Myth::DM_CheckSubtitle, 30502));
-    _list.push_back(std::make_pair(Myth::DM_CheckDescription, 30503));
-    _list.push_back(std::make_pair(Myth::DM_CheckSubtitleAndDescription, 30504));
-    _list.push_back(std::make_pair(Myth::DM_CheckSubtitleThenDescription, 30505));
+    _list.push_back(std::make_pair(Myth::DM_CheckNone, XBMC->GetLocalizedString(30501)));
+    _list.push_back(std::make_pair(Myth::DM_CheckSubtitle, XBMC->GetLocalizedString(30502)));
+    _list.push_back(std::make_pair(Myth::DM_CheckDescription, XBMC->GetLocalizedString(30503)));
+    _list.push_back(std::make_pair(Myth::DM_CheckSubtitleAndDescription, XBMC->GetLocalizedString(30504)));
+    _list.push_back(std::make_pair(Myth::DM_CheckSubtitleThenDescription, XBMC->GetLocalizedString(30505)));
   }
   return _list;
 }
@@ -361,8 +361,22 @@ const MythScheduleManager::RuleExpirationList& MythScheduleHelper75::GetRuleExpi
   if (!_init)
   {
     _init = true;
-    _list.push_back(std::make_pair(0, 30506));
-    _list.push_back(std::make_pair(1, 30507));
+    char buf[256];
+    memset(buf, 0, sizeof(buf));
+    int index = -100;
+    for (int i = 100; i >= 1; --i)
+    {
+      snprintf(buf, sizeof(buf), XBMC->GetLocalizedString(30509), i);
+      _list.push_back(std::make_pair(index++, std::make_pair(MythScheduleManager::RuleExpiration(false,i,true), buf)));
+    }
+    _list.push_back(std::make_pair(0, std::make_pair(MythScheduleManager::RuleExpiration(false,0,false), XBMC->GetLocalizedString(30506))));
+    _list.push_back(std::make_pair(1, std::make_pair(MythScheduleManager::RuleExpiration(true,0,false), XBMC->GetLocalizedString(30507))));
+    index = 2;
+    for (int i = 2; i <= 100; ++i)
+    {
+      snprintf(buf, sizeof(buf), XBMC->GetLocalizedString(30508), i);
+      _list.push_back(std::make_pair(index++, std::make_pair(MythScheduleManager::RuleExpiration(false,i,false), buf)));
+    }
   }
   return _list;
 }
@@ -613,7 +627,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
   entry.endOffset = rule.EndOffset();
   entry.dupMethod = rule.DuplicateControlMethod();
   entry.priority = rule.Priority();
-  entry.autoExpire = rule.AutoExpire();
+  entry.expiration = GetRuleExpirationId(rule.AutoExpire(), rule.MaxEpisodes(), rule.NewExpiresOldRecord());
   entry.isInactive = rule.Inactive();
   entry.firstShowing = (rule.Filter() & Myth::FM_FirstShowing ? true : false);
   entry.recordingGroup = GetRuleRecordingGroupId(rule.RecordingGroup());
@@ -684,7 +698,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythProgr
     entry.startOffset = rule.StartOffset();
     entry.endOffset = rule.EndOffset();
     entry.priority = rule.Priority();
-    entry.autoExpire = rule.AutoExpire();
+    entry.expiration = GetRuleExpirationId(rule.AutoExpire(), 0, false);
   }
   else
     entry.timerType = TIMER_TYPE_ZOMBIE;
@@ -828,8 +842,13 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
     }
     if (entry.priority != GetRulePriorityDefault())
       rule.SetPriority(entry.priority);
-    if (entry.autoExpire != GetRuleExpirationDefault())
-      rule.SetAutoExpire(entry.autoExpire);
+    if (entry.expiration != GetRuleExpirationDefault())
+    {
+      const MythScheduleManager::RuleExpiration& exr = GetRuleExpiration(entry.expiration);
+      rule.SetAutoExpire(exr.autoExpire);
+      rule.SetMaxEpisodes(exr.maxEpisodes);
+      rule.SetNewExpiresOldRecord(exr.maxNewest);
+    }
     if (entry.recordingGroup != RECGROUP_DFLT_ID)
       rule.SetRecordingGroup(GetRuleRecordingGroupName(entry.recordingGroup));
   }
@@ -840,7 +859,10 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
     rule.SetEndOffset(entry.endOffset);
     rule.SetDuplicateControlMethod(entry.dupMethod);
     rule.SetPriority(entry.priority);
-    rule.SetAutoExpire(entry.autoExpire);
+    const MythScheduleManager::RuleExpiration& exr = GetRuleExpiration(entry.expiration);
+    rule.SetAutoExpire(exr.autoExpire);
+    rule.SetMaxEpisodes(exr.maxEpisodes);
+    rule.SetNewExpiresOldRecord(exr.maxNewest);
     rule.SetRecordingGroup(GetRuleRecordingGroupName(entry.recordingGroup));
   }
 

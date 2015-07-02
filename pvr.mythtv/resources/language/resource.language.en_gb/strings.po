@@ -408,3 +408,11 @@ msgstr ""
 msgctxt "#30507"
 msgid "Allow recordings to expire"
 msgstr ""
+
+msgctxt "#30508"
+msgid "Keep up to %d recordings"
+msgstr ""
+
+msgctxt "#30509"
+msgid "Keep %d newest and expire old"
+msgstr ""

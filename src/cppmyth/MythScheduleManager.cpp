@@ -702,6 +702,8 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t
         handle.SetInactive(newrule.Inactive());
         handle.SetPriority(newrule.Priority());
         handle.SetAutoExpire(newrule.AutoExpire());
+        handle.SetMaxEpisodes(newrule.MaxEpisodes());
+        handle.SetNewExpiresOldRecord(newrule.NewExpiresOldRecord());
         handle.SetStartOffset(newrule.StartOffset());
         handle.SetEndOffset(newrule.EndOffset());
         handle.SetRecordingGroup(newrule.RecordingGroup());
@@ -891,7 +893,7 @@ MythScheduleManager::TimerType::TimerType(TimerTypeId id, unsigned attributes, c
   for (MythScheduleManager::RuleDupMethodList::const_iterator it = dupMethodList.begin(); it != dupMethodList.end(); ++it, ++index)
   {
     preventDuplicateEpisodes[index].iValue = it->first;
-    PVR_STRCPY(preventDuplicateEpisodes[index].strDescription, XBMC->GetLocalizedString(it->second));
+    PVR_STRCPY(preventDuplicateEpisodes[index].strDescription, it->second.c_str());
   }
   iPreventDuplicateEpisodesDefault = dupMethodDefault;
   // Initialize expirations
@@ -901,7 +903,7 @@ MythScheduleManager::TimerType::TimerType(TimerTypeId id, unsigned attributes, c
   for (MythScheduleManager::RuleExpirationList::const_iterator it = expirationList.begin(); it != expirationList.end(); ++it, ++index)
   {
     lifetimes[index].iValue = it->first;
-    PVR_STRCPY(lifetimes[index].strDescription, XBMC->GetLocalizedString(it->second));
+    PVR_STRCPY(lifetimes[index].strDescription, it->second.second.c_str());
   }
   iLifetimesDefault = expirationDefault;
   // Initialize recording groups

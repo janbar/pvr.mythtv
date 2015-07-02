@@ -83,7 +83,7 @@ bool MythScheduleHelper85::FillTimerEntry(MythTimerEntry& entry, const MythProgr
     entry.startOffset = rule.StartOffset();
     entry.endOffset = rule.EndOffset();
     entry.priority = rule.Priority();
-    entry.autoExpire = rule.AutoExpire();
+    entry.expiration = GetRuleExpirationId(rule.AutoExpire(), 0, false);
   }
   else
     entry.timerType = TIMER_TYPE_ZOMBIE;

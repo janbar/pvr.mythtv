@@ -1496,7 +1496,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
     PVR_STRCPY(tag.strDirectory, ""); // not implemented
     PVR_STRCPY(tag.strSummary, (*it)->description.c_str());
     tag.iPriority = (*it)->priority;
-    tag.iLifetime = (*it)->autoExpire;
+    tag.iLifetime = (*it)->expiration;
     tag.iRecordingGroup = (*it)->recordingGroup;
     tag.firstDay = 0; // using startTime
     tag.iWeekdays = PVR_WEEKDAY_NONE; // not implemented
@@ -1743,7 +1743,7 @@ MythTimerEntry PVRClientMythTV::PVRtoTimerEntry(const PVR_TIMER& timer, bool che
   entry.endOffset = timer.iMarginEnd;
   entry.dupMethod = static_cast<Myth::DM_t>(timer.iPreventDuplicateEpisodes);
   entry.priority = timer.iPriority;
-  entry.autoExpire = (timer.iLifetime ? true : false);
+  entry.expiration = timer.iLifetime;
   entry.firstShowing = false;
   entry.recordingGroup = timer.iRecordingGroup;
   entry.isInactive = (timer.state == PVR_TIMER_STATE_DISABLED ? true : false);

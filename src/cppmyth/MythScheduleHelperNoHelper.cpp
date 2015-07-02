@@ -24,6 +24,7 @@
 ////
 
 #include "MythScheduleHelperNoHelper.h"
+#include "../client.h"
 
 const std::vector<MythScheduleManager::TimerType>& MythScheduleHelperNoHelper::GetTimerTypes() const
 {
@@ -50,7 +51,7 @@ const MythScheduleManager::RuleDupMethodList& MythScheduleHelperNoHelper::GetRul
   if (!_init)
   {
     _init = true;
-    _list.push_back(std::make_pair(Myth::DM_CheckNone, 30501));
+    _list.push_back(std::make_pair(Myth::DM_CheckNone, XBMC->GetLocalizedString(30501)));
   }
   return _list;
 }
@@ -62,9 +63,54 @@ const MythScheduleManager::RuleExpirationList& MythScheduleHelperNoHelper::GetRu
   if (!_init)
   {
     _init = true;
-    _list.push_back(std::make_pair(0, 30506));
+    _list.push_back(std::make_pair(EXPIRATION_DFLT_ID, std::make_pair(MythScheduleManager::RuleExpiration(false, 0, false), XBMC->GetLocalizedString(30506))));
   }
   return _list;
+}
+
+static inline uint32_t expiration_key(bool autoexpire, int maxepisodes, bool newest)
+{
+  if (maxepisodes > 0 && maxepisodes < 0x100)
+    return (maxepisodes & 0xFF) | (newest ? 0x100 : 0x0);
+  else
+    return (autoexpire ? 0x200 : 0x0);
+}
+
+int MythScheduleHelperNoHelper::GetRuleExpirationId(bool autoexpire, int maxepisodes, bool newest) const
+{
+  static bool _init = false;
+  static std::map<uint32_t, int> _map;
+  if (!_init)
+  {
+    _init = true;
+    const MythScheduleManager::RuleExpirationList& expirationList = GetRuleExpirationList();
+    for (MythScheduleManager::RuleExpirationList::const_iterator it = expirationList.begin(); it != expirationList.end(); ++it)
+      _map.insert(std::make_pair(expiration_key(it->second.first.autoExpire, it->second.first.maxEpisodes, it->second.first.maxNewest), it->first));
+  }
+  std::map<uint32_t, int>::const_iterator it = _map.find(expiration_key(autoexpire, maxepisodes, newest));
+  if (it != _map.end())
+    return it->second;
+  return EXPIRATION_DFLT_ID;
+}
+
+const MythScheduleManager::RuleExpiration& MythScheduleHelperNoHelper::GetRuleExpiration(int id) const
+{
+  static bool _init = false;
+  static std::map<int, MythScheduleManager::RuleExpiration> _map;
+  static MythScheduleManager::RuleExpiration _empty(false, 0, false);
+  if (!_init)
+  {
+    _init = true;
+    const MythScheduleManager::RuleExpirationList& expirationList = GetRuleExpirationList();
+    for (MythScheduleManager::RuleExpirationList::const_iterator it = expirationList.begin(); it != expirationList.end(); ++it)
+    {
+      _map.insert(std::make_pair(it->first, it->second.first));
+    }
+  }
+  std::map<int, MythScheduleManager::RuleExpiration>::const_iterator it = _map.find(id);
+  if (it != _map.end())
+    return it->second;
+  return _empty;
 }
 
 const MythScheduleManager::RuleRecordingGroupList& MythScheduleHelperNoHelper::GetRuleRecordingGroupList() const
