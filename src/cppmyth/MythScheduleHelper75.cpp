@@ -593,6 +593,7 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       break;
   }
 
+  MythScheduleList upcomings;
   // For all repeating fix timeslot as needed
   switch (entry.timerType)
   {
@@ -620,6 +621,24 @@ bool MythScheduleHelper75::FillTimerEntry(MythTimerEntry& entry, const MythRecor
       {
         entry.startTime = rule.StartTime();
         entry.endTime = rule.EndTime();
+      }
+      upcomings = m_manager->FindUpComingByRuleId(rule.RecordID());
+      for (MythScheduleList::const_reverse_iterator it = upcomings.rbegin(); it != upcomings.rend(); ++it)
+      {
+        if ( (it->second->Status() == Myth::RS_RECORDING) ||
+             (it->second->Status() == Myth::RS_TUNING) )
+        {
+
+            entry.recordingStatus = it->second->Status();
+            entry.startTime = it->second->StartTime();
+            entry.endTime = it->second->EndTime();
+            XBMC->Log(LOG_DEBUG,"75:%s: Showing currently active recording for rule %u", __FUNCTION__, rule.RecordID());
+        }
+        else if (it->second->Status() == Myth::RS_CONFLICT)
+        {
+            entry.recordingStatus = it->second->Status();
+            XBMC->Log(LOG_DEBUG,"75:%s: Showing active conflict within rule %u", __FUNCTION__, rule.RecordID());
+        }
       }
       break;
     default:
