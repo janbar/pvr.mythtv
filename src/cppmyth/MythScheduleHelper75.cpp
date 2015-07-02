@@ -40,6 +40,13 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
   {
     _init = true;
 
+    // Prepare simple expiration list for no repeating rule
+    MythScheduleManager::RuleExpirationList autoExpireList;
+    int autoExpire0 = GetRuleExpirationId(false, 0, false);
+    autoExpireList.push_back(std::make_pair(autoExpire0, std::make_pair(MythScheduleManager::RuleExpiration(false, 0, false), XBMC->GetLocalizedString(30506))));
+    int autoExpire1 = GetRuleExpirationId(true, 0, false);
+    autoExpireList.push_back(std::make_pair(autoExpire1, std::make_pair(MythScheduleManager::RuleExpiration(true, 0, false), XBMC->GetLocalizedString(30507))));
+
     typeList.push_back(MythScheduleManager::TimerType(TIMER_TYPE_MANUAL_SEARCH,
             PVR_TIMER_TYPE_IS_MANUAL |
             PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
@@ -53,9 +60,9 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRulePriorityList(),
             GetRulePriorityDefault(),
             MythScheduleManager::RuleDupMethodList(), // empty list
-            0, // Check none
-            GetRuleExpirationList(),
-            GetRuleExpirationDefault(),
+            0,
+            autoExpireList,
+            autoExpire1,
             GetRuleRecordingGroupList(),
             GetRuleRecordingGroupDefault()));
 
@@ -71,9 +78,9 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRulePriorityList(),
             GetRulePriorityDefault(),
             MythScheduleManager::RuleDupMethodList(), // empty list
-            0, // Check none
-            GetRuleExpirationList(),
-            GetRuleExpirationDefault(),
+            0,
+            autoExpireList,
+            autoExpire1,
             GetRuleRecordingGroupList(),
             GetRuleRecordingGroupDefault()));
 
@@ -92,8 +99,8 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRulePriorityDefault(),
             GetRuleDupMethodList(),
             GetRuleDupMethodDefault(),
-            GetRuleExpirationList(),
-            GetRuleExpirationDefault(),
+            autoExpireList,
+            autoExpire1,
             GetRuleRecordingGroupList(),
             GetRuleRecordingGroupDefault()));
 
@@ -112,7 +119,7 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRulePriorityList(),
             GetRulePriorityDefault(),
             MythScheduleManager::RuleDupMethodList(), // empty list
-            0, // Check none
+            0,
             GetRuleExpirationList(),
             GetRuleExpirationDefault(),
             GetRuleRecordingGroupList(),
@@ -249,8 +256,8 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRulePriorityDefault(),
             MythScheduleManager::RuleDupMethodList(), // empty list
             0, // Check none
-            GetRuleExpirationList(),
-            GetRuleExpirationDefault(),
+            autoExpireList,
+            autoExpire1,
             GetRuleRecordingGroupList(),
             GetRuleRecordingGroupDefault()));
 
@@ -266,8 +273,8 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRulePriorityDefault(),
             MythScheduleManager::RuleDupMethodList(), // empty list
             0, // Check none
-            GetRuleExpirationList(),
-            GetRuleExpirationDefault(),
+            autoExpireList,
+            autoExpire1,
             GetRuleRecordingGroupList(),
             GetRuleRecordingGroupDefault()));
 
@@ -280,11 +287,11 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             GetRulePriorityList(),
             GetRulePriorityDefault(),
             MythScheduleManager::RuleDupMethodList(), // empty list
-            0, // Check none
-            GetRuleExpirationList(),
-            GetRuleExpirationDefault(),
-            GetRuleRecordingGroupList(),
-            GetRuleRecordingGroupDefault()));
+            0,
+            MythScheduleManager::RuleExpirationList(), // empty list
+            0,
+            MythScheduleManager::RuleRecordingGroupList(), // empty list
+            RECGROUP_DFLT_ID));
 
     typeList.push_back(MythScheduleManager::TimerType(TIMER_TYPE_UPCOMING_MANUAL,
             PVR_TIMER_TYPE_IS_READONLY,
@@ -292,7 +299,7 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             MythScheduleManager::RulePriorityList(), // empty list
             0,
             MythScheduleManager::RuleDupMethodList(), // empty list
-            0, // Check none
+            0,
             MythScheduleManager::RuleExpirationList(), // empty list
             0,
             MythScheduleManager::RuleRecordingGroupList(), // empty list
@@ -304,7 +311,7 @@ const std::vector<MythScheduleManager::TimerType>& MythScheduleHelper75::GetTime
             MythScheduleManager::RulePriorityList(), // empty list
             0,
             MythScheduleManager::RuleDupMethodList(), // empty list
-            0, // Check none
+            0,
             MythScheduleManager::RuleExpirationList(), // empty list
             0,
             MythScheduleManager::RuleRecordingGroupList(), // empty list
