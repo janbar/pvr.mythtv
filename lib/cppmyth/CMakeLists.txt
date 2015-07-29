@@ -15,10 +15,14 @@ if (MSVC)
   OPTION (STATIC_CRT "Link the static CRT libraries" OFF)
 endif ()
 
+if (NOT WIN32)
+  OPTION (REQUIRE_CXX_98 "Require standard c++98" OFF)
+endif ()
+
 ###############################################################################
 # set lib version here
-set (CPPMYTH_LIB_VERSION "1.5.1")
-set (CPPMYTH_LIB_SOVERSION "1.5")
+set (CPPMYTH_LIB_VERSION "2.1.0")
+set (CPPMYTH_LIB_SOVERSION "2")
 
 ###############################################################################
 # add definitions
@@ -88,6 +92,24 @@ elseif (HAVE___INLINE__)
 else ()
    # no inline on this platform
    set (CC_INLINE)
+endif ()
+
+if (REQUIRE_CXX_98)
+  set (CXX_STANDARD "199711L")
+  message(STATUS "c++98 activated")
+else ()
+  if (MSVC)
+    set (CXX_STANDARD "201103L")
+  else ()
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+    if(COMPILER_SUPPORTS_CXX11)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+      set (CXX_STANDARD "201103L")
+    else()
+      set (CXX_STANDARD "199711L")
+    endif ()
+  endif ()
 endif ()
 
 # configure the public config file

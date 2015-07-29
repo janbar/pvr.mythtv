@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2014 Jean-Luc Barriere
+ *      Copyright (C) 2015 Jean-Luc Barriere
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #ifndef MYTHSHAREDPTR_H
 #define	MYTHSHAREDPTR_H
 
-#include "atomic.h"
+#include "mythintrinsic.h"
 
 #include <cstddef>  // for NULL
 
@@ -39,13 +39,15 @@ namespace Myth
     explicit shared_ptr(T* s) : p(s), c(NULL)
     {
       if (p != NULL)
-        c = new atomic_t(1);
+      {
+        c = new IntrinsicCounter(1);
+      }
     }
 
     shared_ptr(const shared_ptr& s) : p(s.p), c(s.c)
     {
       if (c != NULL)
-        if (atomic_increment(c) < 2)
+        if (c->Increment() < 2)
         {
           c = NULL;
           p = NULL;
@@ -60,7 +62,7 @@ namespace Myth
         p = s.p;
         c = s.c;
         if (c != NULL)
-          if (atomic_increment(c) < 2)
+          if (c->Increment() < 2)
           {
             c = NULL;
             p = NULL;
@@ -77,7 +79,7 @@ namespace Myth
     void reset()
     {
       if (c != NULL)
-        if (atomic_decrement(c) == 0)
+        if (c->Decrement() == 0)
         {
             delete p;
             delete c;
@@ -94,7 +96,7 @@ namespace Myth
         if (s != NULL)
         {
           p = s;
-          c = new atomic_t(1);
+          c = new IntrinsicCounter(1);
         }
       }
     }
@@ -107,7 +109,7 @@ namespace Myth
     void swap(shared_ptr<T>& s)
     {
       T *tmp_p = p;
-      atomic_t *tmp_c = c;
+      IntrinsicCounter *tmp_c = c;
       p = s.p;
       c = s.c;
       s.p = tmp_p;
@@ -116,7 +118,7 @@ namespace Myth
 
     unsigned use_count() const
     {
-      return (unsigned) (c != NULL ? *c : 0);
+      return (unsigned) (c != NULL ? c->GetValue() : 0);
     }
 
     T *operator->() const
@@ -141,7 +143,7 @@ namespace Myth
 
   protected:
     T *p;
-    atomic_t *c;
+    IntrinsicCounter *c;
   };
 
 }
