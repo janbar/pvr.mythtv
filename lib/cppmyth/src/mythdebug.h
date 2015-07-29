@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2014 Jean-Luc Barriere
+ *      Copyright (C) 2014-2015 Jean-Luc Barriere
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@ namespace Myth
   void DBGLevel(int l);
   void DBGAll(void);
   void DBGNone(void);
-  void DBG(int level, const char *fmt, ...);
-  void SetDBGMsgCallback(void (*msgcb)(int level,char *));
+  void DBG(int level, const char* fmt, ...);
+  void SetDBGMsgCallback(void (*msgcb)(int level, char*));
 }
 
 #endif	/* MYTHDEBUG_H */
