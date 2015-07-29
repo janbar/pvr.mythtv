@@ -28,7 +28,7 @@
 #ifdef NSROOT
 using namespace NSROOT::OS;
 #else
-using namespace PLATFORM;
+using namespace OS;
 #endif
 
 CThreadPool::CThreadPool()
