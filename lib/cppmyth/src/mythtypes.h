@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <vector>
 #include <map>
+#include <ctime>
 
 /**
  * @namespace Myth
