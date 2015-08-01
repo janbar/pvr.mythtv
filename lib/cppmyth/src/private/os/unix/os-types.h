@@ -40,6 +40,7 @@ typedef LONG HRESULT;
 #include <limits.h>
 #define MAX_PATH PATH_MAX
 #elif defined(__APPLE__) || defined(__FreeBSD__)
+#include <sys/cdefs.h>
 #include <sys/syslimits.h>
 #define MAX_PATH PATH_MAX
 #else
