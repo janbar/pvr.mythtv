@@ -45,6 +45,7 @@ namespace Myth
     void Close();
     bool IsOpen() { return ProtoMonitor::IsOpen(); }
     void SetTuneDelay(unsigned delay);
+    void SetLimitChannelChange (bool limitchannelchange);
     bool SpawnLiveTV(const std::string& chanNum, const ChannelList& channels);
     bool SpawnLiveTV(const ChannelPtr& thisChannel);
     void StopLiveTV();
@@ -73,6 +74,7 @@ namespace Myth
     unsigned m_eventSubscriberId;
 
     unsigned m_tuneDelay;
+    bool m_limitChannelChange;
     ProtoRecorderPtr m_recorder;
     SignalStatusPtr m_signal;
 

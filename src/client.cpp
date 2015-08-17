@@ -57,6 +57,7 @@ int           g_iTuneDelay              = DEFAULT_TUNE_DELAY;
 int           g_iGroupRecordings        = GROUP_RECORDINGS_ALWAYS;
 int           g_iEnableEDL              = ENABLE_EDL_ALWAYS;
 bool          g_bBlockMythShutdown      = DEFAULT_BLOCK_SHUTDOWN;
+bool          g_bLimitChannelChange     = DEFAULT_LIMIT_CHANNEL_CHANGE;
 
 ///* Client member variables */
 ADDON_STATUS  m_CurStatus               = ADDON_STATUS_UNKNOWN;
@@ -190,6 +191,14 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
     /* If setting is unknown fallback to defaults */
     XBMC->Log(LOG_ERROR, "Couldn't get 'extradebug' setting, falling back to '%b' as default", DEFAULT_EXTRA_DEBUG);
     g_bExtraDebug = DEFAULT_EXTRA_DEBUG;
+  }
+
+  /* Read setting "limitchannelchange" from settings.xml */
+  if (!XBMC->GetSetting("limitchannelchange", &g_bLimitChannelChange))
+  {
+    /* If setting is unknown fallback to defaults */
+    XBMC->Log(LOG_ERROR, "Couldn't get 'limitchannelchnge' setting, falling back to '%b' as default", DEFAULT_LIMIT_CHANNEL_CHANGE);
+    g_bLimitChannelChange = DEFAULT_LIMIT_CHANNEL_CHANGE;
   }
 
   /* Read setting "LiveTV" from settings.xml */
@@ -583,6 +592,12 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
     XBMC->Log(LOG_INFO, "Changed Setting 'rec_autoexpire' from %u to %u", g_bRecAutoExpire, *(bool*)settingValue);
     if (g_bRecAutoExpire != *(bool*)settingValue)
       g_bRecAutoExpire = *(bool*)settingValue;
+  }
+  else if (str == "limitchannelchange")
+  {
+    XBMC->Log(LOG_INFO, "Changed Setting 'limitchannelchange' from %u to %u", g_bLimitChannelChange, *(bool*)settingValue);
+    if (g_bLimitChannelChange != *(bool*)settingValue)
+      g_bLimitChannelChange = *(bool*)settingValue;
   }
   else if (str == "tunedelay")
   {
