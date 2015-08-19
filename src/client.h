@@ -62,7 +62,7 @@
 #define ENABLE_EDL_DIALOG                   1
 #define ENABLE_EDL_NEVER                    2
 #define DEFAULT_BLOCK_SHUTDOWN              true
-
+#define DEFAULT_LIMIT_CHANNEL_CHANGE        false
 /*!
  * @brief PVR macros for string exchange
  */
@@ -91,6 +91,7 @@ extern int          g_iLiveTVConflictStrategy;  ///< Live TV conflict resolving 
 extern bool         g_bChannelIcons;            ///< Load Channel Icons
 extern bool         g_bRecordingIcons;          ///< Load Recording Icons (Fanart/Thumbnails)
 extern int          g_iRecTemplateType;         ///< Template type for new record (0=Internal, 1=MythTV)
+extern bool         g_bLimitChannelChange;      ///< Limit Channel Change Atttempts
 ///* Internal Record template */
 extern bool         g_bRecAutoMetadata;
 extern bool         g_bRecAutoCommFlag;

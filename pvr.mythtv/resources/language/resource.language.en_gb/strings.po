@@ -201,7 +201,11 @@ msgctxt "#30064"
 msgid "Enable recording fanart/thumbnails"
 msgstr ""
 
-#empty strings from id 30065 to 30099
+msgctxt "#30065"
+msgid "Limit channel change attempts"
+msgstr ""
+
+#empty strings from id 30066 to 30099
 
 # Systeminformation labels
 msgctxt "#30100"

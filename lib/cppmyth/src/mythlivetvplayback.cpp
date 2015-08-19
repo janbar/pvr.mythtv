@@ -122,6 +122,12 @@ void LiveTVPlayback::Close()
   ProtoMonitor::Close();
 }
 
+void LiveTVPlayback::SetLimitChannelChange(bool limitchannelchange)
+{
+  
+    m_limitChannelChange = limitchannelchange;
+}
+
 void LiveTVPlayback::SetTuneDelay(unsigned delay)
 {
   if (delay < MIN_TUNE_DELAY)
@@ -176,6 +182,12 @@ bool LiveTVPlayback::SpawnLiveTV(const std::string& chanNum, const ChannelList& 
       m_recorder->StopLiveTV();
     }
     ClearChain();
+    // check if we need to stop after first attempt at tuning
+    if (m_limitChannelChange)
+    {
+      DBG(MYTH_DBG_DEBUG, "%s: Limiting Channel Change Attempts to 1\n", __FUNCTION__);
+      break;
+    }
     // Retry the next preferred card
     ++card;
   }
