@@ -159,6 +159,10 @@ private:
   FileStreaming *m_dummyStream;
   bool m_hang;
   bool m_powerSaving;
+  bool m_InitConnectReceived;
+  bool m_InitChannelsInvalid;
+  bool m_InitScheduleInvalid;
+  bool m_InitRecordingsInvalid;
 
   // Backend
   FileOps *m_fileOps;

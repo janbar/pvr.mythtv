@@ -42,6 +42,10 @@ PVRClientMythTV::PVRClientMythTV()
 , m_dummyStream(NULL)
 , m_hang(false)
 , m_powerSaving(false)
+, m_InitConnectReceived(false)
+, m_InitChannelsInvalid(false)
+, m_InitScheduleInvalid(false)
+, m_InitRecordingsInvalid(false)
 , m_fileOps(NULL)
 , m_scheduleManager(NULL)
 , m_demux(NULL)
@@ -294,10 +298,29 @@ void PVRClientMythTV::HandleBackendMessage(Myth::EventMessagePtr msg)
           m_hang = false;
           XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30303)); // Connection to MythTV restored
         }
-        // Refreshing all
-        HandleChannelChange();
-        HandleScheduleChange();
-        HandleRecordingListChange(Myth::EventMessage());
+        if (m_InitConnectReceived)
+        {
+          XBMC->Log(LOG_DEBUG, "%s: Second or subsequent connect event received: refreshing channels, schedule and recordings.", __FUNCTION__);
+          // Refreshing all
+          HandleChannelChange();
+          HandleScheduleChange();
+          HandleRecordingListChange(Myth::EventMessage());
+        }
+        else if (m_InitChannelsInvalid || m_InitScheduleInvalid || m_InitRecordingsInvalid)
+        {
+          m_InitConnectReceived = true;
+          XBMC->Log(LOG_DEBUG, "%s: Event announcing initial connect received too late (C%d|S%d|R%d), refresh required.", __FUNCTION__,
+                m_InitChannelsInvalid, m_InitScheduleInvalid, m_InitRecordingsInvalid);
+          // Refreshing all
+          HandleChannelChange();
+          HandleScheduleChange();
+          HandleRecordingListChange(Myth::EventMessage());
+        }
+        else
+        {
+          m_InitConnectReceived = true;
+          XBMC->Log(LOG_DEBUG, "%s: Event announcing initial connect received: valid backend data is available.", __FUNCTION__);
+        }
       }
       else if (msg->subject[0] == EVENTHANDLER_NOTCONNECTED)
       {
@@ -597,6 +620,8 @@ PVR_ERROR PVRClientMythTV::GetChannels(ADDON_HANDLE handle, bool bRadio)
 
   CLockObject lock(m_channelsLock);
 
+  if (!m_InitConnectReceived)
+    m_InitChannelsInvalid = true;
   // Load channels list
   if (m_PVRChannels.empty())
     FillChannelsAndChannelGroups();
@@ -829,8 +854,10 @@ PVR_ERROR PVRClientMythTV::GetRecordings(ADDON_HANDLE handle)
 
   CLockObject lock(m_recordingsLock);
 
+  if (!m_InitConnectReceived)
+    m_InitRecordingsInvalid = true;
   // Load recordings list
-  if (m_recordings.empty())
+  if (m_recordings.empty() && m_InitConnectReceived)
     FillRecordings();
   // Setup series
   if (g_iGroupRecordings == GROUP_RECORDINGS_ONLY_FOR_SERIES)
@@ -970,8 +997,10 @@ PVR_ERROR PVRClientMythTV::GetDeletedRecordings(ADDON_HANDLE handle)
 
   CLockObject lock(m_recordingsLock);
 
+  if (!m_InitConnectReceived)
+    m_InitRecordingsInvalid = true;
   // Load recordings list
-  if (m_recordings.empty())
+  if (m_recordings.empty() && m_InitConnectReceived)
     FillRecordings();
   // Transfer to PVR
   for (ProgramInfoMap::iterator it = m_recordings.begin(); it != m_recordings.end(); ++it)
@@ -1524,6 +1553,8 @@ PVR_ERROR PVRClientMythTV::GetTimers(ADDON_HANDLE handle)
   if (g_bExtraDebug)
     XBMC->Log(LOG_DEBUG, "%s", __FUNCTION__);
 
+  if (!m_InitConnectReceived)
+    m_InitScheduleInvalid = true;
   MythTimerEntryList entries;
   {
     CLockObject lock(m_lock);
