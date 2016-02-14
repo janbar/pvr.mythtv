@@ -45,6 +45,9 @@ typedef enum
   TIMER_TYPE_SEARCH_PEOPLE,       // Search people
   // Keep last
   TIMER_TYPE_UPCOMING,            // Upcoming
+  TIMER_TYPE_UPCOMING_ALTERNATE,  // Upcoming will record at another time
+  TIMER_TYPE_UPCOMING_RECORDED,   // Upcoming currently recorded
+  TIMER_TYPE_UPCOMING_EXPIRED,    // Upcoming previously recorded and expired
   TIMER_TYPE_OVERRIDE,            // Override
   TIMER_TYPE_DONT_RECORD,         // Don't record
   TIMER_TYPE_UNHANDLED,           // Unhandled rule

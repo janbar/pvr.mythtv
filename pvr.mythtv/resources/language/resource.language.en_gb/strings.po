@@ -341,7 +341,17 @@ msgctxt "#30456"
 msgid "Zombie"
 msgstr ""
 
-# empty strings from id 30457 to 30459
+msgctxt "#30457"
+msgid "Alternative"
+msgstr ""
+
+msgctxt "#30458"
+msgid "Currently recorded"
+msgstr ""
+
+msgctxt "#30459"
+msgid "Expired recording"
+msgstr ""
 
 msgctxt "#30460"
 msgid "Manual"
