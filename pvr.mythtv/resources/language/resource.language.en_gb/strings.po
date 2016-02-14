@@ -205,7 +205,11 @@ msgctxt "#30065"
 msgid "Limit channel tuning attempts"
 msgstr ""
 
-# empty strings from id 30066 to 30099
+msgctxt "#30066"
+msgid "Show all inactive upcomings by default (alternative/recorded/expired)"
+msgstr ""
+
+# empty strings from id 30067 to 30099
 
 # Systeminformation labels
 msgctxt "#30100"
@@ -300,7 +304,7 @@ msgstr ""
 # empty strings from id 30413 to 30420
 
 msgctxt "#30421"
-msgid "Show/hide inactive upcomings"
+msgid "Toggle display of alternative/recorded/expired"
 msgstr ""
 
 msgctxt "#30422"

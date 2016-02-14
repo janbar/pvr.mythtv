@@ -134,7 +134,6 @@ MythScheduleManager::MythScheduleManager(const std::string& server, unsigned pro
 , m_recordings(NULL)
 , m_recordingIndexByRuleId(NULL)
 , m_templates(NULL)
-, m_showNotRecording(false)
 {
   m_control = new Myth::Control(server, protoPort, wsapiPort, wsapiSecurityPin);
   this->Update();
@@ -974,8 +973,13 @@ MythRecordingRuleList MythScheduleManager::GetTemplateRules() const
 
 bool MythScheduleManager::ToggleShowNotRecording()
 {
-  m_showNotRecording ^= true;
-  return m_showNotRecording;
+  g_bShowNotRecording ^= true;
+  return g_bShowNotRecording;
+}
+
+bool MythScheduleManager::ShowNotRecording()
+{
+  return g_bShowNotRecording;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
