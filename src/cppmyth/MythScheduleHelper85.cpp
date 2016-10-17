@@ -79,7 +79,24 @@ bool MythScheduleHelper85::FillTimerEntryWithUpcoming(MythTimerEntry& entry, con
         if (node->GetMainRule().SearchType() == Myth::ST_ManualSearch)
           entry.timerType = TIMER_TYPE_UPCOMING_MANUAL;
         else
-          entry.timerType = TIMER_TYPE_UPCOMING;
+        {
+          switch (recording.Status())
+          {
+            case Myth::RS_EARLIER_RECORDING:  //will record earlier
+            case Myth::RS_LATER_SHOWING:      //will record later
+              entry.timerType = TIMER_TYPE_UPCOMING_ALTERNATE;
+              break;
+            case Myth::RS_CURRENT_RECORDING:  //Already in the current library
+              entry.timerType = TIMER_TYPE_UPCOMING_RECORDED;
+              break;
+            case Myth::RS_PREVIOUS_RECORDING: //Previoulsy recorded but no longer in the library
+              entry.timerType = TIMER_TYPE_UPCOMING_EXPIRED;
+              break;
+            default:
+              entry.timerType = TIMER_TYPE_UPCOMING;
+              break;
+          }
+        }
     }
     entry.startOffset = rule.StartOffset();
     entry.endOffset = rule.EndOffset();
@@ -92,6 +109,9 @@ bool MythScheduleHelper85::FillTimerEntryWithUpcoming(MythTimerEntry& entry, con
   switch (entry.timerType)
   {
     case TIMER_TYPE_UPCOMING:
+    case TIMER_TYPE_UPCOMING_ALTERNATE:
+    case TIMER_TYPE_UPCOMING_RECORDED:
+    case TIMER_TYPE_UPCOMING_EXPIRED:
     case TIMER_TYPE_OVERRIDE:
     case TIMER_TYPE_UPCOMING_MANUAL:
       entry.epgCheck = true;

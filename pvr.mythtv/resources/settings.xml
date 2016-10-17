@@ -33,5 +33,6 @@
     <setting id="enable_edl" type="enum" label="30058" lvalues="30059|30060|30061" default="0" />
     <setting id="channel_icons" type="bool" label="30063" default="true" />
     <setting id="recording_icons" type="bool" label="30064" default="true" />
+    <setting id="inactive_upcomings" type="bool" label="30066" default="true" />
   </category>
 </settings>

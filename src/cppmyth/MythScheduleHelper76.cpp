@@ -600,6 +600,9 @@ MythRecordingRule MythScheduleHelper76::NewFromTimer(const MythTimerEntry& entry
       rule.SetInactive(entry.isInactive);
       return rule;
     case TIMER_TYPE_UPCOMING:
+    case TIMER_TYPE_UPCOMING_ALTERNATE:
+    case TIMER_TYPE_UPCOMING_RECORDED:
+    case TIMER_TYPE_UPCOMING_EXPIRED:
     case TIMER_TYPE_UPCOMING_MANUAL:
     case TIMER_TYPE_ZOMBIE:
       rule.SetType(Myth::RT_SingleRecord);

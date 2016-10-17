@@ -60,6 +60,7 @@ int           g_iGroupRecordings        = GROUP_RECORDINGS_ALWAYS;
 int           g_iEnableEDL              = ENABLE_EDL_ALWAYS;
 bool          g_bBlockMythShutdown      = DEFAULT_BLOCK_SHUTDOWN;
 bool          g_bLimitTuneAttempts      = DEFAULT_LIMIT_TUNE_ATTEMPTS;
+bool          g_bShowNotRecording       = false;
 
 ///* Client member variables */
 ADDON_STATUS  m_CurStatus               = ADDON_STATUS_UNKNOWN;
@@ -310,6 +311,14 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
     /* If setting is unknown fallback to defaults */
     XBMC->Log(LOG_ERROR, "Couldn't get 'limit_tune_attempts' setting, falling back to '%b' as default", DEFAULT_LIMIT_TUNE_ATTEMPTS);
     g_bLimitTuneAttempts = DEFAULT_LIMIT_TUNE_ATTEMPTS;
+  }
+
+  /* Read setting "inactive_upcomings" from settings.xml */
+  if (!XBMC->GetSetting("inactive_upcomings", &g_bShowNotRecording))
+  {
+    /* If setting is unknown fallback to defaults */
+    XBMC->Log(LOG_ERROR, "Couldn't get 'inactive_upcomings' setting, falling back to '%b' as default", DEFAULT_SHOW_NOT_RECORDING);
+    g_bShowNotRecording = DEFAULT_SHOW_NOT_RECORDING;
   }
 
   free (buffer);
@@ -652,6 +661,16 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
     XBMC->Log(LOG_INFO, "Changed Setting 'limit_tune_attempts' from %u to %u", g_bLimitTuneAttempts, *(bool*)settingValue);
     if (g_bLimitTuneAttempts != *(bool*)settingValue)
       g_bLimitTuneAttempts = *(bool*)settingValue;
+  }
+  else if (str == "inactive_upcomings")
+  {
+    XBMC->Log(LOG_INFO, "Changed Setting 'inactive_upcomings' from %u to %u", g_bShowNotRecording, *(bool*)settingValue);
+    if (g_bShowNotRecording != *(bool*)settingValue)
+    {
+      g_bShowNotRecording = *(bool*)settingValue;
+      if (g_client)
+        g_client->HandleScheduleChange();
+    }
   }
   return ADDON_STATUS_OK;
 }

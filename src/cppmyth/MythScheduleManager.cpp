@@ -134,7 +134,6 @@ MythScheduleManager::MythScheduleManager(const std::string& server, unsigned pro
 , m_recordings(NULL)
 , m_recordingIndexByRuleId(NULL)
 , m_templates(NULL)
-, m_showNotRecording(false)
 {
   m_control = new Myth::Control(server, protoPort, wsapiPort, wsapiSecurityPin);
   this->Update();
@@ -260,6 +259,9 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateTimer(const MythTimerE
   switch (entry.timerType)
   {
     case TIMER_TYPE_UPCOMING:
+    case TIMER_TYPE_UPCOMING_ALTERNATE:
+    case TIMER_TYPE_UPCOMING_RECORDED:
+    case TIMER_TYPE_UPCOMING_EXPIRED:
     case TIMER_TYPE_DONT_RECORD:
     case TIMER_TYPE_OVERRIDE:
     {
@@ -295,6 +297,9 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteTimer(const MythTimerE
   switch (entry.timerType)
   {
     case TIMER_TYPE_UPCOMING:
+    case TIMER_TYPE_UPCOMING_ALTERNATE:
+    case TIMER_TYPE_UPCOMING_RECORDED:
+    case TIMER_TYPE_UPCOMING_EXPIRED:
       return DisableRecording(entry.entryIndex);
     case TIMER_TYPE_DONT_RECORD:
     case TIMER_TYPE_OVERRIDE:
@@ -968,8 +973,13 @@ MythRecordingRuleList MythScheduleManager::GetTemplateRules() const
 
 bool MythScheduleManager::ToggleShowNotRecording()
 {
-  m_showNotRecording ^= true;
-  return m_showNotRecording;
+  g_bShowNotRecording ^= true;
+  return g_bShowNotRecording;
+}
+
+bool MythScheduleManager::ShowNotRecording()
+{
+  return g_bShowNotRecording;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
