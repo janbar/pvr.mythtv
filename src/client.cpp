@@ -1236,7 +1236,7 @@ void DemuxFlush(void)
     g_client->DemuxFlush();
 }
 
-bool SeekTime(int time, bool backwards, double *startpts)
+bool SeekTime(double time, bool backwards, double *startpts)
 {
   if (g_client != NULL)
     return g_client->SeekTime(time, backwards, startpts);
