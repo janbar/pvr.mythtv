@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon
   id="pvr.mythtv"
-  version="4.9.0"
+  version="4.9.1"
   name="MythTV PVR Client"
   provider-name="Christian Fetzer, Jean-Luc Barrière">
   <requires>
     <c-pluff version="0.1"/>
-    <import addon="xbmc.pvr" version="5.2.0"/>
+    <import addon="xbmc.pvr" version="5.2.1"/>
     <import addon="xbmc.codec" version="1.0.1"/>
     <import addon="kodi.guilib" version="5.11.0"/>
   </requires>
