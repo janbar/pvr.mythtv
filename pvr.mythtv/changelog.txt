@@ -1,3 +1,6 @@
+v4.9.2
+- Updated to PVR addon API v5.2.1
+
 v4.9.0
 - Extra timer info
 
