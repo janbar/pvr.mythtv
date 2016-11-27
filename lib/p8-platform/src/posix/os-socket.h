@@ -135,7 +135,7 @@ namespace P8PLATFORM
       {
         long iTimeLeft = (long)readTimeout.TimeLeft();
         timeout.tv_sec  = iTimeLeft / (long int)1000.;
-        timeout.tv_usec = iTimeLeft % (long int)1000.;
+        timeout.tv_usec = (iTimeLeft % (long int)1000.) * (long int)1000.;
         tv = &timeout;
       }
 
