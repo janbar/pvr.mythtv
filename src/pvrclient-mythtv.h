@@ -127,7 +127,7 @@ public:
   void DemuxAbort(void);
   void DemuxFlush(void);
   DemuxPacket* DemuxRead(void);
-  bool SeekTime(int time, bool backwards, double *startpts);
+  bool SeekTime(double time, bool backwards, double *startpts);
 
   time_t GetPlayingTime();
   time_t GetBufferTimeStart();

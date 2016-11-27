@@ -48,7 +48,7 @@ public:
   void Flush();
   void Abort();
   DemuxPacket* Read();
-  bool SeekTime(int time, bool backwards, double* startpts);
+  bool SeekTime(double time, bool backwards, double* startpts);
 
   int GetPlayingTime();
 

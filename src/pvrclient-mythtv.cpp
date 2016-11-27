@@ -2201,7 +2201,7 @@ DemuxPacket* PVRClientMythTV::DemuxRead(void)
   return m_demux ? m_demux->Read() : NULL;
 }
 
-bool PVRClientMythTV::SeekTime(int time, bool backwards, double* startpts)
+bool PVRClientMythTV::SeekTime(double time, bool backwards, double* startpts)
 {
   return m_demux ? m_demux->SeekTime(time, backwards, startpts) : false;
 }

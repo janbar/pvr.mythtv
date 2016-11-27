@@ -278,13 +278,13 @@ DemuxPacket* Demux::Read()
   return PVR->AllocateDemuxPacket(0);
 }
 
-bool Demux::SeekTime(int time, bool backwards, double* startpts)
+bool Demux::SeekTime(double time, bool backwards, double* startpts)
 {
   // Current PTS must be valid to estimate offset
   if (m_PTS == PTS_UNSET)
     return false;
   // time is in MSEC not PTS_TIME_BASE. Rescale time to PTS (90Khz)
-  int64_t pts = (int64_t)time * PTS_TIME_BASE / 1000;
+  int64_t pts = (int64_t)(time * PTS_TIME_BASE / 1000);
   // Compute offset from current PTS
   int64_t offset = pts - m_PTS;
   // Limit offset to deal with invalid request or PTS discontinuity
@@ -298,7 +298,7 @@ bool Demux::SeekTime(int time, bool backwards, double* startpts)
   int64_t desired = m_curTime + offset;
 
   if (g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG, LOGTAG "%s: bw:%d tm:%d tm_pts:%" PRId64 " c_pts:%" PRIu64 " offset:%+6.3f c_tm:%+6.3f n_tm:%+6.3f", __FUNCTION__,
+    XBMC->Log(LOG_DEBUG, LOGTAG "%s: bw:%d tm:%+6.3f tm_pts:%" PRId64 " c_pts:%" PRIu64 " offset:%+6.3f c_tm:%+6.3f n_tm:%+6.3f", __FUNCTION__,
             backwards, time, pts, m_PTS, (double)offset / PTS_TIME_BASE, (double)m_curTime / PTS_TIME_BASE, (double)desired / PTS_TIME_BASE);
 
   CLockObject lock(m_mutex);
