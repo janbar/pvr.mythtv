@@ -35,7 +35,6 @@ namespace Myth
   void DBGLevel(int l);
   void DBGAll(void);
   void DBGNone(void);
-  void DBG(int level, const char* fmt, ...);
   void SetDBGMsgCallback(void (*msgcb)(int level, char*));
 }
 

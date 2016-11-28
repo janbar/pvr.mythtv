@@ -1,6 +1,5 @@
-cmake_minimum_required (VERSION 2.6 FATAL_ERROR)
-cmake_policy (VERSION 2.6)
-set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
+cmake_minimum_required (VERSION 3.0.2 FATAL_ERROR)
+cmake_policy (VERSION 3.0)
 
 project (cppmyth)
 
@@ -9,7 +8,10 @@ set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 enable_language(CXX)
 enable_language(C)
 
+#include (GNUInstallDirs)
+
 # Options
+OPTION (BUILD_SHARED_LIBS "Build shared libraries." OFF)
 if (MSVC)
   # This option must match the settings used in your program, in particular if you
   # are linking statically
@@ -22,7 +24,7 @@ endif ()
 
 ###############################################################################
 # set lib version here
-set (CPPMYTH_LIB_VERSION "2.7.0")
+set (CPPMYTH_LIB_VERSION "2.8.1")
 set (CPPMYTH_LIB_SOVERSION "2")
 
 ###############################################################################
@@ -45,6 +47,7 @@ if (NOT WIN32 AND (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX))
   if (NOT CYGWIN)
     add_definitions ("-fPIC")
   endif ()
+  add_definitions ("-Wall")
   include (CheckLibraryExists)
   include (CheckAtomic)
   if (HAS_BUILTIN_SYNC_ADD_AND_FETCH)
@@ -82,6 +85,22 @@ else ()
     set (HAVE_GMTIME_R 0)
 endif ()
 
+find_package (ZLIB REQUIRED)
+if (ZLIB_FOUND)
+    include_directories (${ZLIB_INCLUDE_DIRS})
+    set (HAVE_ZLIB 1)
+else ()
+    set (HAVE_ZLIB 0)
+endif ()
+
+#find_package(OpenSSL)
+#if (OPENSSL_FOUND)
+#    include_directories (${OPENSSL_INCLUDE_DIR})
+#    set (HAVE_OPENSSL 1)
+#else ()
+    set (HAVE_OPENSSL 0)
+#endif ()
+
 # Check what the inline keyword is.
 check_function_keywords ("inline")
 check_function_keywords ("__inline")
@@ -116,21 +135,18 @@ else ()
 endif ()
 
 # configure the public config file
-configure_file (
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/cppmyth_config.h.in
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/src/cppmyth_config.h.in
   ${CMAKE_CURRENT_SOURCE_DIR}/src/cppmyth_config.h)
 
-include_directories (
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/.)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/src/.)
 
 ###############################################################################
 # add sources
 file (GLOB SRC_FILES
-  src/private/mythdto/*.cpp
-  src/private/*.c
-  src/private/*.cpp
-  src/proto/*.cpp
-  src/*.cpp)
+  src/private/mythdto/*.cpp src/private/mythdto/*.h
+  src/private/*.c src/private/*.cpp src/private/*.h
+  src/proto/*.cpp src/proto/*.h
+  src/*.cpp src/*.h)
 
 file (GLOB OS_SRC_FILES
   src/private/os/threads/threadpool.cpp)
@@ -146,6 +162,12 @@ set (CPPMYTH_SOURCES
 ###############################################################################
 # add targets
 set (cppmyth_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+if (ZLIB_FOUND)
+  list (APPEND cppmyth_LIBRARIES ${ZLIB_LIBRARIES})
+endif ()
+#if (OPENSSL_FOUND)
+#  list (APPEND cppmyth_LIBRARIES ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
+#endif ()
 if (WIN32)
   list (APPEND cppmyth_LIBRARIES ws2_32)
 else ()

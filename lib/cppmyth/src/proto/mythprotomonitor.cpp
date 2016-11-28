@@ -21,8 +21,8 @@
 
 #include "mythprotomonitor.h"
 #include "mythprotorecorder.h"
-#include "../mythdebug.h"
-#include "../private/mythsocket.h"
+#include "../private/debug.h"
+#include "../private/socket.h"
 #include "../private/os/threads/mutex.h"
 #include "../private/builtin.h"
 
@@ -129,11 +129,11 @@ ProtoRecorderPtr ProtoMonitor::GetRecorderFromNum75(int rnum)
   if (!ReadField(field) || string_to_uint16(field.c_str(), &port))
     goto out;
   FlushMessage();
-  DBG(MYTH_DBG_DEBUG, "%s: open recorder %d (%s:%u)\n", __FUNCTION__, (int)rnum, hostname.c_str(), (unsigned)port);
+  DBG(DBG_DEBUG, "%s: open recorder %d (%s:%u)\n", __FUNCTION__, (int)rnum, hostname.c_str(), (unsigned)port);
   recorder.reset(new ProtoRecorder(rnum, hostname, port));
   return recorder;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return recorder;
 }
@@ -157,7 +157,7 @@ bool ProtoMonitor::QueryFreeSpaceSummary75(int64_t *total, int64_t *used)
   FlushMessage();
   return true;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -180,7 +180,7 @@ std::string ProtoMonitor::GetSetting75(const std::string& hostname, const std::s
   FlushMessage();
   return field;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   field.clear();
   return field;
@@ -204,7 +204,7 @@ bool ProtoMonitor::SetSetting75(const std::string& hostname, const std::string& 
   FlushMessage();
   return true;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -229,7 +229,7 @@ bool ProtoMonitor::QueryGenpixmap75(const Program& program)
   FlushMessage();
   return true;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -261,10 +261,10 @@ bool ProtoMonitor::DeleteRecording75(const Program& program, bool force, bool fo
 
   if (!ReadField(field))
     goto out;
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
+  DBG(DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
   return true;
   out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -286,10 +286,10 @@ bool ProtoMonitor::UndeleteRecording75(const Program& program)
 
   if (!ReadField(field) || field != "0")
     goto out;
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
+  DBG(DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
   return true;
   out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -312,10 +312,10 @@ bool ProtoMonitor::StopRecording75(const Program& program)
 
   if (!ReadField(field) || string_to_int32(field.c_str(), &num) || num < 0)
     goto out;
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
+  DBG(DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
   return true;
   out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -339,10 +339,10 @@ bool ProtoMonitor::CancelNextRecording75(int rnum, bool cancel)
 
   if (!ReadField(field) || !IsMessageOK(field))
     goto out;
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded\n", __FUNCTION__);
+  DBG(DBG_DEBUG, "%s: succeeded\n", __FUNCTION__);
   return true;
   out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -376,10 +376,10 @@ StorageGroupFilePtr ProtoMonitor::QuerySGFile75(const std::string& hostname, con
   sgfile->hostName = hostname;
   sgfile->storageGroup = sgname;
 
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, sgfile->fileName.c_str());
+  DBG(DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, sgfile->fileName.c_str());
   return sgfile;
   out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   sgfile.reset();
   return sgfile;
@@ -420,10 +420,10 @@ MarkListPtr ProtoMonitor::GetCutList75(const Program& program)
     }
     while (--nb > 0);
   }
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
+  DBG(DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
   return list;
   out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return list;
 }
@@ -463,10 +463,10 @@ MarkListPtr ProtoMonitor::GetCommBreakList75(const Program& program)
     }
     while (--nb > 0);
   }
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
+  DBG(DBG_DEBUG, "%s: succeeded (%s)\n", __FUNCTION__, program.fileName.c_str());
   return list;
   out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return list;
 }
@@ -485,10 +485,10 @@ bool ProtoMonitor::BlockShutdown75()
 
   if (!ReadField(field) || !IsMessageOK(field))
     goto out;
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded\n", __FUNCTION__);
+  DBG(DBG_DEBUG, "%s: succeeded\n", __FUNCTION__);
   return true;
   out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -507,10 +507,10 @@ bool ProtoMonitor::AllowShutdown75()
 
   if (!ReadField(field) || !IsMessageOK(field))
     goto out;
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded\n", __FUNCTION__);
+  DBG(DBG_DEBUG, "%s: succeeded\n", __FUNCTION__);
   return true;
   out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -533,7 +533,7 @@ std::vector<int> ProtoMonitor::GetFreeCardIdList75()
   {
     if (!ReadField(field) || string_to_int32(field.c_str(), &rnum))
     {
-      DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+      DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
       FlushMessage();
       ids.clear();
       return ids;
@@ -541,7 +541,7 @@ std::vector<int> ProtoMonitor::GetFreeCardIdList75()
     if (rnum > 0)
       ids.push_back(rnum);
   }
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded (%u)\n", __FUNCTION__, (unsigned)ids.size());
+  DBG(DBG_DEBUG, "%s: succeeded (%u)\n", __FUNCTION__, (unsigned)ids.size());
   return ids;
 }
 

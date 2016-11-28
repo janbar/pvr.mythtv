@@ -1,39 +1,41 @@
 /*
- *      Copyright (C) 2014 Jean-Luc Barriere
+ *      Copyright (C) 2014-2015 Jean-Luc Barriere
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
+ *  This library is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation; either version 3, or (at your option)
  *  any later version.
  *
- *  This Program is distributed in the hope that it will be useful,
+ *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
+ *  GNU Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; see the file COPYING.  If not, write to
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this library; see the file COPYING.  If not, write to
  *  the Free Software Foundation, 51 Franklin Street, Fifth Floor, Boston,
  *  MA 02110-1301 USA
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
 
-#ifndef MYTHWSRESPONSE_H
-#define	MYTHWSRESPONSE_H
+#ifndef WSRESPONSE_H
+#define	WSRESPONSE_H
 
-#include "mythwscontent.h"
-#include "mythwsrequest.h"
+#include <cppmyth_config.h>
+#include "wscontent.h"
+#include "wsrequest.h"
 
 #include <cstddef>  // for size_t
 #include <string>
 #include <list>
 
-namespace Myth
+namespace NSROOT
 {
 
   class NetSocket;
   class TcpSocket;
+  class Decompressor;
 
   class WSResponse
   {
@@ -60,14 +62,16 @@ namespace Myth
     std::string m_serverInfo;
     std::string m_etag;
     std::string m_location;
-    std::string m_transferEncoding;
     CT_t m_contentType;
+    CE_t m_contentEncoding;
     bool m_contentChunked;
     size_t m_contentLength;
     size_t m_consumed;
-    char* m_chunkBuffer;
-    char* m_chunkPtr;
-    char* m_chunkEnd;
+    char* m_chunkBuffer;      ///< The chunk data buffer
+    char* m_chunkPtr;         ///< The next position to read data from the chunk
+    char* m_chunkEOR;         ///< The end of received data in the chunk
+    char* m_chunkEnd;         ///< The end of the chunk buffer
+    Decompressor *m_decoder;
 
     typedef std::list<std::pair<std::string, std::string> > HeaderList;
     HeaderList m_headers;
@@ -78,8 +82,11 @@ namespace Myth
 
     bool SendRequest(const WSRequest& request);
     bool GetResponse();
+    size_t ReadChunk(void *buf, size_t buflen);
+    static int SocketStreamReader(void *hdl, void *buf, int sz);
+    static int ChunkStreamReader(void *hdl, void *buf, int sz);
   };
 
 }
 
-#endif	/* MYTHWSRESPONSE_H */
+#endif	/* WSRESPONSE_H */

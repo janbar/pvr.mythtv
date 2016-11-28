@@ -1,26 +1,26 @@
 /*
- *      Copyright (C) 2014 Jean-Luc Barriere
+ *      Copyright (C) 2014-2015 Jean-Luc Barriere
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
+ *  This library is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation; either version 3, or (at your option)
  *  any later version.
  *
- *  This Program is distributed in the hope that it will be useful,
+ *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
+ *  GNU Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; see the file COPYING.  If not, write to
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this library; see the file COPYING.  If not, write to
  *  the Free Software Foundation, 51 Franklin Street, Fifth Floor, Boston,
  *  MA 02110-1301 USA
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
 
-#include "mythsocket.h"
-#include "../mythdebug.h"
+#include "socket.h"
+#include "debug.h"
 
 #include <errno.h>
 #include <cstdio>
@@ -50,7 +50,7 @@ typedef IN_ADDR in_addr_t;
 
 #include <signal.h>
 
-using namespace Myth;
+using namespace NSROOT;
 
 static int __addressFamily(SOCKET_AF_t af)
 {
@@ -65,7 +65,7 @@ static int __addressFamily(SOCKET_AF_t af)
   }
 }
 
-namespace Myth
+namespace NSROOT
 {
 
   struct SocketAddress
@@ -110,7 +110,7 @@ TcpSocket::TcpSocket()
 
 TcpSocket::~TcpSocket()
 {
-  if (IsConnected())
+  if (IsValid())
     Disconnect();
   if (m_buffer)
     delete[] m_buffer;
@@ -128,7 +128,7 @@ static int __connectAddr(struct addrinfo *addr, net_socket_t *s, int rcvbuf)
   if ((my_hostname[0] == '\0') && (gethostname(my_hostname, sizeof (my_hostname)) < 0))
   {
     err = LASTERROR;
-    DBG(MYTH_DBG_ERROR, "%s: gethostname failed (%d)\n", __FUNCTION__, err);
+    DBG(DBG_ERROR, "%s: gethostname failed (%d)\n", __FUNCTION__, err);
     return err;
   }
 
@@ -136,16 +136,16 @@ static int __connectAddr(struct addrinfo *addr, net_socket_t *s, int rcvbuf)
   if (*s == INVALID_SOCKET_VALUE)
   {
     err = LASTERROR;
-    DBG(MYTH_DBG_ERROR, "%s: invalid socket (%d)\n", __FUNCTION__, err);
+    DBG(DBG_ERROR, "%s: invalid socket (%d)\n", __FUNCTION__, err);
     return err;
   }
 
   opt_rcvbuf = (rcvbuf < SOCKET_RCVBUF_MINSIZE ? SOCKET_RCVBUF_MINSIZE : rcvbuf);
   size = sizeof (opt_rcvbuf);
   if (setsockopt(*s, SOL_SOCKET, SO_RCVBUF, (char *)&opt_rcvbuf, size))
-    DBG(MYTH_DBG_WARN, "%s: could not set rcvbuf from socket (%d)\n", __FUNCTION__, LASTERROR);
+    DBG(DBG_WARN, "%s: could not set rcvbuf from socket (%d)\n", __FUNCTION__, LASTERROR);
   if (getsockopt(*s, SOL_SOCKET, SO_RCVBUF, (char *)&opt_rcvbuf, &size))
-    DBG(MYTH_DBG_WARN, "%s: could not get rcvbuf from socket (%d)\n", __FUNCTION__, LASTERROR);
+    DBG(DBG_WARN, "%s: could not get rcvbuf from socket (%d)\n", __FUNCTION__, LASTERROR);
 
 #ifndef __WINDOWS__
   old_sighandler = signal(SIGALRM, __sigHandler);
@@ -155,7 +155,7 @@ static int __connectAddr(struct addrinfo *addr, net_socket_t *s, int rcvbuf)
   if (connect(*s, addr->ai_addr, addr->ai_addrlen) < 0)
   {
     err = LASTERROR;
-    DBG(MYTH_DBG_ERROR, "%s: failed to connect (%d)\n", __FUNCTION__, err);
+    DBG(DBG_ERROR, "%s: failed to connect (%d)\n", __FUNCTION__, err);
     closesocket(*s);
 #ifndef __WINDOWS__
     signal(SIGALRM, old_sighandler);
@@ -168,7 +168,7 @@ static int __connectAddr(struct addrinfo *addr, net_socket_t *s, int rcvbuf)
   signal(SIGALRM, old_sighandler);
   alarm(old_alarm);
 #endif
-  DBG(MYTH_DBG_DEBUG, "%s: connected to socket(%p)\n", __FUNCTION__, s);
+  DBG(DBG_PROTO, "%s: connected to socket(%p)\n", __FUNCTION__, s);
   return err;
 }
 
@@ -179,7 +179,7 @@ bool TcpSocket::Connect(const char *server, unsigned port, int rcvbuf)
   char service[33];
   int err;
 
-  if (IsConnected())
+  if (IsValid())
     Disconnect();
 
   if (rcvbuf > SOCKET_RCVBUF_MINSIZE)
@@ -197,19 +197,19 @@ bool TcpSocket::Connect(const char *server, unsigned port, int rcvbuf)
     switch (err)
     {
       case EAI_NONAME:
-        DBG(MYTH_DBG_ERROR, "%s: the specified host is unknown\n", __FUNCTION__);
+        DBG(DBG_ERROR, "%s: the specified host is unknown\n", __FUNCTION__);
         break;
       case EAI_FAIL:
-        DBG(MYTH_DBG_ERROR, "%s: a non-recoverable failure in name resolution occurred\n", __FUNCTION__);
+        DBG(DBG_ERROR, "%s: a non-recoverable failure in name resolution occurred\n", __FUNCTION__);
         break;
       case EAI_MEMORY:
-        DBG(MYTH_DBG_ERROR, "%s: a memory allocation failure occurred\n", __FUNCTION__);
+        DBG(DBG_ERROR, "%s: a memory allocation failure occurred\n", __FUNCTION__);
         break;
       case EAI_AGAIN:
-        DBG(MYTH_DBG_ERROR, "%s: a temporary error occurred on an authoritative name server\n", __FUNCTION__);
+        DBG(DBG_ERROR, "%s: a temporary error occurred on an authoritative name server\n", __FUNCTION__);
         break;
       default:
-        DBG(MYTH_DBG_ERROR, "%s: unknown error %d\n", __FUNCTION__, err);
+        DBG(DBG_ERROR, "%s: unknown error %d\n", __FUNCTION__, err);
         break;
     }
     m_errno = err;
@@ -227,7 +227,7 @@ bool TcpSocket::Connect(const char *server, unsigned port, int rcvbuf)
   return (err ? false : true);
 }
 
-bool TcpSocket::SendMessage(const char *msg, size_t size)
+bool TcpSocket::SendData(const char *msg, size_t size)
 {
   if (IsValid())
   {
@@ -244,7 +244,7 @@ bool TcpSocket::SendMessage(const char *msg, size_t size)
   return false;
 }
 
-size_t TcpSocket::ReadResponse(void *buf, size_t n)
+size_t TcpSocket::ReceiveData(void *buf, size_t n)
 {
   if (IsValid())
   {
@@ -271,7 +271,7 @@ size_t TcpSocket::ReadResponse(void *buf, size_t n)
     else if ((m_buffer = new char[m_buflen]) == NULL)
     {
       m_errno = ENOMEM;
-      DBG(MYTH_DBG_ERROR, "%s: cannot allocate %u bytes for buffer\n", __FUNCTION__, m_buflen);
+      DBG(DBG_ERROR, "%s: cannot allocate %u bytes for buffer\n", __FUNCTION__, m_buflen);
       return 0;
     }
     // Reset buffer
@@ -319,7 +319,7 @@ size_t TcpSocket::ReadResponse(void *buf, size_t n)
       }
       if (r == 0)
       {
-        DBG(MYTH_DBG_WARN, "%s: socket(%p) timed out (%d)\n", __FUNCTION__, &m_socket, hangcount);
+        DBG(DBG_DEBUG, "%s: socket(%p) timed out (%d)\n", __FUNCTION__, &m_socket, hangcount);
         m_errno = ETIMEDOUT;
         if (++hangcount >= m_attempt)
           break;
@@ -363,6 +363,11 @@ void TcpSocket::Disconnect()
     m_socket = INVALID_SOCKET_VALUE;
     m_rcvlen = 0;
   }
+}
+
+bool TcpSocket::IsValid() const
+{
+  return (m_socket == INVALID_SOCKET_VALUE ? false : true);
 }
 
 int TcpSocket::Listen(timeval *timeout)
@@ -458,7 +463,7 @@ bool TcpServerSocket::Create(SOCKET_AF_t af)
   if (!IsValid())
   {
     m_errno = LASTERROR;
-    DBG(MYTH_DBG_ERROR, "%s: invalid socket (%d)\n", __FUNCTION__, m_errno);
+    DBG(DBG_ERROR, "%s: invalid socket (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
 
@@ -467,10 +472,15 @@ bool TcpServerSocket::Create(SOCKET_AF_t af)
   if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt_reuseaddr, sizeof(opt_reuseaddr)))
   {
     m_errno = LASTERROR;
-    DBG(MYTH_DBG_ERROR, "%s: could not set reuseaddr from socket (%d)\n", __FUNCTION__, m_errno);
+    DBG(DBG_ERROR, "%s: could not set reuseaddr from socket (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
   return true;
+}
+
+bool TcpServerSocket::IsValid() const
+{
+  return (m_socket == INVALID_SOCKET_VALUE ? false : true);
 }
 
 bool TcpServerSocket::Bind(unsigned port)
@@ -505,7 +515,7 @@ bool TcpServerSocket::Bind(unsigned port)
   if (r)
   {
     m_errno = LASTERROR;
-    DBG(MYTH_DBG_ERROR, "%s: could not bind to address (%d)\n", __FUNCTION__, m_errno);
+    DBG(DBG_ERROR, "%s: could not bind to address (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
   return true;
@@ -519,7 +529,7 @@ bool TcpServerSocket::ListenConnection()
   if (listen(m_socket, m_maxconnections))
   {
     m_errno = LASTERROR;
-    DBG(MYTH_DBG_ERROR, "%s: listen failed (%d)\n", __FUNCTION__, m_errno);
+    DBG(DBG_ERROR, "%s: listen failed (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
   return true;
@@ -532,7 +542,7 @@ bool TcpServerSocket::AcceptConnection(TcpSocket& socket)
   if (!socket.IsValid())
   {
     m_errno = LASTERROR;
-    DBG(MYTH_DBG_ERROR, "%s: accept failed (%d)\n", __FUNCTION__, m_errno);
+    DBG(DBG_ERROR, "%s: accept failed (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
   socket.SetReadAttempt(0);
@@ -615,7 +625,7 @@ bool UdpSocket::SetAddress(SOCKET_AF_t af, const char* target, unsigned port)
     if ((m_socket = socket(m_addr->sa.sa_family, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET_VALUE)
     {
       m_errno = LASTERROR;
-      DBG(MYTH_DBG_ERROR, "%s: create socket failed (%d)\n", __FUNCTION__, m_errno);
+      DBG(DBG_ERROR, "%s: create socket failed (%d)\n", __FUNCTION__, m_errno);
       return false;
     }
   }
@@ -624,7 +634,7 @@ bool UdpSocket::SetAddress(SOCKET_AF_t af, const char* target, unsigned port)
   if (inet_pton(m_addr->sa.sa_family, target, &_addr) == 0)
   {
     m_errno = LASTERROR;
-    DBG(MYTH_DBG_ERROR, "%s: invalid address (%d)\n", __FUNCTION__, m_errno);
+    DBG(DBG_ERROR, "%s: invalid address (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
 
@@ -648,7 +658,7 @@ bool UdpSocket::SetAddress(SOCKET_AF_t af, const char* target, unsigned port)
       break;
     }
     default:
-      DBG(MYTH_DBG_ERROR, "%s: address familly unknown (%d)\n", __FUNCTION__, m_addr->sa.sa_family);
+      DBG(DBG_ERROR, "%s: address familly unknown (%d)\n", __FUNCTION__, m_addr->sa.sa_family);
       return false;
   }
   m_errno = 0;
@@ -669,7 +679,7 @@ bool UdpSocket::SetMulticastTTL(int multicastTTL)
       if (setsockopt(m_socket, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&_ttl, sizeof(_ttl)))
       {
         m_errno = LASTERROR;
-        DBG(MYTH_DBG_ERROR, "%s: could not set IP_MULTICAST_TTL from socket (%d)\n", __FUNCTION__, m_errno);
+        DBG(DBG_ERROR, "%s: could not set IP_MULTICAST_TTL from socket (%d)\n", __FUNCTION__, m_errno);
         return false;
       }
       break;
@@ -680,14 +690,14 @@ bool UdpSocket::SetMulticastTTL(int multicastTTL)
       if (setsockopt(m_socket, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (char*)&multicastTTL, sizeof(multicastTTL)))
       {
         m_errno = LASTERROR;
-        DBG(MYTH_DBG_ERROR, "%s: could not set IPV6_MULTICAST_HOPS from socket (%d)\n", __FUNCTION__, m_errno);
+        DBG(DBG_ERROR, "%s: could not set IPV6_MULTICAST_HOPS from socket (%d)\n", __FUNCTION__, m_errno);
         return false;
       }
       break;
     }
     default:
       m_errno = EINVAL;
-      DBG(MYTH_DBG_ERROR, "%s: address familly unknown (%d)\n", __FUNCTION__, m_addr->sa.sa_family);
+      DBG(DBG_ERROR, "%s: address familly unknown (%d)\n", __FUNCTION__, m_addr->sa.sa_family);
       return false;
   }
   m_errno = 0;
@@ -737,7 +747,7 @@ size_t UdpSocket::ReceiveData(void* buf, size_t n)
     else if ((m_buffer = new char[m_buflen]) == NULL)
     {
       m_errno = ENOMEM;
-      DBG(MYTH_DBG_ERROR, "%s: cannot allocate %u bytes for buffer\n", __FUNCTION__, m_buflen);
+      DBG(DBG_ERROR, "%s: cannot allocate %u bytes for buffer\n", __FUNCTION__, m_buflen);
       return 0;
     }
     // Reset buffer
@@ -768,23 +778,28 @@ size_t UdpSocket::ReceiveData(void* buf, size_t n)
         //n -= s;
         rcvlen += s;
         if (m_rcvlen == m_buflen)
-          DBG(MYTH_DBG_WARN, "%s: datagram have been truncated (%d)\n", __FUNCTION__, r);
+          DBG(DBG_WARN, "%s: datagram have been truncated (%d)\n", __FUNCTION__, r);
       }
     }
     if (r == 0)
     {
       m_errno = ETIMEDOUT;
-      DBG(MYTH_DBG_DEBUG, "%s: socket(%p) timed out\n", __FUNCTION__, &m_socket);
+      DBG(DBG_DEBUG, "%s: socket(%p) timed out\n", __FUNCTION__, &m_socket);
     }
     if (r < 0)
     {
       m_errno = LASTERROR;
-      DBG(MYTH_DBG_ERROR, "%s: socket(%p) read error (%d)\n", __FUNCTION__, &m_socket, m_errno);
+      DBG(DBG_ERROR, "%s: socket(%p) read error (%d)\n", __FUNCTION__, &m_socket, m_errno);
     }
     return rcvlen;
   }
   m_errno = ENOTSOCK;
   return 0;
+}
+
+bool UdpSocket::IsValid() const
+{
+  return (m_socket == INVALID_SOCKET_VALUE ? false : true);
 }
 
 std::string UdpSocket::GetRemoteIP() const

@@ -21,7 +21,7 @@
 
 #include "mythfileplayback.h"
 #include "mythlivetvplayback.h"
-#include "mythdebug.h"
+#include "private/debug.h"
 #include "private/os/threads/mutex.h"
 #include "private/builtin.h"
 

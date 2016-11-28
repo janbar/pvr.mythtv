@@ -19,21 +19,22 @@
  *
  */
 
-#ifndef MYTHJSONPARSER_H
-#define	MYTHJSONPARSER_H
+#ifndef JSONPARSER_H
+#define	JSONPARSER_H
 
-#include "mythwsresponse.h"
+#include <cppmyth_config.h>
+#include "wsresponse.h"
 #include "sajson.h"
-#include "../private/os/os.h"
-#include "../private/cppdef.h"
+#include "os/os.h"
+#include "cppdef.h"
 
 #include <string>
 
 /**
- * @namespace Myth::JSON
+ * @namespace NSROOT::JSON
  * @brief This namespace contains all operations to handle JSON content
  */
-namespace Myth
+namespace NSROOT
 {
 namespace JSON
 {
@@ -72,7 +73,7 @@ namespace JSON
   class Document
   {
   public:
-    Document(Myth::WSResponse& resp);
+    Document(NSROOT::WSResponse& resp);
     ~Document()
     {
       SAFE_DELETE(m_document);
@@ -92,4 +93,4 @@ namespace JSON
 }
 }
 
-#endif	/* MYTHJSONPARSER_H */
+#endif	/* JSONPARSER_H */

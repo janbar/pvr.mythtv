@@ -1,0 +1,1 @@
+zlib http://mirrors.xbmc.org/build-deps/sources/zlib-1.2.8.tar.gz

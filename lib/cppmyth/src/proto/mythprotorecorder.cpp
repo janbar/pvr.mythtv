@@ -20,7 +20,7 @@
  */
 
 #include "mythprotorecorder.h"
-#include "../mythdebug.h"
+#include "../private/debug.h"
 #include "../private/os/threads/mutex.h"
 #include "../private/builtin.h"
 
@@ -65,24 +65,24 @@ bool ProtoRecorder::IsTunable(const Channel& channel)
     const CardInput *input = (*it).get();
     if (input->sourceId != channel.sourceId)
     {
-      DBG(MYTH_DBG_DEBUG, "%s: skip input, source id differs (channel: %" PRIu32 ", input: %" PRIu32 ")\n",
+      DBG(DBG_DEBUG, "%s: skip input, source id differs (channel: %" PRIu32 ", input: %" PRIu32 ")\n",
               __FUNCTION__, channel.sourceId, input->sourceId);
       continue;
     }
     if (input->mplexId && input->mplexId != channel.mplexId)
     {
-      DBG(MYTH_DBG_DEBUG, "%s: skip input, multiplex id differs (channel: %" PRIu32 ", input: %" PRIu32 ")\n",
+      DBG(DBG_DEBUG, "%s: skip input, multiplex id differs (channel: %" PRIu32 ", input: %" PRIu32 ")\n",
               __FUNCTION__, channel.mplexId, input->mplexId);
       continue;
     }
-    DBG(MYTH_DBG_DEBUG,"%s: using recorder, input is tunable: source id: %" PRIu32 ", multiplex id: %" PRIu32 ", channel: %" PRIu32 ", input: %" PRIu32 ")\n",
+    DBG(DBG_DEBUG,"%s: using recorder, input is tunable: source id: %" PRIu32 ", multiplex id: %" PRIu32 ", channel: %" PRIu32 ", input: %" PRIu32 ")\n",
             __FUNCTION__, channel.sourceId, channel.mplexId, channel.chanId, input->inputId);
     ok = true;
     break;
   }
   if (!ok)
   {
-    DBG(MYTH_DBG_INFO,"%s: recorder is not tunable\n", __FUNCTION__);
+    DBG(DBG_INFO,"%s: recorder is not tunable\n", __FUNCTION__);
   }
   return ok;
 }
@@ -91,7 +91,7 @@ void ProtoRecorder::DoneRecordingCallback()
 {
   OS::CLockGuard lock(*m_mutex);
   m_liveRecording = false;
-  DBG(MYTH_DBG_DEBUG, "%s: completed\n", __FUNCTION__);
+  DBG(DBG_DEBUG, "%s: completed\n", __FUNCTION__);
 }
 
 bool ProtoRecorder::SpawnLiveTV75(const std::string& chainid, const std::string& channum)
@@ -112,7 +112,7 @@ bool ProtoRecorder::SpawnLiveTV75(const std::string& chainid, const std::string&
   cmd.append(PROTO_STR_SEPARATOR).append("0").append(PROTO_STR_SEPARATOR);
   cmd.append(channum);
 
-  DBG(MYTH_DBG_DEBUG, "%s: starting ...\n", __FUNCTION__);
+  DBG(DBG_DEBUG, "%s: starting ...\n", __FUNCTION__);
   m_playing = true;
   if (!SendCommand(cmd.c_str()))
   {
@@ -123,7 +123,7 @@ bool ProtoRecorder::SpawnLiveTV75(const std::string& chainid, const std::string&
     m_playing = false;
     FlushMessage();
   }
-  DBG(MYTH_DBG_DEBUG, "%s: %s\n", __FUNCTION__, (m_playing ? "succeeded" : "failed"));
+  DBG(DBG_DEBUG, "%s: %s\n", __FUNCTION__, (m_playing ? "succeeded" : "failed"));
   return m_playing;
 }
 
@@ -172,7 +172,7 @@ bool ProtoRecorder::CheckChannel75(const std::string& channum)
     return false;
   if (!ReadField(field) || field != "1")
   {
-    DBG(MYTH_DBG_DEBUG, "%s: %s\n", __FUNCTION__, field.c_str());
+    DBG(DBG_DEBUG, "%s: %s\n", __FUNCTION__, field.c_str());
       FlushMessage();
       return false;
   }
@@ -201,7 +201,7 @@ ProgramPtr ProtoRecorder::GetCurrentRecording75()
   FlushMessage();
   return program;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return program;
 }
@@ -583,10 +583,10 @@ bool ProtoRecorder::SetLiveRecording75(bool keep)
 
   if (!ReadField(field) || !IsMessageOK(field))
     goto out;
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded (%d)\n", __FUNCTION__, keep);
+  DBG(DBG_DEBUG, "%s: succeeded (%d)\n", __FUNCTION__, keep);
   return true;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }
@@ -610,10 +610,10 @@ bool ProtoRecorder::FinishRecording75()
 
   if (!ReadField(field) || !IsMessageOK(field))
     goto out;
-  DBG(MYTH_DBG_DEBUG, "%s: succeeded\n", __FUNCTION__);
+  DBG(DBG_DEBUG, "%s: succeeded\n", __FUNCTION__);
   return true;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed\n", __FUNCTION__);
+  DBG(DBG_ERROR, "%s: failed\n", __FUNCTION__);
   FlushMessage();
   return false;
 }

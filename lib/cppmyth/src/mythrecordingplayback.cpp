@@ -20,7 +20,7 @@
  */
 
 #include "mythrecordingplayback.h"
-#include "mythdebug.h"
+#include "private/debug.h"
 #include "private/os/threads/mutex.h"
 #include "private/builtin.h"
 
@@ -219,7 +219,7 @@ void RecordingPlayback::HandleBackendMessage(EventMessagePtr msg)
         m_readAhead = true;
         transfer->SetSize(newsize);
         recording->fileSize = newsize;
-        DBG(MYTH_DBG_DEBUG, "%s: (%d) %s %" PRIi64 "\n", __FUNCTION__,
+        DBG(DBG_DEBUG, "%s: (%d) %s %" PRIi64 "\n", __FUNCTION__,
                 msg->event, recording->fileName.c_str(), newsize);
       }
       break;

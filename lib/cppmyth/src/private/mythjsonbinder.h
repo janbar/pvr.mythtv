@@ -23,7 +23,7 @@
 #define	MYTHJSONBINDER_H
 
 #include "mythdto/mythdto.h"
-#include "mythjsonparser.h"
+#include "jsonparser.h"
 
 namespace Myth
 {

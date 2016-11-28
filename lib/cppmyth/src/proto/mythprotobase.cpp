@@ -20,8 +20,8 @@
  */
 
 #include "mythprotobase.h"
-#include "../mythdebug.h"
-#include "../private/mythsocket.h"
+#include "../private/debug.h"
+#include "../private/socket.h"
 #include "../private/os/threads/mutex.h"
 #include "../private/cppdef.h"
 #include "../private/builtin.h"
@@ -82,7 +82,7 @@ ProtoBase::~ProtoBase()
 
 void ProtoBase::HangException()
 {
-  DBG(MYTH_DBG_ERROR, "%s: protocol connection hang with error %d\n", __FUNCTION__, m_socket->GetErrNo());
+  DBG(DBG_ERROR, "%s: protocol connection hang with error %d\n", __FUNCTION__, m_socket->GetErrNo());
   m_tainted = m_hang = true;
   ProtoBase::Close();
   // Note: Opening connection successfully will reset m_hang
@@ -94,7 +94,7 @@ bool ProtoBase::SendCommand(const char *cmd, bool feedback)
 
   if (m_msgConsumed != m_msgLength)
   {
-    DBG(MYTH_DBG_ERROR, "%s: did not consume everything\n", __FUNCTION__);
+    DBG(DBG_ERROR, "%s: did not consume everything\n", __FUNCTION__);
     FlushMessage();
   }
 
@@ -105,18 +105,18 @@ bool ProtoBase::SendCommand(const char *cmd, bool feedback)
     msg.reserve(l + 8);
     sprintf(buf, "%-8u", (unsigned)l);
     msg.append(buf).append(cmd);
-    DBG(MYTH_DBG_PROTO, "%s: %s\n", __FUNCTION__, cmd);
-    if (m_socket->SendMessage(msg.c_str(), msg.size()))
+    DBG(DBG_PROTO, "%s: %s\n", __FUNCTION__, cmd);
+    if (m_socket->SendData(msg.c_str(), msg.size()))
     {
       if (feedback)
         return RcvMessageLength();
       return true;
     }
-    DBG(MYTH_DBG_ERROR, "%s: failed (%d)\n", __FUNCTION__, m_socket->GetErrNo());
+    DBG(DBG_ERROR, "%s: failed (%d)\n", __FUNCTION__, m_socket->GetErrNo());
     HangException();
     return false;
   }
-  DBG(MYTH_DBG_ERROR, "%s: message size out of bound (%d)\n", __FUNCTION__, (int)l);
+  DBG(DBG_ERROR, "%s: message size out of bound (%d)\n", __FUNCTION__, (int)l);
   return false;
 }
 
@@ -145,7 +145,7 @@ bool ProtoBase::ReadField(std::string& field)
   {
     if (l > c)
     {
-      if (m_socket->ReadResponse(&buf[p], 1) < 1)
+      if (m_socket->ReceiveData(&buf[p], 1) < 1)
       {
         HangException();
         return false;
@@ -207,7 +207,7 @@ size_t ProtoBase::FlushMessage()
   while (f > 0)
   {
     r = (f > PROTO_BUFFER_SIZE ? PROTO_BUFFER_SIZE : f);
-    if (m_socket->ReadResponse(buf, r) != r)
+    if (m_socket->ReceiveData(buf, r) != r)
     {
       HangException();
       break;
@@ -228,16 +228,16 @@ bool ProtoBase::RcvMessageLength()
   if (m_msgLength > 0)
     return false;
 
-  if (m_socket->ReadResponse(buf, 8) == 8)
+  if (m_socket->ReceiveData(buf, 8) == 8)
   {
     if (0 == string_to_uint32(buf, &val))
     {
-      DBG(MYTH_DBG_PROTO, "%s: %" PRIu32 "\n", __FUNCTION__, val);
+      DBG(DBG_PROTO, "%s: %" PRIu32 "\n", __FUNCTION__, val);
       m_msgLength = (size_t)val;
       m_msgConsumed = 0;
       return true;
     }
-    DBG(MYTH_DBG_ERROR, "%s: failed ('%s')\n", __FUNCTION__, buf);
+    DBG(DBG_ERROR, "%s: failed ('%s')\n", __FUNCTION__, buf);
   }
   HangException();
   return false;
@@ -265,7 +265,7 @@ bool ProtoBase::RcvVersion(unsigned *version)
     goto out;
   if (FlushMessage())
   {
-    DBG(MYTH_DBG_ERROR, "%s: did not consume everything\n", __FUNCTION__);
+    DBG(DBG_ERROR, "%s: did not consume everything\n", __FUNCTION__);
     return false;
   }
   if (0 != string_to_uint32(field.c_str(), &val))
@@ -274,7 +274,7 @@ bool ProtoBase::RcvVersion(unsigned *version)
   return true;
 
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed ('%s')\n", __FUNCTION__, field.c_str());
+  DBG(DBG_ERROR, "%s: failed ('%s')\n", __FUNCTION__, field.c_str());
   FlushMessage();
   return false;
 }
@@ -309,7 +309,7 @@ bool ProtoBase::OpenConnection(int rcvbuf)
     if (map->version == 0)
     {
       m_protoError = ERROR_UNKNOWN_VERSION;
-      DBG(MYTH_DBG_ERROR, "%s: failed to connect with any version\n", __FUNCTION__);
+      DBG(DBG_ERROR, "%s: failed to connect with any version\n", __FUNCTION__);
       break;
     }
 
@@ -331,12 +331,12 @@ bool ProtoBase::OpenConnection(int rcvbuf)
       break;
     }
 
-    DBG(MYTH_DBG_DEBUG, "%s: asked for version %" PRIu32 ", got version %" PRIu32 "\n",
+    DBG(DBG_DEBUG, "%s: asked for version %" PRIu32 ", got version %" PRIu32 "\n",
             __FUNCTION__, map->version, tmp_ver);
 
     if (map->version == tmp_ver)
     {
-      DBG(MYTH_DBG_DEBUG, "%s: agreed on version %u\n", __FUNCTION__, tmp_ver);
+      DBG(DBG_DEBUG, "%s: agreed on version %u\n", __FUNCTION__, tmp_ver);
       if (tmp_ver != my_version)
         my_version = tmp_ver; // Store agreed version for next time
       m_isOpen = true;
@@ -357,16 +357,16 @@ void ProtoBase::Close()
 {
   OS::CLockGuard lock(*m_mutex);
 
-  if (m_socket->IsConnected())
+  if (m_socket->IsValid())
   {
     // Close gracefully by sending DONE message before disconnect
     if (m_isOpen && !m_hang)
     {
       const char *cmd = "DONE";
       if (SendCommand(cmd, false))
-        DBG(MYTH_DBG_PROTO, "%s: done\n", __FUNCTION__);
+        DBG(DBG_PROTO, "%s: done\n", __FUNCTION__);
       else
-        DBG(MYTH_DBG_WARN, "%s: gracefully failed (%d)\n", __FUNCTION__, m_socket->GetErrNo());
+        DBG(DBG_WARN, "%s: gracefully failed (%d)\n", __FUNCTION__, m_socket->GetErrNo());
     }
     m_socket->Disconnect();
   }
@@ -556,7 +556,7 @@ ProgramPtr ProtoBase::RcvProgramInfo75()
     goto out;
   return program;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
+  DBG(DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
   program.reset();
   return program;
 }
@@ -716,7 +716,7 @@ ProgramPtr ProtoBase::RcvProgramInfo76()
     goto out;
   return program;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
+  DBG(DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
   program.reset();
   return program;
 }
@@ -883,7 +883,7 @@ ProgramPtr ProtoBase::RcvProgramInfo79()
   program->catType = CategoryTypeToString(m_protoVersion, CategoryTypeFromNum(m_protoVersion, (int)tmpi));
   return program;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
+  DBG(DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
   program.reset();
   return program;
 }
@@ -1053,7 +1053,7 @@ ProgramPtr ProtoBase::RcvProgramInfo82()
     goto out;
   return program;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
+  DBG(DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
   program.reset();
   return program;
 }
@@ -1229,7 +1229,7 @@ ProgramPtr ProtoBase::RcvProgramInfo86()
     goto out;
   return program;
 out:
-  DBG(MYTH_DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
+  DBG(DBG_ERROR, "%s: failed (%d) buf='%s'\n", __FUNCTION__, i, field.c_str());
   program.reset();
   return program;
 }

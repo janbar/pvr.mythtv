@@ -1,25 +1,25 @@
 /*
  *      Copyright (C) 2014-2015 Jean-Luc Barriere
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
+ *  This library is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation; either version 3, or (at your option)
  *  any later version.
  *
- *  This Program is distributed in the hope that it will be useful,
+ *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
+ *  GNU Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; see the file COPYING.  If not, write to
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this library; see the file COPYING.  If not, write to
  *  the Free Software Foundation, 51 Franklin Street, Fifth Floor, Boston,
  *  MA 02110-1301 USA
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
 
-#include "mythdebug.h"
+#include "debug.h"
 
 #include <cstdlib>
 #include <cstdarg>
@@ -38,7 +38,7 @@ typedef struct
   void (*msg_callback)(int level, char* msg);
 } debug_ctx_t;
 
-static debug_ctx_t debug_ctx = {"CPPMyth", MYTH_DBG_NONE, NULL};
+static debug_ctx_t debug_ctx = {LIBTAG, DBG_NONE, NULL};
 
 /**
  * Set the debug level to be used for the subsystem
@@ -78,22 +78,22 @@ static inline void __dbg(debug_ctx_t* ctx, int level, const char* fmt, va_list a
   }
 }
 
-void Myth::DBGLevel(int l)
+void NSROOT::DBGLevel(int l)
 {
   __dbg_setlevel(&debug_ctx, l);
 }
 
-void Myth::DBGAll()
+void NSROOT::DBGAll()
 {
-  __dbg_setlevel(&debug_ctx, MYTH_DBG_ALL);
+  __dbg_setlevel(&debug_ctx, DBG_ALL);
 }
 
-void Myth::DBGNone()
+void NSROOT::DBGNone()
 {
-  __dbg_setlevel(&debug_ctx, MYTH_DBG_NONE);
+  __dbg_setlevel(&debug_ctx, DBG_NONE);
 }
 
-void Myth::DBG(int level, const char* fmt, ...)
+void NSROOT::DBG(int level, const char* fmt, ...)
 {
   va_list ap;
 
@@ -102,7 +102,7 @@ void Myth::DBG(int level, const char* fmt, ...)
   va_end(ap);
 }
 
-void Myth::SetDBGMsgCallback(void (*msgcb)(int level, char*))
+void NSROOT::SetDBGMsgCallback(void (*msgcb)(int level, char*))
 {
   debug_ctx.msg_callback = msgcb;
 }

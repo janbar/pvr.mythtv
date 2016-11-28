@@ -55,7 +55,7 @@ typedef volatile int counter_t;
 #endif
 
 #else
-#include "private/mythatomic.h"
+#include "private/atomic.h"
 #ifndef ATOMIC_NOATOMIC
 typedef Myth::atomic<int> counter_t;
 #define GETVALUE(p)   (p)->load()

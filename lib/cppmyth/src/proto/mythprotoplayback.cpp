@@ -20,8 +20,8 @@
  */
 
 #include "mythprotoplayback.h"
-#include "../mythdebug.h"
-#include "../private/mythsocket.h"
+#include "../private/debug.h"
+#include "../private/socket.h"
 #include "../private/os/threads/mutex.h"
 #include "../private/builtin.h"
 
@@ -208,12 +208,12 @@ int ProtoPlayback::TransferRequestBlock(ProtoTransfer& transfer, void *buffer, u
     r = select (nfds + 1, &fds, NULL, NULL, &tv);
     if (r < 0)
     {
-      DBG(MYTH_DBG_ERROR, "%s: select error (%d)\n", __FUNCTION__, r);
+      DBG(DBG_ERROR, "%s: select error (%d)\n", __FUNCTION__, r);
       goto err;
     }
     if (r == 0 && !data)
     {
-      DBG(MYTH_DBG_ERROR, "%s: select timeout\n", __FUNCTION__);
+      DBG(DBG_ERROR, "%s: select timeout\n", __FUNCTION__);
       goto err;
     }
     // Check for data
@@ -223,7 +223,7 @@ int ProtoPlayback::TransferRequestBlock(ProtoTransfer& transfer, void *buffer, u
       r = recv((net_socket_t)fdd, p, (size_t)(n - s), 0);
       if (r < 0)
       {
-        DBG(MYTH_DBG_ERROR, "%s: recv data error (%d)\n", __FUNCTION__, r);
+        DBG(DBG_ERROR, "%s: recv data error (%d)\n", __FUNCTION__, r);
         goto err;
       }
       if (r > 0)
@@ -243,14 +243,14 @@ int ProtoPlayback::TransferRequestBlock(ProtoTransfer& transfer, void *buffer, u
       m_mutex->Unlock();
       if (rlen < 0)
         goto err;
-      DBG(MYTH_DBG_DEBUG, "%s: receive block size (%u)\n", __FUNCTION__, (unsigned)rlen);
+      DBG(DBG_DEBUG, "%s: receive block size (%u)\n", __FUNCTION__, (unsigned)rlen);
       if (rlen == 0 && !data)
         break; // no more data
       fileRequest += rlen;
       transfer.SetRequested(fileRequest);
     }
   } while (request || data || !s);
-  DBG(MYTH_DBG_DEBUG, "%s: data read (%u)\n", __FUNCTION__, s);
+  DBG(DBG_DEBUG, "%s: data read (%u)\n", __FUNCTION__, s);
   return (int)s;
 err:
   if (request)
@@ -293,7 +293,7 @@ int32_t ProtoPlayback::TransferRequestBlockFeedback75()
   std::string field;
   if (!RcvMessageLength() || !ReadField(field) || 0 != string_to_int32(field.c_str(), &rlen) || rlen < 0)
   {
-    DBG(MYTH_DBG_ERROR, "%s: invalid response for request block (%s)\n", __FUNCTION__, field.c_str());
+    DBG(DBG_ERROR, "%s: invalid response for request block (%s)\n", __FUNCTION__, field.c_str());
     FlushMessage();
     return -1;
   }

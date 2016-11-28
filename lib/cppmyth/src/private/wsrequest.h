@@ -1,39 +1,41 @@
 /*
- *      Copyright (C) 2014 Jean-Luc Barriere
+ *      Copyright (C) 2014-2015 Jean-Luc Barriere
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
+ *  This library is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation; either version 3, or (at your option)
  *  any later version.
  *
- *  This Program is distributed in the hope that it will be useful,
+ *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
+ *  GNU Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; see the file COPYING.  If not, write to
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this library; see the file COPYING.  If not, write to
  *  the Free Software Foundation, 51 Franklin Street, Fifth Floor, Boston,
  *  MA 02110-1301 USA
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
 
-#ifndef MYTHWSREQUEST_H
-#define	MYTHWSREQUEST_H
+#ifndef WSREQUEST_H
+#define	WSREQUEST_H
 
-#include "mythwscontent.h"
+#include <cppmyth_config.h>
+#include "wscontent.h"
+#include "uriparser.h"
 
 #include <cstddef>  // for size_t
 #include <string>
 #include <map>
 
 #define REQUEST_PROTOCOL      "HTTP/1.1"
-#define REQUEST_USER_AGENT    "libcppmyth/2.5"
+#define REQUEST_USER_AGENT    "libcppmyth/2.8"
 #define REQUEST_CONNECTION    "close" // "keep-alive"
 #define REQUEST_STD_CHARSET   "utf-8"
 
-namespace Myth
+namespace NSROOT
 {
 
   typedef enum
@@ -41,35 +43,39 @@ namespace Myth
     HRM_GET,
     HRM_POST,
     HRM_HEAD,
+    HRM_SUBSCRIBE,
+    HRM_UNSUBSCRIBE,
+    HRM_NOTIFY,
   } HRM_t;
 
   class WSRequest
   {
   public:
     WSRequest(const std::string& server, unsigned port);
+    WSRequest(const std::string& server, unsigned port, bool secureURI);
+    WSRequest(const URIParser& uri, HRM_t method = HRM_GET);
     ~WSRequest();
 
     void RequestService(const std::string& url, HRM_t method = HRM_GET);
     void RequestAccept(CT_t contentType);
+    void RequestAcceptEncoding(bool yesno);
+    void SetUserAgent(const std::string& value);
     void SetContentParam(const std::string& param, const std::string& value);
     void SetContentCustom(CT_t contentType, const char *content);
     void SetHeader(const std::string& field, const std::string& value);
     const std::string& GetContent() const { return m_contentData; }
     void ClearContent();
 
-    void MakeMessage(std::string& msg) const
-    {
-      if (m_service_method == HRM_GET) MakeMessageGET(msg);
-      else if (m_service_method == HRM_POST) MakeMessagePOST(msg);
-      else if (m_service_method == HRM_HEAD) MakeMessageHEAD(msg);
-    }
+    void MakeMessage(std::string& msg) const;
 
     const std::string& GetServer() const { return m_server; }
     unsigned GetPort() const { return m_port; }
+    bool IsSecureURI() const { return m_secure_uri; }
 
   private:
     std::string m_server;
     unsigned m_port;
+    bool m_secure_uri;
     std::string m_service_url;
     HRM_t m_service_method;
     std::string m_charset;
@@ -77,6 +83,7 @@ namespace Myth
     CT_t m_contentType;
     std::string m_contentData;
     std::map<std::string, std::string> m_headers;
+    std::string m_userAgent;
 
     void MakeMessageGET(std::string& msg, const char* method = "GET") const;
     void MakeMessagePOST(std::string& msg, const char* method = "POST") const;
@@ -85,4 +92,4 @@ namespace Myth
 
 }
 
-#endif	/* MYTHWSREQUEST_H */
+#endif	/* WSREQUEST_H */

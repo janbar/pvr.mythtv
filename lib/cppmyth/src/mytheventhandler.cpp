@@ -20,7 +20,7 @@
  */
 
 #include "mytheventhandler.h"
-#include "mythdebug.h"
+#include "private/debug.h"
 #include "proto/mythprotoevent.h"
 #include "private/os/threads/thread.h"
 #include "private/os/threads/event.h"
@@ -86,9 +86,9 @@ SubscriptionHandlerThread::SubscriptionHandlerThread(EventSubscriber *handle, un
 , m_msgQueue()
 {
   if (m_handle && Start())
-    DBG(MYTH_DBG_DEBUG, "%s: subscription is started (%p:%u)\n", __FUNCTION__, m_handle, m_subId);
+    DBG(DBG_DEBUG, "%s: subscription is started (%p:%u)\n", __FUNCTION__, m_handle, m_subId);
   else
-    DBG(MYTH_DBG_ERROR, "%s: subscription failed (%p:%u)\n", __FUNCTION__, m_handle, m_subId);
+    DBG(DBG_ERROR, "%s: subscription failed (%p:%u)\n", __FUNCTION__, m_handle, m_subId);
 }
 
 SubscriptionHandlerThread::~SubscriptionHandlerThread()
@@ -108,13 +108,13 @@ void SubscriptionHandlerThread::Stop()
 {
   if (OS::CThread::IsRunning())
   {
-    DBG(MYTH_DBG_DEBUG, "%s: subscription thread (%p:%u)\n", __FUNCTION__, m_handle, m_subId);
+    DBG(DBG_DEBUG, "%s: subscription thread (%p:%u)\n", __FUNCTION__, m_handle, m_subId);
     // Set stopping. don't wait as we need to signal the thread first
     OS::CThread::StopThread(false);
     m_queueContent.Signal();
     // Wait for thread to stop
     OS::CThread::StopThread(true);
-    DBG(MYTH_DBG_DEBUG, "%s: subscription thread (%p:%u) stopped\n", __FUNCTION__, m_handle, m_subId);
+    DBG(DBG_DEBUG, "%s: subscription thread (%p:%u) stopped\n", __FUNCTION__, m_handle, m_subId);
   }
 }
 
@@ -218,9 +218,9 @@ void BasicEventHandler::Stop()
 {
   if (OS::CThread::IsRunning())
   {
-    DBG(MYTH_DBG_DEBUG, "%s: event handler thread (%p)\n", __FUNCTION__, this);
+    DBG(DBG_DEBUG, "%s: event handler thread (%p)\n", __FUNCTION__, this);
     OS::CThread::StopThread(true);
-    DBG(MYTH_DBG_DEBUG, "%s: event handler thread (%p) stopped\n", __FUNCTION__, this);
+    DBG(DBG_DEBUG, "%s: event handler thread (%p) stopped\n", __FUNCTION__, this);
   }
   if (m_event->IsOpen())
     m_event->Close();
@@ -362,7 +362,7 @@ void *BasicEventHandler::Process()
 
 void BasicEventHandler::AnnounceStatus(const char *status)
 {
-  DBG(MYTH_DBG_DEBUG, "%s: (%p) %s\n", __FUNCTION__, this, status);
+  DBG(DBG_DEBUG, "%s: (%p) %s\n", __FUNCTION__, this, status);
   EventMessage msg;
   msg.event = EVENT_HANDLER_STATUS;
   msg.subject.push_back(status);
@@ -392,7 +392,7 @@ void BasicEventHandler::RetryConnect()
         break;
       }
       c = 10; // Retry after 5 seconds
-      DBG(MYTH_DBG_INFO, "%s: could not open event socket (%d)\n", __FUNCTION__, m_event->GetSocketErrNo());
+      DBG(DBG_INFO, "%s: could not open event socket (%d)\n", __FUNCTION__, m_event->GetSocketErrNo());
       AnnounceStatus(EVENTHANDLER_NOTCONNECTED);
     }
     usleep(500000);

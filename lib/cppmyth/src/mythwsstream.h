@@ -39,15 +39,14 @@ namespace Myth
     WSStream(WSResponse *response);
     ~WSStream();
 
-    bool EndOfStream();
-
     int Read(void* buffer, unsigned n);
-    int64_t GetSize() const;
+    int64_t GetSize() const; // Always returns -1 for valid stream else 0
     int64_t GetPosition() const;
     int64_t Seek(int64_t offset, WHENCE_t whence);
 
   private:
     WSResponse *m_response;
+    int64_t m_position;
   };
 }
 

@@ -30,7 +30,7 @@ namespace Myth
   {
   public:
     virtual ~Stream() {};
-    virtual int64_t GetSize() const = 0;
+    virtual int64_t GetSize() const = 0; // Returns -1 for undefined size
     virtual int Read(void *buffer, unsigned n) = 0;
     virtual int64_t Seek(int64_t offset, WHENCE_t whence) = 0;
     virtual int64_t GetPosition() const = 0;

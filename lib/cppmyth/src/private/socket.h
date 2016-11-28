@@ -1,27 +1,28 @@
 /*
- *      Copyright (C) 2014 Jean-Luc Barriere
+ *      Copyright (C) 2014-2015 Jean-Luc Barriere
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
+ *  This library is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation; either version 3, or (at your option)
  *  any later version.
  *
- *  This Program is distributed in the hope that it will be useful,
+ *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
+ *  GNU Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; see the file COPYING.  If not, write to
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this library; see the file COPYING.  If not, write to
  *  the Free Software Foundation, 51 Franklin Street, Fifth Floor, Boston,
  *  MA 02110-1301 USA
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
 
-#ifndef MYTHSOCKET_H
-#define	MYTHSOCKET_H
+#ifndef SOCKET_H
+#define	SOCKET_H
 
+#include <cppmyth_config.h>
 #include "os/os.h"
 
 #include <cstddef>  // for size_t
@@ -34,7 +35,7 @@
 #define SOCKET_READ_ATTEMPT           3
 #define SOCKET_BUFFER_SIZE            1472
 
-namespace Myth
+namespace NSROOT
 {
 
   typedef enum {
@@ -69,49 +70,34 @@ namespace Myth
     friend class TcpServerSocket;
   public:
     TcpSocket();
-    ~TcpSocket();
-
-    // Implements NetSocket
-    bool SendData(const char* buf, size_t size)
-    {
-      return SendMessage(buf, size);
-    }
-    size_t ReceiveData(void* buf, size_t n)
-    {
-      return ReadResponse(buf, n);
-    }
+    virtual ~TcpSocket();
 
     int GetErrNo() const
     {
       return m_errno;
     }
-    bool Connect(const char *server, unsigned port, int rcvbuf);
-    bool SendMessage(const char *msg, size_t size);
     void SetReadAttempt(int n)
     {
       m_attempt = n;
     }
-    size_t ReadResponse(void *buf, size_t n);
-    void Disconnect();
-    bool IsValid() const
-    {
-      return (m_socket == INVALID_SOCKET_VALUE ? false : true);
-    }
-    bool IsConnected() const
-    {
-      return IsValid();
-    }
+    virtual bool Connect(const char *server, unsigned port, int rcvbuf);
+    virtual bool SendData(const char* buf, size_t size);
+    virtual size_t ReceiveData(void* buf, size_t n);
+    virtual void Disconnect();
+    virtual bool IsValid() const;
     int Listen(timeval *timeout);
     net_socket_t GetSocket() const;
     std::string GetLocalIP();
 
     static const char* GetMyHostName();
 
-  private:
+  protected:
     net_socket_t m_socket;
     int m_rcvbuf;
     int m_errno;
     int m_attempt;
+
+  private:
     char* m_buffer;
     char* m_bufptr;
     size_t m_buflen;
@@ -133,10 +119,7 @@ namespace Myth
       return m_errno;
     }
     bool Create(SOCKET_AF_t af);
-    bool IsValid() const
-    {
-      return (m_socket == INVALID_SOCKET_VALUE ? false : true);
-    }
+    bool IsValid() const;
     bool Bind(unsigned port);
     bool ListenConnection();
     bool AcceptConnection(TcpSocket& socket);
@@ -160,14 +143,14 @@ namespace Myth
     UdpSocket(size_t bufferSize);
     ~UdpSocket();
 
-    // Implements NetSocket
-    bool SendData(const char* data, size_t size);
-    size_t ReceiveData(void* buf, size_t n);
-
     int GetErrNo() const
     {
       return m_errno;
     }
+    bool SendData(const char* data, size_t size);
+    size_t ReceiveData(void* buf, size_t n);
+    bool IsValid() const;
+
     bool SetAddress(SOCKET_AF_t af, const char *target, unsigned port);
     bool SetMulticastTTL(int multicastTTL);
     size_t GetPayloadLength() const
@@ -179,10 +162,6 @@ namespace Myth
       m_rcvlen = 0;
     }
     std::string GetRemoteIP() const;
-    bool IsValid() const
-    {
-      return (m_socket == INVALID_SOCKET_VALUE ? false : true);
-    }
 
   private:
     SocketAddress* m_addr;
@@ -201,4 +180,4 @@ namespace Myth
 
 }
 
-#endif	/* MYTHSOCKET_H */
+#endif	/* SOCKET_H */

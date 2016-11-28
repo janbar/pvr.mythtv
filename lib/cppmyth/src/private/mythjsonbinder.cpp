@@ -20,8 +20,8 @@
  */
 
 #include "mythjsonbinder.h"
-#include "../private/builtin.h"
-#include "../mythdebug.h"
+#include "builtin.h"
+#include "debug.h"
 
 #include <cstdlib>  // for atof
 #include <cstring>  // for strcmp
@@ -123,9 +123,9 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
           break;
       }
       if (err)
-        Myth::DBG(MYTH_DBG_ERROR, "%s: failed (%d) field \"%s\" type %d: %s\n", __FUNCTION__, err, bl->attr_bind[i].field, bl->attr_bind[i].type, value.c_str());
+        Myth::DBG(DBG_ERROR, "%s: failed (%d) field \"%s\" type %d: %s\n", __FUNCTION__, err, bl->attr_bind[i].field, bl->attr_bind[i].type, value.c_str());
     }
     else
-      Myth::DBG(MYTH_DBG_WARN, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+      Myth::DBG(DBG_WARN, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
   }
 }

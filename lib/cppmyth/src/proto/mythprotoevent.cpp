@@ -20,8 +20,8 @@
  */
 
 #include "mythprotoevent.h"
-#include "../mythdebug.h"
-#include "../private/mythsocket.h"
+#include "../private/debug.h"
+#include "../private/socket.h"
 #include "../private/os/threads/mutex.h"
 #include "../private/builtin.h"
 
@@ -149,7 +149,7 @@ int ProtoEvent::RcvBackendMessage(unsigned timeout, EventMessage& msg)
       // Tokenize the subject
       __tokenize(field, " ", msg.subject, false);
       n = (unsigned)msg.subject.size();
-      DBG(MYTH_DBG_DEBUG, "%s: %s (%u)\n", __FUNCTION__, field.c_str(), n);
+      DBG(DBG_DEBUG, "%s: %s (%u)\n", __FUNCTION__, field.c_str(), n);
 
       if (msg.subject[0] == "UPDATE_FILE_SIZE")
         msg.event = EVENT_UPDATE_FILE_SIZE;

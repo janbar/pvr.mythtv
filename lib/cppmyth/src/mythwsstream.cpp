@@ -20,18 +20,20 @@
  */
 
 #include "mythwsstream.h"
-#include "private/mythwsresponse.h"
+#include "private/wsresponse.h"
 #include "private/cppdef.h"
 
 using namespace Myth;
 
 WSStream::WSStream()
 : m_response(NULL)
+, m_position(0)
 {
 }
 
 WSStream::WSStream(WSResponse *response)
 : m_response(response)
+, m_position(0)
 {
 }
 
@@ -40,26 +42,23 @@ WSStream::~WSStream()
   SAFE_DELETE(m_response);
 }
 
-bool WSStream::EndOfStream()
-{
-  if (m_response != NULL)
-    return (m_response->GetConsumed() >= m_response->GetContentLength());
-  return true;
-}
-
 int WSStream::Read(void* buffer, unsigned n)
 {
-  return (m_response != NULL ? (int)m_response->ReadContent((char *)buffer, n) : 0);
+  if (m_response == NULL)
+    return 0;
+  size_t s = m_response->ReadContent((char *)buffer, n);
+  m_position += s;
+  return (int)s;
 }
 
 int64_t WSStream::GetSize() const
 {
-  return (m_response != NULL ? (int64_t)m_response->GetContentLength() : 0);
+  return (m_response != NULL ? (int64_t)(-1) : 0);
 }
 
 int64_t WSStream::GetPosition() const
 {
-  return (m_response != NULL ? m_response->GetConsumed() : 0);
+  return (m_response != NULL ? m_position : 0);
 }
 
 int64_t WSStream::Seek(int64_t offset, WHENCE_t whence)

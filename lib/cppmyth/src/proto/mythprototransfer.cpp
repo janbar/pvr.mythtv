@@ -20,8 +20,8 @@
  */
 
 #include "mythprototransfer.h"
-#include "../mythdebug.h"
-#include "../private/mythsocket.h"
+#include "../private/debug.h"
+#include "../private/socket.h"
 #include "../private/os/threads/mutex.h"
 #include "../private/builtin.h"
 
@@ -104,11 +104,11 @@ void ProtoTransfer::Flush()
     while (n > 0)
     {
       size_t s = (n > PROTO_BUFFER_SIZE ? PROTO_BUFFER_SIZE : n);
-      if(m_socket->ReadResponse(buf, s) != s)
+      if(m_socket->ReceiveData(buf, s) != s)
         break;
       n -= s;
     }
-    DBG(MYTH_DBG_DEBUG, "%s: unreaded bytes (%u)\n", __FUNCTION__, (unsigned)n);
+    DBG(DBG_DEBUG, "%s: unreaded bytes (%u)\n", __FUNCTION__, (unsigned)n);
     // Reset position regardless bytes read
     m_filePosition = m_fileRequest;
   }

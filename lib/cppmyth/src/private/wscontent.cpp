@@ -1,29 +1,29 @@
 /*
  *      Copyright (C) 2014 Jean-Luc Barriere
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
+ *  This library is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation; either version 3, or (at your option)
  *  any later version.
  *
- *  This Program is distributed in the hope that it will be useful,
+ *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
+ *  GNU Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; see the file COPYING.  If not, write to
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this library; see the file COPYING.  If not, write to
  *  the Free Software Foundation, 51 Franklin Street, Fifth Floor, Boston,
  *  MA 02110-1301 USA
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
 
-#include "mythwscontent.h"
+#include "wscontent.h"
 
 #include <cstring>  // for strcmp
 
-using namespace Myth;
+using namespace NSROOT;
 
 struct mimetype
 {
@@ -45,7 +45,7 @@ static struct mimetype mimetypes[] =
   { "application/octet-stream",           ""    }
 };
 
-CT_t Myth::ContentTypeFromMime(const char *mime)
+CT_t NSROOT::ContentTypeFromMime(const char *mime)
 {
   int i;
   for (i = 0; i < CT_UNKNOWN; ++i)
@@ -56,14 +56,14 @@ CT_t Myth::ContentTypeFromMime(const char *mime)
   return CT_UNKNOWN;
 }
 
-const char* Myth::MimeFromContentType(CT_t ct)
+const char* NSROOT::MimeFromContentType(CT_t ct)
 {
   if (ct >= 0 && ct < CT_UNKNOWN)
     return mimetypes[ct].content_type;
   return mimetypes[CT_UNKNOWN].content_type;
 }
 
-const char* Myth::ExtnFromContentType(CT_t ct)
+const char* NSROOT::ExtnFromContentType(CT_t ct)
 {
   if (ct >= 0 && ct < CT_UNKNOWN)
     return mimetypes[ct].extn;
