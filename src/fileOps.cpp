@@ -278,7 +278,7 @@ void *FileOps::Process()
         break;
       }
 
-      if (fileStream && fileStream->GetSize() > 0)
+      if (fileStream)
       {
         // Cache it to the local addon cache
         bool cached = CacheFile(file, fileStream.get());
@@ -302,18 +302,8 @@ void *FileOps::Process()
 
         // Failed to open file for reading. Unfortunately it cannot be determined if this is a permanent or a temporary problem (new recording's preview hasn't been generated yet).
         // Increase the error count and retry to cache the file a few times
-        if (!fileStream)
-        {
-          XBMC->Log(LOG_ERROR, "%s: Failed to read file: type: %d, local: %s", __FUNCTION__, job.m_fileType, job.m_localFilename.c_str());
-          job.m_errorCount += 1;
-        }
-
-        // File was empty (this happens usually for new recordings where the preview image hasn't been generated yet)
-        // This is not an error, always try to recache the file
-        else if (fileStream->GetSize() <= 0)
-        {
-          XBMC->Log(LOG_DEBUG, "%s: File is empty: type: %d, local: %s", __FUNCTION__, job.m_fileType, job.m_localFilename.c_str());
-        }
+        XBMC->Log(LOG_ERROR, "%s: Failed to read file: type: %d, local: %s", __FUNCTION__, job.m_fileType, job.m_localFilename.c_str());
+        job.m_errorCount += 1;
 
         // Recache the file if it hasn't exceeded the maximum number of allowed attempts
         if (job.m_errorCount <= c_maximumAttemptsOnReadError)
@@ -377,30 +367,29 @@ void *FileOps::OpenFile(const std::string& localFilename)
 
 bool FileOps::CacheFile(void *file, Myth::Stream *source)
 {
-  int64_t size = source->GetSize();
+  int s;
   char *buffer = new char[FILEOPS_STREAM_BUFFER_SIZE];
 
-  while (size > 0)
+  while ((s = source->Read(buffer, FILEOPS_STREAM_BUFFER_SIZE)) > 0)
   {
-    int br = source->Read(buffer, (size > FILEOPS_STREAM_BUFFER_SIZE ? FILEOPS_STREAM_BUFFER_SIZE : (unsigned)size));
-    if (br <= 0)
-      break;
-    size -= br;
     char *p = buffer;
-    while (br > 0)
+    do
     {
-      int bw = XBMC->WriteFile(file, p, br);
+      int bw = XBMC->WriteFile(file, p, s);
       if (bw <= 0)
         break;
 
-      br -= bw;
+      s -= bw;
       p += bw;
-    }
+    } while (s > 0);
   }
   delete[] buffer;
 
-  if (size)
-    XBMC->Log(LOG_NOTICE, "%s: Did not consume everything (%ld)", __FUNCTION__, (long)size);
+  if (s < 0)
+  {
+    XBMC->Log(LOG_ERROR, "%s: Read stream failed", __FUNCTION__);
+    return false;
+  }
   return true;
 }
 
