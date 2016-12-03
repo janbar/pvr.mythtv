@@ -1,3 +1,6 @@
+v4.10.0
+- Sync cppmyth upstream (2.8.1) with support of content-encoding gzip/deflate for WS API
+
 v4.9.2
 - Updated to PVR addon API v5.2.1
 
