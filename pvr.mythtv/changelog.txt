@@ -1,3 +1,7 @@
+v4.11.0
+- Handle recording last played position from the backend
+- Bookmark at current position in a recording when you press record on LiveTV
+
 v4.10.1
 - Minor bug fixes
 
