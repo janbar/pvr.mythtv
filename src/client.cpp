@@ -416,7 +416,7 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
   menuHook.iHookId = MENUHOOK_TIMER_BACKEND_INFO;
   menuHook.iLocalizedStringId = 30424;
   PVR->AddMenuHook(&menuHook);
-  
+
   memset(&menuHook, 0, sizeof(PVR_MENUHOOK));
   menuHook.category = PVR_MENUHOOK_TIMER;
   menuHook.iHookId = MENUHOOK_SHOW_HIDE_NOT_RECORDING;
@@ -750,7 +750,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES *pCapabilities)
     pCapabilities->bSupportsRecordings            = true;
     pCapabilities->bSupportsRecordingsUndelete    = true;
     pCapabilities->bSupportsRecordingPlayCount    = (version < 80 ? false : true);
-    pCapabilities->bSupportsLastPlayedPosition    = false;
+    pCapabilities->bSupportsLastPlayedPosition    = (version < 88 ? false : true);
     pCapabilities->bSupportsRecordingEdl          = true;
     return PVR_ERROR_NO_ERROR;
   }
@@ -967,17 +967,14 @@ PVR_ERROR SetRecordingLastPlayedPosition(const PVR_RECORDING &recording, int las
 {
   if (g_client == NULL)
     return PVR_ERROR_SERVER_ERROR;
-  (void)recording;
-  (void)lastplayedposition;
-  return PVR_ERROR_NOT_IMPLEMENTED;
+  return g_client->SetRecordingLastPlayedPosition(recording, lastplayedposition);
 }
 
 int GetRecordingLastPlayedPosition(const PVR_RECORDING &recording)
 {
   if (g_client == NULL)
     return PVR_ERROR_SERVER_ERROR;
-  (void)recording;
-  return -1;
+  return g_client->GetRecordingLastPlayedPosition(recording);
 }
 
 PVR_ERROR GetRecordingEdl(const PVR_RECORDING &recording, PVR_EDL_ENTRY entries[], int *size)
