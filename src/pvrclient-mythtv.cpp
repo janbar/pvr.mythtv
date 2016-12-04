@@ -1632,6 +1632,11 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
       XBMC->Log(LOG_DEBUG, "%s: Timer is a quick recording. Toggling Record on", __FUNCTION__);
       if (m_liveStream->IsLiveRecording())
         XBMC->Log(LOG_NOTICE, "%s: Record already on! Retrying...", __FUNCTION__);
+      else
+      {
+        // Add bookmark for the current stream position
+        m_control->SetSavedBookmark(*program, 1, m_liveStream->GetPosition());
+      }
       if (m_liveStream->KeepLiveRecording(true))
         return PVR_ERROR_NO_ERROR;
       else
