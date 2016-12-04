@@ -415,28 +415,56 @@ namespace Myth
 
     /**
      * @brief GET Dvr/GetRecordedCommBreak
-     * @param recordedId
+     * @param recordedid
      * @param unit 0 = Frame count, 1 = Position, 2 = Duration ms
      * @return MarkListPtr
      */
-    MarkListPtr GetRecordedCommBreak(uint32_t recordedId, int unit)
+    MarkListPtr GetRecordedCommBreak(uint32_t recordedid, int unit)
     {
       WSServiceVersion_t wsv = CheckService(WS_Dvr);
-      if (wsv.ranking >= 0x00060001) return GetRecordedCommBreak6_1(recordedId, unit);
+      if (wsv.ranking >= 0x00060001) return GetRecordedCommBreak6_1(recordedid, unit);
       return MarkListPtr(new MarkList);
     }
 
     /**
      * @brief GET Dvr/GetRecordedCutList
-     * @param recordedId
+     * @param recordedid
      * @param unit 0 = Frame count, 1 = Position, 2 = Duration ms
      * @return MarkListPtr
      */
-    MarkListPtr GetRecordedCutList(uint32_t recordedId, int unit)
+    MarkListPtr GetRecordedCutList(uint32_t recordedid, int unit)
     {
       WSServiceVersion_t wsv = CheckService(WS_Dvr);
-      if (wsv.ranking >= 0x00060001) return GetRecordedCutList6_1(recordedId, unit);
+      if (wsv.ranking >= 0x00060001) return GetRecordedCutList6_1(recordedid, unit);
       return MarkListPtr(new MarkList);
+    }
+
+    /**
+     * @brief POST Dvr/SetSavedBookmark
+     * @param recordedid
+     * @param unit 1 = Position, 2 = Duration ms
+     * @param value of mark
+     * @return boolean
+     */
+    bool SetSavedBookmark(uint32_t recordedid, int unit, int64_t value)
+    {
+      WSServiceVersion_t wsv = CheckService(WS_Dvr);
+      if (wsv.ranking >= 0x00060002) return SetSavedBookmark6_2(recordedid, unit, value);
+      return false;
+    }
+
+
+    /**
+     * @brief GET Dvr/GetSavedBookmark
+     * @param recordedid
+     * @param unit 1 = Position, 2 = Duration ms
+     * @return value
+     */
+    int64_t GetSavedBookmark(uint32_t recordedid, int unit)
+    {
+      WSServiceVersion_t wsv = CheckService(WS_Dvr);
+      if (wsv.ranking >= 0x00060002) return GetSavedBookmark6_2(recordedid, unit);
+      return 0;
     }
 
   private:
@@ -486,6 +514,8 @@ namespace Myth
     bool UpdateRecordedWatchedStatus6_0(uint32_t recordedid, bool watched);
     MarkListPtr GetRecordedCommBreak6_1(uint32_t recordedid, int unit);
     MarkListPtr GetRecordedCutList6_1(uint32_t recordedid, int unit);
+    bool SetSavedBookmark6_2(uint32_t recordedid, int unit, int64_t value);
+    int64_t GetSavedBookmark6_2(uint32_t recordedid, int unit);
 
     RecordScheduleListPtr GetRecordScheduleList1_5();
     RecordSchedulePtr GetRecordSchedule1_5(uint32_t recordid);

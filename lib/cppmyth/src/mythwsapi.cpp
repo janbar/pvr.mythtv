@@ -1470,6 +1470,79 @@ MarkListPtr WSAPI::GetRecordedCutList6_1(uint32_t recordedid, int unit)
   return ret;
 }
 
+bool WSAPI::SetSavedBookmark6_2(uint32_t recordedid, int unit, int64_t value)
+{
+  char buf[32];
+
+  // Initialize request header
+  WSRequest req = WSRequest(m_server, m_port);
+  req.RequestAccept(CT_JSON);
+  req.RequestService("/Dvr/SetSavedBookmark", HRM_POST);
+  uint32_to_string(recordedid, buf);
+  req.SetContentParam("RecordedId", buf);
+  if (unit == 2)
+    req.SetContentParam("OffsetType", "Duration");
+  else
+    req.SetContentParam("OffsetType", "Position");
+  int64_to_string(value, buf);
+  req.SetContentParam("Offset", buf);
+  WSResponse resp(req);
+  if (!resp.IsSuccessful())
+  {
+    DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
+    return false;
+  }
+  const JSON::Document json(resp);
+  const JSON::Node& root = json.GetRoot();
+  if (!json.IsValid() || !root.IsObject())
+  {
+    DBG(DBG_ERROR, "%s: unexpected content\n", __FUNCTION__);
+    return false;
+  }
+  DBG(DBG_DEBUG, "%s: content parsed\n", __FUNCTION__);
+
+  const JSON::Node& field = root.GetObjectValue("bool");
+  if (!field.IsString() || strcmp(field.GetStringValue().c_str(), "true"))
+    return false;
+  return true;
+}
+
+int64_t WSAPI::GetSavedBookmark6_2(uint32_t recordedid, int unit)
+{
+  char buf[32];
+
+  // Initialize request header
+  WSRequest req = WSRequest(m_server, m_port);
+  req.RequestAccept(CT_JSON);
+  req.RequestService("/Dvr/GetSavedBookmark", HRM_POST);
+  uint32_to_string(recordedid, buf);
+  req.SetContentParam("RecordedId", buf);
+  if (unit == 2)
+    req.SetContentParam("OffsetType", "Duration");
+  else
+    req.SetContentParam("OffsetType", "Position");
+  WSResponse resp(req);
+  if (!resp.IsSuccessful())
+  {
+    DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
+    return false;
+  }
+  const JSON::Document json(resp);
+  const JSON::Node& root = json.GetRoot();
+  if (!json.IsValid() || !root.IsObject())
+  {
+    DBG(DBG_ERROR, "%s: unexpected content\n", __FUNCTION__);
+    return false;
+  }
+  DBG(DBG_DEBUG, "%s: content parsed\n", __FUNCTION__);
+
+  int64_t value = 0;
+  const JSON::Node& field = root.GetObjectValue("long");
+  if (!field.IsString() || string_to_int64(field.GetStringValue().c_str(), &value))
+    return -1;
+  return value;
+}
+
 static void ProcessRecordIN(unsigned proto, RecordSchedule& record)
 {
   // Converting API codes to internal types

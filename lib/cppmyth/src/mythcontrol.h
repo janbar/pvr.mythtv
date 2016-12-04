@@ -529,6 +529,28 @@ namespace Myth
       return m_monitor.AllowShutdown();
     }
 
+    /**
+     * @brief Set saved bookmark for a program
+     * @param program
+     * @param unit 1 = Position, 2 = Duration ms
+     * @return bool
+     */
+    bool SetSavedBookmark(const Program& program, int unit, int64_t value)
+    {
+      return m_wsapi.SetSavedBookmark(program.recording.recordedId, unit, value);
+    }
+
+    /**
+     * @brief Retrieve saved bookmark for a program
+     * @param program
+     * @param unit 1 = Position, 2 = Duration ms
+     * @return value
+     */
+    int64_t GetSavedBookmark(const Program& program, int unit)
+    {
+      return m_wsapi.GetSavedBookmark(program.recording.recordedId, unit);
+    }
+
   private:
     ProtoMonitor m_monitor;
     WSAPI m_wsapi;
