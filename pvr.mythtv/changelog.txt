@@ -1,3 +1,6 @@
+v4.10.1
+- Minor bug fixes
+
 v4.10.0
 - Sync cppmyth upstream (2.8.1) with support of content-encoding gzip/deflate for WS API
 
