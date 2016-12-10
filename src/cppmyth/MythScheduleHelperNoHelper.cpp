@@ -79,6 +79,12 @@ MythRecordingRule MythScheduleHelperNoHelper::NewFromTimer(const MythTimerEntry&
   return MythRecordingRule();
 }
 
+MythRecordingRule MythScheduleHelperNoHelper::UpdateFromTimer(const MythTimerEntry& entry)
+{
+  (void)entry;
+  return MythRecordingRule();
+}
+
 MythRecordingRule MythScheduleHelperNoHelper::MakeDontRecord(const MythRecordingRule& rule, const MythProgramInfo& recording)
 {
   MythRecordingRule modifier;

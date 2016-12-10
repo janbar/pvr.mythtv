@@ -1248,6 +1248,14 @@ MythRecordingRule MythScheduleHelper75::NewFromTimer(const MythTimerEntry& entry
   return rule;
 }
 
+MythRecordingRule MythScheduleHelper75::UpdateFromTimer(const MythTimerEntry& entry)
+{
+  MythRecordingRule rule;
+  rule.SetType(Myth::RT_UNKNOWN);
+  XBMC->Log(LOG_ERROR, "75::%s: Mythtv 0.26 backend cannot update existing rules using the services API interface.", __FUNCTION__);
+  return rule;
+}
+
 MythRecordingRule MythScheduleHelper75::MakeDontRecord(const MythRecordingRule& rule, const MythProgramInfo& recording)
 {
   MythRecordingRule modifier = rule.DuplicateRecordingRule();
