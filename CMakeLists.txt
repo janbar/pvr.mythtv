@@ -77,7 +77,7 @@ set(DEPLIBS p8-platform cppmyth)
 if(WIN32)
   list(APPEND DEPLIBS ws2_32)
 else()
-  list(APPEND DEPLIBS m)
+  list(APPEND DEPLIBS m dl)
 endif()
 
 if(NOT WIN32 AND (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX))
