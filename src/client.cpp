@@ -22,7 +22,6 @@
 
 #include "client.h"
 #include "pvrclient-mythtv.h"
-#include "guidialogyesno.h"
 
 #include <xbmc_pvr_dll.h>
 
@@ -347,9 +346,8 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
         // Do you want to retry ?
         std::string msg = XBMC->GetLocalizedString(30300);
         msg.append("\n").append(XBMC->GetLocalizedString(30113));
-        GUIDialogYesNo dialog(XBMC->GetLocalizedString(30112), msg.c_str(), 1);
-        dialog.Open();
-        if (dialog.IsNo())
+	bool canceled = false;
+	if (!GUI->Dialog_YesNo_ShowAndGetInput(XBMC->GetLocalizedString(30112), msg.c_str(), canceled) && !canceled)
           m_CurStatus = ADDON_STATUS_PERMANENT_FAILURE;
         else
           m_CurStatus = ADDON_STATUS_NEED_SETTINGS;
@@ -362,9 +360,8 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
         // Do you want to retry ?
         std::string msg = XBMC->GetLocalizedString(30301);
         msg.append("\n").append(XBMC->GetLocalizedString(30113));
-        GUIDialogYesNo dialog(XBMC->GetLocalizedString(30112), msg.c_str(), 1);
-        dialog.Open();
-        if (dialog.IsNo())
+	bool canceled = false;
+	if (!GUI->Dialog_YesNo_ShowAndGetInput(XBMC->GetLocalizedString(30112), msg.c_str(), canceled) && !canceled)
           m_CurStatus = ADDON_STATUS_PERMANENT_FAILURE;
         else
           m_CurStatus = ADDON_STATUS_NEED_SETTINGS;
