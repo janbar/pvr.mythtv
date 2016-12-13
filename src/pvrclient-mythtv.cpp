@@ -24,7 +24,6 @@
 #include "client.h"
 #include "tools.h"
 #include "avinfo.h"
-#include "guidialogyesno.h"
 
 #include <time.h>
 #include <set>
@@ -1329,9 +1328,8 @@ PVR_ERROR PVRClientMythTV::GetRecordingEdl(const PVR_RECORDING &recording, PVR_E
   // Open dialog
   if (g_iEnableEDL == ENABLE_EDL_DIALOG && !skpList->empty())
   {
-    GUIDialogYesNo dialog(XBMC->GetLocalizedString(30110), XBMC->GetLocalizedString(30111), 1);
-    dialog.Open();
-    if (dialog.IsNo())
+    bool canceled = false;
+    if (!GUI->Dialog_YesNo_ShowAndGetInput(XBMC->GetLocalizedString(30110), XBMC->GetLocalizedString(30111), canceled) && !canceled)
       return PVR_ERROR_NO_ERROR;
   }
 
