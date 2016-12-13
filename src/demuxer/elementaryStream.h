@@ -45,6 +45,7 @@ namespace TSDemux
     STREAM_TYPE_AUDIO_AAC_ADTS,
     STREAM_TYPE_AUDIO_AAC_LATM,
     STREAM_TYPE_VIDEO_H264,
+    STREAM_TYPE_VIDEO_HEVC,
     STREAM_TYPE_AUDIO_AC3,
     STREAM_TYPE_AUDIO_EAC3,
     STREAM_TYPE_DVB_TELETEXT,
@@ -124,6 +125,7 @@ namespace TSDemux
     size_t es_pts_pointer;        ///< Position in buffer where current PTS becomes applicable
     size_t es_parsed;             ///< Parser: Last processed position in buffer
     bool   es_found_frame;        ///< Parser: Found frame
+    bool   es_frame_valid;
   };
 }
 

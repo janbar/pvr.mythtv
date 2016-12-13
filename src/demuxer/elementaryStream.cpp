@@ -45,6 +45,7 @@ ElementaryStream::ElementaryStream(uint16_t pes_pid)
   , es_pts_pointer(0)
   , es_parsed(0)
   , es_found_frame(false)
+  , es_frame_valid(false)
 {
   memset(&stream_info, 0, sizeof(STREAM_INFO));
 }
@@ -63,6 +64,7 @@ void ElementaryStream::Reset(void)
 {
   ClearBuffer();
   es_found_frame = false;
+  es_frame_valid = false;
 }
 
 void ElementaryStream::ClearBuffer()
@@ -147,6 +149,8 @@ const char* ElementaryStream::GetStreamCodecName(STREAM_TYPE stream_type)
       return "aac_latm";
     case STREAM_TYPE_VIDEO_H264:
       return "h264";
+    case STREAM_TYPE_VIDEO_HEVC:
+      return "hevc";
     case STREAM_TYPE_AUDIO_AC3:
       return "ac3";
     case STREAM_TYPE_AUDIO_EAC3:
