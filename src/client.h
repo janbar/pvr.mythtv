@@ -65,6 +65,7 @@
 #define DEFAULT_BLOCK_SHUTDOWN              true
 #define DEFAULT_LIMIT_TUNE_ATTEMPTS         true
 #define DEFAULT_SHOW_NOT_RECORDING          true
+#define DEFAULT_PROMPT_DELETE               false
 
 /*!
  * @brief PVR macros for string exchange
@@ -115,6 +116,7 @@ extern int          g_iEnableEDL;
 extern bool         g_bBlockMythShutdown;
 extern bool         g_bLimitTuneAttempts;       ///< Limit channel tuning attempts to first card
 extern bool         g_bShowNotRecording;
+extern bool         g_bPromptDeleteAtEnd;
 
 extern ADDON::CHelper_libXBMC_addon *XBMC;
 extern CHelper_libXBMC_pvr          *PVR;

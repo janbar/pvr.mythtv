@@ -61,6 +61,7 @@ int           g_iEnableEDL              = ENABLE_EDL_ALWAYS;
 bool          g_bBlockMythShutdown      = DEFAULT_BLOCK_SHUTDOWN;
 bool          g_bLimitTuneAttempts      = DEFAULT_LIMIT_TUNE_ATTEMPTS;
 bool          g_bShowNotRecording       = false;
+bool          g_bPromptDeleteAtEnd      = false;
 
 ///* Client member variables */
 ADDON_STATUS  m_CurStatus               = ADDON_STATUS_UNKNOWN;
@@ -327,6 +328,14 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
     /* If setting is unknown fallback to defaults */
     XBMC->Log(LOG_ERROR, "Couldn't get 'inactive_upcomings' setting, falling back to '%b' as default", DEFAULT_SHOW_NOT_RECORDING);
     g_bShowNotRecording = DEFAULT_SHOW_NOT_RECORDING;
+  }
+
+  /* Read setting "use_airdate" from settings.xml */
+  if (!XBMC->GetSetting("prompt_delete", &g_bPromptDeleteAtEnd))
+  {
+    /* If setting is unknown fallback to defaults */
+    XBMC->Log(LOG_ERROR, "Couldn't get 'prompt_delete' setting, falling back to '%b' as default", DEFAULT_PROMPT_DELETE);
+    g_bPromptDeleteAtEnd = DEFAULT_PROMPT_DELETE;
   }
 
   free (buffer);
@@ -686,6 +695,12 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
       if (g_client)
         g_client->HandleScheduleChange();
     }
+  }
+  else if (str == "prompt_delete")
+  {
+    XBMC->Log(LOG_INFO, "Changed Setting 'prompt_delete' from %b to %b", g_bPromptDeleteAtEnd, *(bool*)settingValue);
+    if (g_bPromptDeleteAtEnd != *(bool*)settingValue)
+      g_bPromptDeleteAtEnd = *(bool*)settingValue;
   }
   return ADDON_STATUS_OK;
 }
