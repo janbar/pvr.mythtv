@@ -17,8 +17,8 @@ override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1
 
 override_dh_strip:
-	dh_strip -pkodi-pvr-mythtv --dbg-package=kodi-pvr-mythtv-dbg
+	dh_strip -pkodi-pvr-mythtv-krypton --dbg-package=kodi-pvr-mythtv-krypton-dbg
 
 override_dh_installdocs:
-	dh_installdocs --link-doc=kodi-pvr-mythtv
+	dh_installdocs --link-doc=kodi-pvr-mythtv-krypton
 
