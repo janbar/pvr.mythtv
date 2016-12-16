@@ -868,7 +868,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(ADDON_HANDLE handle)
       tag.recordingTime = GetRecordingTime(it->second.Airdate(), it->second.RecordingStartTime());
       tag.iDuration = it->second.Duration();
       tag.iPlayCount = it->second.IsWatched() ? 1 : 0;
-      //@TODO: tag.iLastPlayedPosition
+      tag.iLastPlayedPosition = it->second.HasBookmark() ? 1 : 0;
 
       std::string id = it->second.UID();
 
@@ -985,7 +985,7 @@ PVR_ERROR PVRClientMythTV::GetDeletedRecordings(ADDON_HANDLE handle)
       tag.recordingTime = GetRecordingTime(it->second.Airdate(), it->second.RecordingStartTime());
       tag.iDuration = it->second.Duration();
       tag.iPlayCount = it->second.IsWatched() ? 1 : 0;
-      //@TODO: tag.iLastPlayedPosition
+      tag.iLastPlayedPosition = it->second.HasBookmark() ? 1 : 0;
 
       std::string id = it->second.UID();
 
