@@ -2591,9 +2591,8 @@ time_t PVRClientMythTV::GetRecordingTime(time_t airtt, time_t recordingtt)
   the best possible time to report to the user to allow them to sort by
   datetime to see the correct episode ordering. */
   struct tm airtm, rectm;
-  gmtime_r(&airtt, &airtm);
-  gmtime_r(&recordingtt, &rectm);
-
+  localtime_r(&airtt, &airtm);
+  localtime_r(&recordingtt, &rectm);
   airtm.tm_hour = rectm.tm_hour;
   airtm.tm_min = rectm.tm_min;
   airtm.tm_sec = rectm.tm_sec;
