@@ -383,19 +383,7 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
       }
       default:
       {
-        if (!g_bNotifyAddonFailure)
-          m_CurStatus = ADDON_STATUS_NEED_SETTINGS;
-        else
-        {
-          // HEADING: Connection failed
-          // No response from MythTV backend.
-          // Do you want to retry ?
-          std::string msg = XBMC->GetLocalizedString(30304);
-          msg.append("\n").append(XBMC->GetLocalizedString(30113));
-          bool canceled = false;
-          if (!GUI->Dialog_YesNo_ShowAndGetInput(XBMC->GetLocalizedString(30112), msg.c_str(), canceled) && !canceled)
-            m_CurStatus = ADDON_STATUS_NEED_SETTINGS;
-        }
+        // do nothing
         break;
       }
     }
