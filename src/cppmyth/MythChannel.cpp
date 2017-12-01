@@ -114,7 +114,9 @@ bool MythChannel::Visible() const
 
 bool MythChannel::IsRadio() const
 {
-  return (false);
+   // Check for keyword to move channel to "Radio" group in the channel's callsign 
+  // If "-[RADIO]" is found then return true else return false
+  return (m_channel ? ((m_channel->callSign.find("-[RADIO]") != std::string::npos) ? true : false) : false);
 }
 
 uint32_t MythChannel::SourceID() const
