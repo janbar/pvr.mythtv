@@ -68,6 +68,7 @@
 #define DEFAULT_LIVETV_RECORDINGS           true
 #define DEFAULT_BACKEND_BOOKMARKS           true
 #define DEFAULT_ROOT_DEFAULT_GROUP          false
+#define DEFAULT_DAMAGED_COLOR               "yellow"
 /*!
  * @brief PVR macros for string exchange
  */
@@ -119,6 +120,7 @@ extern bool         g_bShowNotRecording;
 extern bool         g_bPromptDeleteAtEnd;
 extern bool         g_bUseBackendBookmarks;
 extern bool         g_bRootDefaultGroup;
+extern std::string  g_szDamagedColor;
 
 extern ADDON::CHelper_libXBMC_addon *XBMC;
 extern CHelper_libXBMC_pvr          *PVR;

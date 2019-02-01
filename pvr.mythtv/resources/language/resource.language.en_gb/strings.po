@@ -137,7 +137,11 @@ msgctxt "#30034"
 msgid "Allow recordings to expire"
 msgstr ""
 
-# empty strings from id 30035 to 30046
+# empty strings from id 30035 to 30045
+
+msgctxt "#30046"
+msgid "Show damaged recordings as color"
+msgstr
 
 msgctxt "#30047"
 msgid "Prompt to delete the watched recording"

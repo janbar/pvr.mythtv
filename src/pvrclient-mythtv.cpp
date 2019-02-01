@@ -909,10 +909,10 @@ PVR_ERROR PVRClientMythTV::GetRecordings(ADDON_HANDLE handle)
 
       std::string str; // a temporary string to build formating label
       std::string title(it->second.Title());
-      if (it->second.IsDamaged())
+      if (it->second.IsDamaged() && !g_szDamagedColor.empty())
       {
         str.assign(title);
-        title.assign("[COLOR yellow]").append(str).append("[/COLOR]");
+        title.assign("[COLOR ").append(g_szDamagedColor).append("]").append(str).append("[/COLOR]");
       }
 
       PVR_STRCPY(tag.strRecordingId, id.c_str());

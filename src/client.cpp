@@ -67,6 +67,7 @@ bool          g_bShowNotRecording       = DEFAULT_SHOW_NOT_RECORDING;
 bool          g_bPromptDeleteAtEnd      = DEFAULT_PROMPT_DELETE;
 bool          g_bUseBackendBookmarks    = DEFAULT_BACKEND_BOOKMARKS;
 bool          g_bRootDefaultGroup       = DEFAULT_ROOT_DEFAULT_GROUP;
+std::string   g_szDamagedColor          = DEFAULT_DAMAGED_COLOR;
 
 ///* Client member variables */
 ADDON_STATUS  m_CurStatus               = ADDON_STATUS_UNKNOWN;
@@ -347,6 +348,17 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
     XBMC->Log(LOG_ERROR, "Couldn't get 'root_default_group' setting, falling back to '%u' as default", DEFAULT_ROOT_DEFAULT_GROUP);
     g_bRootDefaultGroup = DEFAULT_ROOT_DEFAULT_GROUP;
   }
+
+  /* Read setting "damaged_color" from settings.xml */
+  if (XBMC->GetSetting("damaged_color", buffer))
+    g_szDamagedColor = buffer;
+  else
+  {
+    /* If setting is unknown fallback to defaults */
+    XBMC->Log(LOG_ERROR, "Couldn't get 'damaged_color' setting, falling back to '%s' as default", DEFAULT_DAMAGED_COLOR);
+    g_szDamagedColor = DEFAULT_DAMAGED_COLOR;
+  }
+  buffer[0] = 0;
 
   free (buffer);
   XBMC->Log(LOG_DEBUG, "Loading settings...done");

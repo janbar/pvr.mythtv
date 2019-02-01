@@ -20,6 +20,7 @@
     <setting id="inactive_upcomings" type="bool" label="30066" default="true" />
     <setting id="prompt_delete" type="bool" label="30047" default="false" />
     <setting id="root_default_group" type="bool" label="30069" default="false" />
+    <setting id="damaged_color" type="text" label="30046" default="yellow" />
   </category>
   <category label="30049">
     <setting id="rec_template_provider" type="enum" label="30020" lvalues="30021|30022" default="1" />
