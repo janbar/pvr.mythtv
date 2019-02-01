@@ -1466,6 +1466,19 @@ PVR_ERROR PVRClientMythTV::GetRecordingEdl(const PVR_RECORDING &recording, PVR_E
     switch ((*it)->markType)
     {
       case Myth::MARK_COMM_START:
+        startPtr = *it;
+        if (g_iEnableEDL == ENABLE_EDL_SCENE)
+        {
+          PVR_EDL_ENTRY entry;
+	  double e = (double)((*it)->markValue) / rate;
+          entry.end = entry.start = (int64_t)(e * 1000.0);
+          entry.type = PVR_EDL_TYPE_SCENE;
+          entries[index] = entry;
+          index++;
+	  if (g_bExtraDebug)
+            XBMC->Log(LOG_DEBUG, "%s: SCENE @ %9.3f", __FUNCTION__, e);
+        }
+        break;
       case Myth::MARK_CUT_START:
         startPtr = *it;
         break;
@@ -1475,13 +1488,23 @@ PVR_ERROR PVRClientMythTV::GetRecordingEdl(const PVR_RECORDING &recording, PVR_E
           PVR_EDL_ENTRY entry;
           double s = (double)(startPtr->markValue) / rate;
           double e = (double)((*it)->markValue) / rate;
-          entry.start = (int64_t)(s * 1000.0);
-          entry.end = (int64_t)(e * 1000.0);
-          entry.type = PVR_EDL_TYPE_COMBREAK;
+          if (g_iEnableEDL == ENABLE_EDL_SCENE)
+          {
+            entry.start = entry.end = (int64_t)(e * 1000.0);
+            entry.type = PVR_EDL_TYPE_SCENE;
+            if (g_bExtraDebug)
+              XBMC->Log(LOG_DEBUG, "%s: SCENE @ %9.3f", __FUNCTION__, e);
+          }
+          else
+          {
+            entry.start = (int64_t)(s * 1000.0);
+            entry.end = (int64_t)(e * 1000.0);
+            entry.type = PVR_EDL_TYPE_COMBREAK;
+            if (g_bExtraDebug)
+              XBMC->Log(LOG_DEBUG, "%s: COMBREAK %9.3f - %9.3f", __FUNCTION__, s, e);
+          }
           entries[index] = entry;
           index++;
-          if (g_bExtraDebug)
-            XBMC->Log(LOG_DEBUG, "%s: COMBREAK %9.3f - %9.3f", __FUNCTION__, s, e);
         }
         startPtr.reset();
         break;

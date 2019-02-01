@@ -61,6 +61,7 @@
 #define ENABLE_EDL_ALWAYS                   0
 #define ENABLE_EDL_DIALOG                   1
 #define ENABLE_EDL_NEVER                    2
+#define ENABLE_EDL_SCENE                    3
 #define DEFAULT_BLOCK_SHUTDOWN              true
 #define DEFAULT_LIMIT_TUNE_ATTEMPTS         true
 #define DEFAULT_SHOW_NOT_RECORDING          true

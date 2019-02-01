@@ -468,3 +468,8 @@ msgstr ""
 msgctxt "#30509"
 msgid "Keep %d newest and expire old"
 msgstr ""
+
+msgctxt "#30510"
+msgid "Scene Only"
+msgstr ""
+
