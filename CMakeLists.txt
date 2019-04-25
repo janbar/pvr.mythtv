@@ -11,11 +11,9 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Kodi REQUIRED)
-find_package(kodiplatform REQUIRED)
 find_package(p8-platform REQUIRED)
 
-include_directories(${kodiplatform_INCLUDE_DIRS}
-                    ${p8-platform_INCLUDE_DIRS}
+include_directories(${p8-platform_INCLUDE_DIRS}
                     ${KODI_INCLUDE_DIR}
                     ${PROJECT_SOURCE_DIR}/lib/cppmyth/src)
 

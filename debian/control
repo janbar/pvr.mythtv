@@ -1,7 +1,7 @@
 Source: kodi-pvr-mythtv
 Priority: extra
 Maintainer: janbar <jlbarriere68@gmail.com>
-Build-Depends: debhelper (>= 9.0.0), cmake, libkodiplatform-dev (>= 16.0.0),
+Build-Depends: debhelper (>= 9.0.0), cmake,
                kodi-addon-dev, zlib1g-dev
 Standards-Version: 3.9.4
 Section: libs
