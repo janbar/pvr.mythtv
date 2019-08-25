@@ -26,7 +26,7 @@
 #include "MythChannel.h"
 #include "MythPrivate.h"
 
-#include <xbmc_pvr_types.h>
+#include <kodi/xbmc_pvr_types.h>
 
 #include <vector>
 #include <list>

@@ -20,7 +20,7 @@
  *
  */
 
-#include <xbmc_pvr_types.h>
+#include <kodi/xbmc_pvr_types.h>
 
 #include "avinfo.h"
 #include "demuxer/debug.h"
