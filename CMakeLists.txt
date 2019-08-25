@@ -1,11 +1,7 @@
+cmake_minimum_required(VERSION 3.5)
 project(pvr.mythtv)
 
-cmake_minimum_required(VERSION 3.1.0)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
-
-enable_language(CXX)
-enable_language(C)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
