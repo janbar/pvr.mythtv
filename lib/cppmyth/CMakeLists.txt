@@ -1,12 +1,7 @@
-cmake_minimum_required (VERSION 2.8.9 FATAL_ERROR)
-cmake_policy (VERSION 2.8)
-
+cmake_minimum_required(VERSION 3.5)
 project (cppmyth)
 
 set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-enable_language(CXX)
-enable_language(C)
 
 # Options
 OPTION (BUILD_SHARED_LIBS "Build shared libraries." OFF)
