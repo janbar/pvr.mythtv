@@ -1,3 +1,7 @@
+v5.10.8
+- Update build system version
+- Change header include way
+
 v5.10.7
 - Force allow shutdown when deactivating the gui
 
