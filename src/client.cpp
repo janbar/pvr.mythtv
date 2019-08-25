@@ -24,7 +24,7 @@
 #include "pvrclient-mythtv.h"
 #include "pvrclient-launcher.h"
 
-#include <xbmc_pvr_dll.h>
+#include <kodi/xbmc_pvr_dll.h>
 
 ///* undefined constants in pvr API */
 #define SEEK_POSSIBLE 0x10 ///< flag used to check if protocol allows seeks

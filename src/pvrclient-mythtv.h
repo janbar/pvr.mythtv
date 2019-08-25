@@ -25,7 +25,7 @@
 #include "artworksmanager.h"
 #include "categories.h"
 
-#include <xbmc_pvr_types.h>
+#include <kodi/xbmc_pvr_types.h>
 #include <mythsharedptr.h>
 #include <mythcontrol.h>
 #include <mytheventhandler.h>
