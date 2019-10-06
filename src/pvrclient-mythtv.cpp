@@ -1327,8 +1327,10 @@ int PVRClientMythTV::GetRecordingLastPlayedPosition(const PVR_RECORDING &recordi
   //        next time for this recording.
   static uint64_t _recid = 0;
   static int _bookmark = 0;
+  static time_t _last = 0;
+  time_t now = time(NULL);
   uint64_t recid = (static_cast<uint64_t>(recording.iChannelUid) << 32) | static_cast<uint64_t>(recording.recordingTime);
-  if (recid == _recid)
+  if (recid == _recid && (now - _last) < 5)
   {
     XBMC->Log(LOG_DEBUG, "%s: Returning cached Bookmark for: %s", __FUNCTION__, recording.strTitle);
     return _bookmark;
@@ -1352,6 +1354,7 @@ int PVRClientMythTV::GetRecordingLastPlayedPosition(const PVR_RECORDING &recordi
         {
             _recid = recid;
             _bookmark = (int)(duration / 1000);
+	    _last = now;
           if (g_bExtraDebug)
             XBMC->Log(LOG_DEBUG, "%s: Bookmark: %d", __FUNCTION__, _bookmark);
           return _bookmark;
@@ -1365,6 +1368,7 @@ int PVRClientMythTV::GetRecordingLastPlayedPosition(const PVR_RECORDING &recordi
     XBMC->Log(LOG_ERROR, "%s: Recording %s does not exist", __FUNCTION__, recording.strRecordingId);
   _recid = recid;
   _bookmark = 0;
+  _last = now;
   return _bookmark;
 }
 
