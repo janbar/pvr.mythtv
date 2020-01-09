@@ -121,7 +121,7 @@ bool PVRClientMythTV::Connect()
   assert(m_control == NULL);
 
   SetDebug(true);
-  Myth::Control *control = new Myth::Control(g_szMythHostname, g_iProtoPort, g_iWSApiPort, g_szWSSecurityPin, g_bBlockMythShutdown, true);
+  Myth::Control *control = new Myth::Control(g_szMythHostname, g_iProtoPort, g_iWSApiPort, g_szWSSecurityPin, true);
   if (!control->IsOpen())
   {
     switch(control->GetProtoError())
@@ -258,13 +258,15 @@ void PVRClientMythTV::OnWake()
 
 void PVRClientMythTV::OnDeactivatedGUI()
 {
-  AllowBackendShutdown();
+  if (g_bAllowMythShutdown && m_control && m_control->IsOpen())
+    AllowBackendShutdown();
   m_powerSaving = true;
 }
 
 void PVRClientMythTV::OnActivatedGUI()
 {
-  if (g_bBlockMythShutdown)
+  // block shutdown if backend is connected
+  if (g_bAllowMythShutdown && m_control && m_control->IsOpen())
     BlockBackendShutdown();
   m_powerSaving = false;
 }
@@ -305,6 +307,9 @@ void PVRClientMythTV::HandleBackendMessage(Myth::EventMessagePtr msg)
             m_scheduleManager->OpenControl();
           m_hang = false;
           XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30303)); // Connection to MythTV restored
+          // still in mode power saving I have to allow shutdown again
+          if (m_powerSaving && g_bAllowMythShutdown)
+            AllowBackendShutdown();
         }
         // Refreshing all
         HandleChannelChange();

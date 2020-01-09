@@ -61,7 +61,7 @@ int           g_iTuneDelay              = DEFAULT_TUNE_DELAY;
 int           g_iGroupRecordings        = GROUP_RECORDINGS_ALWAYS;
 bool          g_bUseAirdate             = DEFAULT_USE_AIRDATE;
 int           g_iEnableEDL              = ENABLE_EDL_ALWAYS;
-bool          g_bBlockMythShutdown      = DEFAULT_BLOCK_SHUTDOWN;
+bool          g_bAllowMythShutdown      = DEFAULT_ALLOW_SHUTDOWN;
 bool          g_bLimitTuneAttempts      = DEFAULT_LIMIT_TUNE_ATTEMPTS;
 bool          g_bShowNotRecording       = DEFAULT_SHOW_NOT_RECORDING;
 bool          g_bPromptDeleteAtEnd      = DEFAULT_PROMPT_DELETE;
@@ -276,12 +276,12 @@ ADDON_STATUS ADDON_Create(void *hdl, void *props)
     g_iEnableEDL = ENABLE_EDL_ALWAYS;
   }
 
-  /* Read setting "block_shutdown" from settings.xml */
-  if (!XBMC->GetSetting("block_shutdown", &g_bBlockMythShutdown))
+  /* Read setting "allow_shutdown" from settings.xml */
+  if (!XBMC->GetSetting("allow_shutdown", &g_bAllowMythShutdown))
   {
     /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'block_shutdown' setting, falling back to '%u' as default", DEFAULT_BLOCK_SHUTDOWN);
-    g_bBlockMythShutdown = DEFAULT_BLOCK_SHUTDOWN;
+    XBMC->Log(LOG_ERROR, "Couldn't get 'allow_shutdown' setting, falling back to '%u' as default", DEFAULT_ALLOW_SHUTDOWN);
+    g_bAllowMythShutdown = DEFAULT_ALLOW_SHUTDOWN;
   }
 
   /* Read setting "channel_icons" from settings.xml */
@@ -638,15 +638,11 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
     if (g_iEnableEDL != *(int*)settingValue)
       g_iEnableEDL = *(int*)settingValue;
   }
-  else if (str == "block_shutdown")
+  else if (str == "allow_shutdown")
   {
-    XBMC->Log(LOG_INFO, "Changed Setting 'block_shutdown' from %u to %u", g_bBlockMythShutdown, *(bool*)settingValue);
-    if (g_bBlockMythShutdown != *(bool*)settingValue)
-    {
-      g_bBlockMythShutdown = *(bool*)settingValue;
-      if (g_client)
-        g_bBlockMythShutdown ? g_client->BlockBackendShutdown() : g_client->AllowBackendShutdown();
-    }
+    XBMC->Log(LOG_INFO, "Changed Setting 'allow_shutdown' from %u to %u", g_bAllowMythShutdown, *(bool*)settingValue);
+    if (g_bAllowMythShutdown != *(bool*)settingValue)
+      g_bAllowMythShutdown = *(bool*)settingValue;
   }
   else if (str == "limit_tune_attempts")
   {
