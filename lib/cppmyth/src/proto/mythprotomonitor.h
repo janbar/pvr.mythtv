@@ -36,8 +36,7 @@ namespace Myth
   {
   public:
     ProtoMonitor(const std::string& server, unsigned port);
-    ProtoMonitor(const std::string& server, unsigned port, bool blockShutdown);
-    ProtoMonitor(const std::string& server, unsigned port, bool blockShutdown, bool frontend);
+    ProtoMonitor(const std::string& server, unsigned port, bool frontend);
 
     virtual bool Open();
     virtual void Close();
@@ -93,12 +92,10 @@ namespace Myth
     }
     bool BlockShutdown()
     {
-      m_blockShutdown = true;
       return BlockShutdown75();
     }
     bool AllowShutdown()
     {
-      m_blockShutdown = false;
       return AllowShutdown75();
     }
     /**
@@ -119,7 +116,6 @@ namespace Myth
 
   private:
     bool m_frontend;
-    bool m_blockShutdown;
 
     bool Announce75();
     bool Announce88();

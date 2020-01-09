@@ -39,21 +39,12 @@ using namespace Myth;
 ProtoMonitor::ProtoMonitor(const std::string& server, unsigned port)
 : ProtoBase(server, port)
 , m_frontend(false)
-, m_blockShutdown(false)
 {
 }
 
-ProtoMonitor::ProtoMonitor(const std::string& server, unsigned port, bool blockShutdown)
-: ProtoBase(server, port)
-, m_frontend(false)
-, m_blockShutdown(blockShutdown)
-{
-}
-
-ProtoMonitor::ProtoMonitor(const std::string& server, unsigned port, bool blockShutdown, bool frontend)
+ProtoMonitor::ProtoMonitor(const std::string& server, unsigned port, bool frontend)
 : ProtoBase(server, port)
 , m_frontend(frontend)
-, m_blockShutdown(blockShutdown)
 {
 }
 
@@ -71,8 +62,6 @@ bool ProtoMonitor::Open()
 
   if (ok)
   {
-    if (m_blockShutdown)
-      BlockShutdown();
     return true;
   }
   Close();
