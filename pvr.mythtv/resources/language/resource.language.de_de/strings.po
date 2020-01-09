@@ -203,8 +203,8 @@ msgid "Never"
 msgstr "Nie"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Herunterfahren des Backends verhindern"
+msgid "Allow backend shutdown"
+msgstr "Erlaube des Backends verhindern"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

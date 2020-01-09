@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Никада"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Блокирај гашење позадине"
+msgid "Allow backend shutdown"
+msgstr "Допусти гашење позадине"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

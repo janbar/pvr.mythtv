@@ -181,8 +181,8 @@ msgid "Never"
 msgstr "Nigdy"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Zniymożebniej szaltrowanie serwera"
+msgid "Allow backend shutdown"
+msgstr "zezwól na szaltrowanie serwera"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Никога"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Забраняване на спирането на сървъра"
+msgid "Allow backend shutdown"
+msgstr "Разрешаване на спирането на сървъра"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

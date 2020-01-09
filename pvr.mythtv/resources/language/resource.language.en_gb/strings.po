@@ -204,7 +204,7 @@ msgid "Never"
 msgstr ""
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
+msgid "Allow backend shutdown"
 msgstr ""
 
 msgctxt "#30063"

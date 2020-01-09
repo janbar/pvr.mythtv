@@ -181,8 +181,8 @@ msgid "Never"
 msgstr "사용 안 함"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "백엔드 종료 방지"
+msgid "Allow backend shutdown"
+msgstr "백엔드 종료 허용"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

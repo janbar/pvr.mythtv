@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Tidak sesekali"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Sekat bahagian belakang matikan"
+msgid "Allow backend shutdown"
+msgstr "Benarkan bahagian belakang matikan"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

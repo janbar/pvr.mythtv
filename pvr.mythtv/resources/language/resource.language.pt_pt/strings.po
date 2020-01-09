@@ -189,8 +189,8 @@ msgid "Never"
 msgstr "Nunca"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Bloquear encerramento da estrutura"
+msgid "Allow backend shutdown"
+msgstr "Permitir encerramento da estrutura"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

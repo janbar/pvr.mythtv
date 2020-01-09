@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "אף פעם"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "מנע כיבוי משרת אחורי"
+msgid "Allow backend shutdown"
+msgstr "אפשר לכבות משרת"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

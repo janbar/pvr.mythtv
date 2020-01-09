@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Mai"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Blocca chiusura backend"
+msgid "Allow backend shutdown"
+msgstr "Consenti chiusura backend"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

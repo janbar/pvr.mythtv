@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "永不"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "阻斷後端關機"
+msgid "Allow backend shutdown"
+msgstr "允許後端關機"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

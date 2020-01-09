@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Ei koskaan"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Estä taustaosan sammutus"
+msgid "Allow backend shutdown"
+msgstr "Salli taustaosan sammutus"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

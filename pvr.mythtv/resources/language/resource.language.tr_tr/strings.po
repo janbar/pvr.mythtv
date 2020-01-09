@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Asla"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Arka uç kapatmasını engelle"
+msgid "Allow backend shutdown"
+msgstr "Arka uç kapatmasını izin ver"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

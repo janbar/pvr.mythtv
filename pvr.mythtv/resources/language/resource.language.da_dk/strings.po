@@ -199,8 +199,8 @@ msgid "Never"
 msgstr "Aldrig"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Blokér backend nedlukning"
+msgid "Allow backend shutdown"
+msgstr "Tillad backend nedlukning"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

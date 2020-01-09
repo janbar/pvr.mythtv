@@ -181,8 +181,8 @@ msgid "Never"
 msgstr "Byth"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Rhwystro cau'r cefn"
+msgid "Allow backend shutdown"
+msgstr "Caniatáu cau'r cefn"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

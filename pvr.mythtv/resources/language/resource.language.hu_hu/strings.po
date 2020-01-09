@@ -189,8 +189,8 @@ msgid "Never"
 msgstr "Soha"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Háttérszolgáltatás leállításának tblokkolása"
+msgid "Allow backend shutdown"
+msgstr "Háttérszolgáltatás leállításának lehetővé"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

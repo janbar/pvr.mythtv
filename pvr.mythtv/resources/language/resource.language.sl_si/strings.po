@@ -181,8 +181,8 @@ msgid "Never"
 msgstr "Nikoli"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Blokiraj izklop hrbtenice"
+msgid "Allow backend shutdown"
+msgstr "Dovoli izklop hrbtenice"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

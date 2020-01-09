@@ -181,8 +181,8 @@ msgid "Never"
 msgstr "Ποτέ"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Να μην επιτρέπεται τερματισμός του backend"
+msgid "Allow backend shutdown"
+msgstr "Αφήστε τον τερματισμό του backend"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

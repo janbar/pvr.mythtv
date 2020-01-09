@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Nikdy"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Blokovat vypnutí backendu"
+msgid "Allow backend shutdown"
+msgstr "Povolit vypnutí backendu"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

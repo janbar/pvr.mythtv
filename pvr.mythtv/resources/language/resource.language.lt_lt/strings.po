@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Niekada"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Blokuoti posistemės išjungimą"
+msgid "Allow backend shutdown"
+msgstr "Leisti posistemės išjungimą"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

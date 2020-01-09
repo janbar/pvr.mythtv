@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Aldrei"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Hindra að slökkt sé á bakenda"
+msgid "Allow backend shutdown"
+msgstr "Leyfa að slökkt sé á bakenda"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

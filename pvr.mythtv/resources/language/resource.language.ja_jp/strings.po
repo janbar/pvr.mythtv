@@ -181,8 +181,8 @@ msgid "Never"
 msgstr "使用しない"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "バックエンドの電源が切れるのを阻止する"
+msgid "Allow backend shutdown"
+msgstr "バックエンドの電源切断を許可する"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

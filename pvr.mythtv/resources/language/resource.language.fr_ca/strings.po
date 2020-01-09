@@ -203,8 +203,8 @@ msgid "Never"
 msgstr "Jamais"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Bloquer l'extinction du dorsal"
+msgid "Allow backend shutdown"
+msgstr "Permettre l'extinction du dorsal"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

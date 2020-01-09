@@ -181,8 +181,8 @@ msgid "Never"
 msgstr "Никогда"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Блокировать выключение бэк-энда"
+msgid "Allow backend shutdown"
+msgstr "Разрешить выключение бэк-энда"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

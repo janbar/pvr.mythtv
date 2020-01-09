@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Niciodată"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Blochează închiderea furnizorului din spate"
+msgid "Allow backend shutdown"
+msgstr "Permite închiderea furnizorului din spate"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

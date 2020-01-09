@@ -161,8 +161,8 @@ msgid "Never"
 msgstr "Ніколи"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Блокувати фонове вимикання"
+msgid "Allow backend shutdown"
+msgstr "дозволяти фонове вимикання"
 
 msgctxt "#30100"
 msgid "Protocol version: %i - Database version: %i"

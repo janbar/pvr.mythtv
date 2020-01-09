@@ -181,8 +181,8 @@ msgid "Never"
 msgstr "Nekad"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Bloķēt galasistēmas izslēgšanu"
+msgid "Allow backend shutdown"
+msgstr "Piekrist galasistēmas izslēgšanu"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

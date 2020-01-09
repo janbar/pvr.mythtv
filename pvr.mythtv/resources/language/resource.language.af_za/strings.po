@@ -193,8 +193,8 @@ msgid "Never"
 msgstr "Nooit"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Blok agterkant afskakel"
+msgid "Allow backend shutdown"
+msgstr "Laat agterkant afskakel"
 
 msgctxt "#30063"
 msgid "Enable channel icons"

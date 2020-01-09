@@ -185,8 +185,8 @@ msgid "Never"
 msgstr "Mai"
 
 msgctxt "#30062"
-msgid "Block backend shutdown"
-msgstr "Bloqueja l'apagada del dorsal"
+msgid "Allow backend shutdown"
+msgstr "Concedir l'apagada del dorsal"
 
 msgctxt "#30063"
 msgid "Enable channel icons"
