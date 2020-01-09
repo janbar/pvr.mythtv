@@ -1,3 +1,7 @@
+v5.10.15
+- Backport fixes
+Fix allow backend shutdown when GUI is idle (screensaver activated)
+
 v5.10.14
 - Backport fixes
 
