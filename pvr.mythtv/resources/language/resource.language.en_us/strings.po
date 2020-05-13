@@ -2,20 +2,23 @@
 # Addon Name: MythTV PVR Client
 # Addon id: pvr.mythtv
 # Addon Provider: Christian Fetzer, Jean-Luc Barrière
+# Translators:
+# Jean-Luc Barrière <jlbarriere68@gmail.com>, 2019-2020
 msgid ""
 msgstr ""
-"Project-Id-Version: KODI Main\n"
+"Project-Id-Version: pvr.mythtv\n"
 "Report-Msgid-Bugs-To: http://trac.kodi.tv/\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Kodi Translation Team\n"
-"Language-Team: English (United States) (http://www.transifex.com/projects/p/kodi-main/language/en_US/)\n"
+"PO-Revision-Date: 2020-05-13 23:30+0000\n"
+"Last-Translator: Jean-Luc Barrière <jlbarriere68@gmail.com>\n"
+"Language-Team: English (United States) (http://www.transifex.com/janbar/pvrmythtv/language/en_US/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: en_US\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# Settings labels
 msgctxt "#30000"
 msgid "MythTV Backend Hostname or IP"
 msgstr "MythTV Backend Hostname or IP"
@@ -76,6 +79,7 @@ msgctxt "#30014"
 msgid "MythTV Security Pin for API services"
 msgstr "MythTV Security Pin for API services"
 
+# empty strings from id 30015 to 30018
 msgctxt "#30019"
 msgid "General"
 msgstr "General"
@@ -92,6 +96,7 @@ msgctxt "#30022"
 msgid "MythTV"
 msgstr "MythTV"
 
+# empty strings from id 30023 to 30024
 msgctxt "#30025"
 msgid "Internal template"
 msgstr "Internal template"
@@ -131,6 +136,11 @@ msgstr "Transcoder"
 msgctxt "#30034"
 msgid "Allow recordings to expire"
 msgstr "Allow recordings to expire"
+
+# empty strings from id 30035 to 30045
+msgctxt "#30046"
+msgid "Show damaged recordings as color"
+msgstr "Show damaged recordings as color"
 
 msgctxt "#30047"
 msgid "Prompt to delete the watched recording"
@@ -216,16 +226,34 @@ msgctxt "#30067"
 msgid "Show LiveTV recordings"
 msgstr "Show LiveTV recordings"
 
+msgctxt "#30068"
+msgid "Use bookmarks of the backend MythTV"
+msgstr "Use bookmarks of the backend MythTV"
+
+msgctxt "#30069"
+msgid "Show default recording group as root"
+msgstr "Show default recording group as root"
+
+msgctxt "#30070"
+msgid "Scene Only"
+msgstr "Scene Only"
+
+# empty strings from id 30071 to 30099
+# Systeminformation labels
 msgctxt "#30100"
 msgid "Protocol version: %i - Database version: %i"
 msgstr "Protocol version: %i - Database version: %i"
 
+# empty strings from id 30101 to 30109
+# Dialog labels
 msgctxt "#30110"
 msgid "Enabling EDL"
 msgstr "Enabling EDL"
 
 msgctxt "#30111"
-msgid "A cut list or commercial skips have been found.\nDo you want to activate EDL functionality for this show ?"
+msgid ""
+"A cut list or commercial skips have been found.\n"
+"Do you want to activate EDL functionality for this show ?"
 msgstr "A cut list or commercial skips have been found.\nDo you want to activate EDL functionality for this show ?"
 
 msgctxt "#30112"
@@ -240,12 +268,20 @@ msgctxt "#30114"
 msgid "Connected"
 msgstr "Connected"
 
+# empty strings from id 30114 to 30299
+# Notifications
 msgctxt "#30300"
-msgid "Failed to connect the MythTV backend with the known protocol versions. Please check the compatibility map of the addon and upgrade your backend to a supported version."
+msgid ""
+"Failed to connect the MythTV backend with the known protocol versions. "
+"Please check the compatibility map of the addon and upgrade your backend to "
+"a supported version."
 msgstr "Failed to connect the MythTV backend with the known protocol versions. Please check the compatibility map of the addon and upgrade your backend to a supported version."
 
 msgctxt "#30301"
-msgid "Failed to connect the API services of MythTV backend. Please check your PIN code or backend setup. The PIN code has to be configured in your backend to allow connection."
+msgid ""
+"Failed to connect the API services of MythTV backend. Please check your PIN "
+"code or backend setup. The PIN code has to be configured in your backend to "
+"allow connection."
 msgstr "Failed to connect the API services of MythTV backend. Please check your PIN code or backend setup. The PIN code has to be configured in your backend to allow connection."
 
 msgctxt "#30302"
@@ -292,6 +328,8 @@ msgctxt "#30312"
 msgid "No broadcast found"
 msgstr "No broadcast found"
 
+# empty strings from id 30313 to 30410
+# Menu Hooks
 msgctxt "#30411"
 msgid "Delete and re-record"
 msgstr "Delete and re-record"
@@ -300,6 +338,7 @@ msgctxt "#30412"
 msgid "Keep recording"
 msgstr "Keep recording"
 
+# empty strings from id 30413 to 30420
 msgctxt "#30421"
 msgid "Toggle display of alternative/recorded/expired"
 msgstr "Toggle display of alternative/recorded/expired"
@@ -324,6 +363,7 @@ msgctxt "#30426"
 msgid "Show status of broadcast"
 msgstr "Show status of broadcast"
 
+# empty strings from id 30427 to 30450
 msgctxt "#30451"
 msgid "Unhandled"
 msgstr "Unhandled"
@@ -400,6 +440,7 @@ msgctxt "#30469"
 msgid "Rule disabled"
 msgstr "Rule disabled"
 
+# empty strings from id 30470 to 30500
 msgctxt "#30501"
 msgid "Don't match duplicates"
 msgstr "Don't match duplicates"
