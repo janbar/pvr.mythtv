@@ -1,3 +1,6 @@
+v5.10.16
+- Update translations nl
+
 v5.10.15
 - Backport fixes
 Fix allow backend shutdown when GUI is idle (screensaver activated)
