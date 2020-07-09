@@ -2519,24 +2519,24 @@ PVR_ERROR PVRClientMythTV::CallMenuHook(const PVR_MENUHOOK &menuhook, const PVR_
     const unsigned sz = 12;
     std::string items[sz];
     const char* entries[sz];
-    items[0].append("Status : [COLOR ").append(g_szDamagedColor).append("]")
+    items[0].append("Status : [COLOR white]")
             .append(Myth::RecStatusToString(m_control->CheckService(), pinfo.Status())).append("[/COLOR]");
-    items[1].append("RecordID : [COLOR ").append(g_szDamagedColor).append("]")
+    items[1].append("RecordID : [COLOR white]")
             .append(Myth::IdToString(pinfo.RecordID())).append("[/COLOR]");
-    items[2].append("StartTime : [COLOR ").append(g_szDamagedColor).append("]")
+    items[2].append("StartTime : [COLOR white]")
             .append(Myth::TimeToString(pinfo.RecordingStartTime())).append("[/COLOR]");
-    items[3].append("EndTime : [COLOR ").append(g_szDamagedColor).append("]")
+    items[3].append("EndTime : [COLOR white]")
             .append(Myth::TimeToString(pinfo.RecordingEndTime())).append("[/COLOR]");
-    items[4].append("ChannelName : [COLOR ").append(g_szDamagedColor).append("]")
+    items[4].append("ChannelName : [COLOR white]")
             .append(pinfo.ChannelName()).append("[/COLOR]");
-    items[5].append("FileName : [COLOR ").append(g_szDamagedColor).append("]")
+    items[5].append("FileName : [COLOR white]")
             .append(pinfo.FileName()).append("[/COLOR]");
-    items[6].append("StorageGroup : [COLOR ").append(g_szDamagedColor).append("]")
+    items[6].append("StorageGroup : [COLOR white]")
             .append(pinfo.StorageGroup()).append("[/COLOR]");
-    items[7].append("HostName : [COLOR ").append(g_szDamagedColor).append("]")
+    items[7].append("HostName : [COLOR white]")
             .append(pinfo.HostName()).append("[/COLOR]");
 
-    items[8].append("ProgramFlags : [COLOR ").append(g_szDamagedColor).append("]");
+    items[8].append("ProgramFlags : [COLOR white]");
     unsigned pf = pinfo.GetPtr()->programFlags;
     items[8].append((pf & 0x00001) ? "0 " : "");
     items[8].append((pf & 0x00002) ? "1 " : "");
@@ -2558,7 +2558,7 @@ PVR_ERROR PVRClientMythTV::CallMenuHook(const PVR_MENUHOOK &menuhook, const PVR_
     items[8].append((pf & 0x20000) ? "H " : "");
     items[8].append("[/COLOR]");
 
-    items[9].append("AudioProps : [COLOR ").append(g_szDamagedColor).append("]");
+    items[9].append("AudioProps : [COLOR white]");
     unsigned ap = pinfo.GetPtr()->audioProps;
     items[9].append((ap & 0x01) ? "0 " : "");
     items[9].append((ap & 0x02) ? "1 " : "");
@@ -2568,7 +2568,7 @@ PVR_ERROR PVRClientMythTV::CallMenuHook(const PVR_MENUHOOK &menuhook, const PVR_
     items[9].append((ap & 0x20) ? "5 " : "");
     items[9].append("[/COLOR]");
 
-    items[10].append("VideoProps : [COLOR ").append(g_szDamagedColor).append("]");
+    items[10].append("VideoProps : [COLOR white]");
     unsigned vp = pinfo.GetPtr()->videoProps;
     items[10].append((vp & 0x01) ? "0 " : "");
     items[10].append((vp & 0x02) ? "1 " : "");
@@ -2579,7 +2579,7 @@ PVR_ERROR PVRClientMythTV::CallMenuHook(const PVR_MENUHOOK &menuhook, const PVR_
     items[10].append((vp & 0x40) ? "6 " : "");
     items[10].append("[/COLOR]");
 
-    items[11].append("FrameRate : [COLOR ").append(g_szDamagedColor).append("]");
+    items[11].append("FrameRate : [COLOR white]");
     if (pinfo.GetPropsVideoFrameRate() > 0.0)
       items[11].append(std::to_string(pinfo.GetPropsVideoFrameRate()));
     items[11].append("[/COLOR]");
@@ -2607,13 +2607,13 @@ PVR_ERROR PVRClientMythTV::CallMenuHook(const PVR_MENUHOOK &menuhook, const PVR_
         const unsigned sz = 4;
         std::string items[sz];
         const char* entries[sz];
-        items[0].append("Status : [COLOR ").append(g_szDamagedColor).append("]")
+        items[0].append("Status : [COLOR white]")
                 .append(Myth::RecStatusToString(m_control->CheckService(), prog->Status())).append("[/COLOR]");
-        items[1].append("RecordID : [COLOR ").append(g_szDamagedColor).append("]")
+        items[1].append("RecordID : [COLOR white]")
                 .append(Myth::IdToString(prog->RecordID())).append("[/COLOR]");
-        items[2].append("StartTime : [COLOR ").append(g_szDamagedColor).append("]")
+        items[2].append("StartTime : [COLOR white]")
                 .append(Myth::TimeToString(prog->RecordingStartTime())).append("[/COLOR]");
-        items[3].append("EndTime : [COLOR ").append(g_szDamagedColor).append("]")
+        items[3].append("EndTime : [COLOR white]")
                 .append(Myth::TimeToString(prog->RecordingEndTime())).append("[/COLOR]");
         for (unsigned i = 0; i < sz; ++i)
           entries[i] = items[i].c_str();
