@@ -1,4 +1,4 @@
-v5.10.17
+v5.10.18
 - Show coverart of recording instead preview when possible
 
 v5.10.16
