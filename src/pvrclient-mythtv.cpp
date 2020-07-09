@@ -978,7 +978,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(ADDON_HANDLE handle)
       }
 
       PVR_STRCPY(tag.strIconPath, strIconPath.c_str());
-      PVR_STRCPY(tag.strThumbnailPath, strThumbnailPath.c_str());
+      PVR_STRCPY(tag.strThumbnailPath, strIconPath.c_str());
       PVR_STRCPY(tag.strFanartPath, strFanartPath.c_str());
 
       // EPG Entry (Enables "Play recording" option and icon)
