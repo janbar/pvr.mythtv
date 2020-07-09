@@ -1,3 +1,6 @@
+v5.10.17
+- Show coverart of recording instead preview when possible
+
 v5.10.16
 - Update translations nl
 

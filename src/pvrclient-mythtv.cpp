@@ -1093,7 +1093,7 @@ PVR_ERROR PVRClientMythTV::GetDeletedRecordings(ADDON_HANDLE handle)
           strFanartPath = m_artworksManager->GetArtworkPath(it->second, ArtworkManager::AWTypeFanart);
       }
       PVR_STRCPY(tag.strIconPath, strIconPath.c_str());
-      PVR_STRCPY(tag.strThumbnailPath, strThumbnailPath.c_str());
+      PVR_STRCPY(tag.strThumbnailPath, strIconPath.c_str());
       PVR_STRCPY(tag.strFanartPath, strFanartPath.c_str());
 
       // Unimplemented
