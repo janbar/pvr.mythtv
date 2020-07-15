@@ -295,7 +295,9 @@ void PVRClientMythTV::HandleBackendMessage(Myth::EventMessagePtr msg)
           m_control->Close();
         if (m_scheduleManager)
           m_scheduleManager->CloseControl();
-        XBMC->QueueNotification(QUEUE_ERROR, XBMC->GetLocalizedString(30302)); // Connection to MythTV backend lost
+        // notify the user when the screen is activated
+        if (!m_powerSaving)
+          XBMC->QueueNotification(QUEUE_ERROR, XBMC->GetLocalizedString(30302)); // Connection to MythTV backend lost
       }
       else if (msg->subject[0] == EVENTHANDLER_CONNECTED)
       {
@@ -306,7 +308,9 @@ void PVRClientMythTV::HandleBackendMessage(Myth::EventMessagePtr msg)
           if (m_scheduleManager)
             m_scheduleManager->OpenControl();
           m_hang = false;
-          XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30303)); // Connection to MythTV restored
+          // notify the user when the screen is activated
+          if (!m_powerSaving)
+            XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30303)); // Connection to MythTV restored
           // still in mode power saving I have to allow shutdown again
           if (m_powerSaving && g_bAllowMythShutdown)
             AllowBackendShutdown();
@@ -2321,7 +2325,7 @@ bool PVRClientMythTV::OpenRecordedStream(const PVR_RECORDING &recording)
     // Request the stream from our master using the opened event handler.
     m_recordingStream = new Myth::RecordingPlayback(*m_eventHandler);
     if (!m_recordingStream->IsOpen())
-      XBMC->QueueNotification(QUEUE_ERROR, XBMC->GetLocalizedString(30302)); // MythTV backend unavailable
+      XBMC->QueueNotification(QUEUE_ERROR, XBMC->GetLocalizedString(30304)); // No response from MythTV backend
     else if (m_recordingStream->OpenTransfer(prog.GetPtr()))
     {
       m_recordingStreamInfo = prog;
