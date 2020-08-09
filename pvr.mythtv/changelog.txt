@@ -1,3 +1,6 @@
+v7.0.6
+- Fix spelling error identified by lintian
+
 v7.0.5
 - Disable notification about the connection state when the screen is desactivated
 
