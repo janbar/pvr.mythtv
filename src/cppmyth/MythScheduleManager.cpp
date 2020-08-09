@@ -656,7 +656,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteRecordingRule(uint32_t
         MythScheduleList rec = FindUpComingByRuleId(ito->RecordID());
         for (MythScheduleList::iterator itr = rec.begin(); itr != rec.end(); ++itr)
         {
-          kodi::Log(ADDON_LOG_DEBUG, "%s: Found overriden recording %s status %d", __FUNCTION__, itr->second->UID().c_str(), itr->second->Status());
+          kodi::Log(ADDON_LOG_DEBUG, "%s: Found overridden recording %s status %d", __FUNCTION__, itr->second->UID().c_str(), itr->second->Status());
           if (itr->second->Status() == Myth::RS_RECORDING || itr->second->Status() == Myth::RS_TUNING)
           {
             kodi::Log(ADDON_LOG_DEBUG, "%s: Stop recording %s", __FUNCTION__, itr->second->UID().c_str());
@@ -924,7 +924,7 @@ void MythScheduleManager::Update()
   if (CMythSettings::GetExtraDebug())
   {
     for (NodeList::iterator it = new_rules->begin(); it != new_rules->end(); ++it)
-      kodi::Log(ADDON_LOG_DEBUG, "%s: Rule node - recordid: %u, parentid: %u, type: %d, overriden: %s", __FUNCTION__,
+      kodi::Log(ADDON_LOG_DEBUG, "%s: Rule node - recordid: %u, parentid: %u, type: %d, overridden: %s", __FUNCTION__,
               (unsigned)(*it)->m_rule.RecordID(), (unsigned)(*it)->m_rule.ParentID(),
               (int)(*it)->m_rule.Type(), ((*it)->HasOverrideRules() ? "Yes" : "No"));
     for (RecordingList::iterator it = new_recordings->begin(); it != new_recordings->end(); ++it)
