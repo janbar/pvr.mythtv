@@ -16,6 +16,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+msgctxt "Addon Summary"
+msgid "Kodi frontend for MythTV"
+msgstr "MythTV的Kodi前端介面"
+
+msgctxt "Addon Description"
+msgid "MythTV frontend (up to MythTV 31). Supports streaming of Live TV &amp; Recordings, listening to Radio channels, EPG and Timers."
+msgstr "MythTV 前端介面 (最高至MythTV 31)。支援電視直播串流及錄影，收聽廣播，電子節目表及定時器。"
+
+msgctxt "Addon Disclaimer"
+msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."
+msgstr "這是測試中的軟體！原創作者無法針對以下情況負責：包括錄影失敗，不正確的定時器，多餘的時數，或任何不可預期的不良影響。"
+
 msgctxt "#30000"
 msgid "MythTV Backend Hostname or IP"
 msgstr "MythTV的後端主機名稱或IP"

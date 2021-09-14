@@ -16,6 +16,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgctxt "Addon Summary"
+msgid "Kodi frontend for MythTV"
+msgstr "Frontend di Kodi per MythTV"
+
+msgctxt "Addon Description"
+msgid "MythTV frontend (up to MythTV 31). Supports streaming of Live TV &amp; Recordings, listening to Radio channels, EPG and Timers."
+msgstr "Frontend MythTV (compatibile fino a MythTV 31). Supporta lo streaming TV in diretta, le registrazioni, l'ascolto dei canali radio, EPG e programmazioni."
+
+msgctxt "Addon Disclaimer"
+msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."
+msgstr "Questo software è instabile! Gli autori non sono in alcun modo responsabili per registrazioni fallite, timers incorretti, ore perse, o qualsiasi altro effetto indesiderato."
+
 msgctxt "#30000"
 msgid "MythTV Backend Hostname or IP"
 msgstr "Hostname o indirizzo IP per il pannello di amministrazione di MythTV"

@@ -9,6 +9,13 @@
     point="kodi.pvrclient"
     library_@PLATFORM@="@LIBRARY_FILENAME@"/>
   <extension point="xbmc.addon.metadata">
+    <platform>@PLATFORM@</platform>
+    <license>GPL-2.0-or-later</license>
+    <source>https://github.com/janbar/pvr.mythtv</source>
+    <forum>https://forum.kodi.tv/forumdisplay.php?fid=170</forum>
+    <assets>
+      <icon>icon.png</icon>
+    </assets>
     <summary lang="af_ZA">Kodi voorprogram vir MythTV</summary>
     <summary lang="be_BY">Kodi frontend for MythTV</summary>
     <summary lang="bg_BG">Kodi клиент за MythTV</summary>
@@ -157,12 +164,5 @@
     <disclaimer lang="vi_VN">Đây là phần mềm không ổn định! Các tác giả sẽ không chịu trách nhiệm nào với các bản ghi thất bại, bị đặt giờ sai, giờ lãng phí, hoặc các tác dụng không mong muốn khác..</disclaimer>
     <disclaimer lang="zh_CN">这是不稳定版的软件！作者不对录制失败、错误定时造成时间浪费或其它不良影响负责。</disclaimer>
     <disclaimer lang="zh_TW">這是測試中的軟體！原創作者無法針對以下情況負責：包括錄影失敗，不正確的定時器，多餘的時數，或任何不可預期的不良影響。</disclaimer>
-    <platform>@PLATFORM@</platform>
-    <license>GPL-2.0-or-later</license>
-    <source>https://github.com/janbar/pvr.mythtv</source>
-    <forum>https://forum.kodi.tv/forumdisplay.php?fid=170</forum>
-    <assets>
-      <icon>icon.png</icon>
-    </assets>
   </extension>
 </addon>

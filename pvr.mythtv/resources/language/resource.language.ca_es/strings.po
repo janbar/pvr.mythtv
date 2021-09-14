@@ -17,6 +17,18 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 4.8\n"
 
+msgctxt "Addon Summary"
+msgid "Kodi frontend for MythTV"
+msgstr "Frontal de Kodi per a MythTV"
+
+msgctxt "Addon Description"
+msgid "MythTV frontend (up to MythTV 31). Supports streaming of Live TV &amp; Recordings, listening to Radio channels, EPG and Timers."
+msgstr "Frontal de MythTV (fins a MythTV 31). És compatible amb les transmissions en línia de TV en directe i enregistraments, escolta d'emissores de ràdio, guia electrònica de programació (EPG) i temporitzadors."
+
+msgctxt "Addon Disclaimer"
+msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."
+msgstr "Aquest programari és inestable! En cap cas els autors són els responsables dels enregistraments fallits, temporitzadors incorrectes, hores malgastades o qualsevol altre efecte indesitjable."
+
 msgctxt "#30000"
 msgid "MythTV Backend Hostname or IP"
 msgstr "Nom d'amfitrió o IP del dorsal de MythTV"
