@@ -8,11 +8,11 @@ MythTV PVR client addon for [Kodi](http://kodi.tv)
 
 ## Build instructions
 When building the addon you have to use the correct branch depending on which version of Kodi you're building against.
-For example, if you're building the `master` branch of Kodi you should checkout the `master` branch of this repository. Also make sure you follow this README from the branch in question.
+For example, if you're building the `Matrix` branch of Kodi you should checkout the `Matrix` branch of this repository. Also make sure you follow this README from the branch in question.
 
 ### Linux
 
-    git clone --branch master --depth=1 https://github.com/xbmc/xbmc.git
+    git clone --branch Matrix --depth=1 https://github.com/xbmc/xbmc.git
     git clone --branch Matrix https://github.com/janbar/pvr.mythtv.git
     cd pvr.mythtv && mkdir build && cd build
     cmake -DADDONS_TO_BUILD=pvr.mythtv -DADDON_SRC_PREFIX=../.. -DCMAKE_BUILD_TYPE=Debug \
