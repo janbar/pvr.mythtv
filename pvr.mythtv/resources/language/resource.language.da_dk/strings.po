@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: pvr.mythtv\n"
 "Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: 2021-09-26 14:30+0000\n"
+"PO-Revision-Date: 2021-10-21 12:30+0000\n"
 "Last-Translator: Christian Gade <gade@kodi.tv>\n"
 "Language-Team: Danish <https://kodi.weblate.cloud/projects/kodi-add-ons-pvr-clients/pvr-mythtv/da_dk/>\n"
 "Language: da_dk\n"
@@ -29,7 +29,7 @@ msgstr "MythTV frontend (op til MythTV 31). Understøtter streaming af direkte t
 
 msgctxt "Addon Disclaimer"
 msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."
-msgstr "Denne software er ustabil. Udviklerne er på ingen måde ansvarlige for mislykkede optagelser, fejlagtige tidsindstillinger, spildte timer eller andre uhensigtsmæssigheder."
+msgstr "Denne software er ustabil. Udviklerne er på ingen måde ansvarlige for mislykkede optagelser, fejlagtige timere, spildte timer eller andre uønskede konsekvenser."
 
 # Settings labels
 msgctxt "#30000"
@@ -70,15 +70,15 @@ msgstr "Konflikthåndtering"
 
 msgctxt "#30009"
 msgid "Prefer Live TV when recording has later slot"
-msgstr "Foretræk live TV når optagelse er senere"
+msgstr "Foretræk direkte tv når optagelse ligger senere"
 
 msgctxt "#30010"
 msgid "Prefer recording and stop Live TV"
-msgstr "Foretræk optagelse og stop Live TV"
+msgstr "Foretræk optagelse og stop direkte tv"
 
 msgctxt "#30011"
 msgid "Prefer Live TV and cancel conflicting recording"
-msgstr "Foretræk Live TV og aflys modstridende optagelser"
+msgstr "Foretræk direkte tv og aflys modstridende optagelser"
 
 msgctxt "#30012"
 msgid "MythTV Backend Ethernet address (WOL)"
@@ -238,7 +238,7 @@ msgstr "Vis inaktive optagelsesregler (alternativ/optaget/udløbet)"
 
 msgctxt "#30067"
 msgid "Show LiveTV recordings"
-msgstr "Vis 'LiveTV' optagelser"
+msgstr "Vis optagelser fra direkte tv"
 
 msgctxt "#30068"
 msgid "Use bookmarks of the backend MythTV"
@@ -320,7 +320,7 @@ msgstr "Aflyser modstridende optagelse: %s"
 
 msgctxt "#30308"
 msgid "Stopping Live TV due to conflicting recording: %s"
-msgstr "Stopper direkte TV på grund af modstridende optagelse: %s"
+msgstr "Stopper direkte tv på grund af modstridende optagelse: %s"
 
 msgctxt "#30309"
 msgid "Not recording"
