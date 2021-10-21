@@ -21,7 +21,7 @@ msgid "Kodi frontend for MythTV"
 msgstr "Rozhraní Kodi pro MythTV"
 
 msgctxt "Addon Description"
-msgid "MythTV frontend (up to MythTV 31). Supports streaming of Live TV &amp; Recordings, listening to Radio channels, EPG and Timers."
+msgid "MythTV frontend (up to MythTV 31). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
 msgstr "Rozhraní MythTV (do verze MythTV 31). Podporuje streamování živého vysílání a nahrávání, poslech kanálů rádia, televizní program a časovače."
 
 msgctxt "Addon Disclaimer"

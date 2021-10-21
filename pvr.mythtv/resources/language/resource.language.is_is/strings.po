@@ -22,7 +22,7 @@ msgid "Kodi frontend for MythTV"
 msgstr "Kodi framendi fyrir MythTV"
 
 msgctxt "Addon Description"
-msgid "MythTV frontend (up to MythTV 31). Supports streaming of Live TV &amp; Recordings, listening to Radio channels, EPG and Timers."
+msgid "MythTV frontend (up to MythTV 31). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
 msgstr "MythTV framendi (upp að MythTV 31). Styður streymingu frá beinum útsendingum og upptökum, hlustun á útvarp, rafræna dagskrárvísa og tíma upptökur."
 
 msgctxt "Addon Disclaimer"
