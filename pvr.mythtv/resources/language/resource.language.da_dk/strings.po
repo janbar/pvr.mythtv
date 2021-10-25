@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: pvr.mythtv\n"
 "Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: 2021-10-21 12:30+0000\n"
+"PO-Revision-Date: 2021-10-25 15:07+0000\n"
 "Last-Translator: Christian Gade <gade@kodi.tv>\n"
 "Language-Team: Danish <https://kodi.weblate.cloud/projects/kodi-add-ons-pvr-clients/pvr-mythtv/da_dk/>\n"
 "Language: da_dk\n"
@@ -34,35 +34,35 @@ msgstr "Denne software er ustabil. Udviklerne er på ingen måde ansvarlige for 
 # Settings labels
 msgctxt "#30000"
 msgid "MythTV Backend Hostname or IP"
-msgstr "MythTV Backend værtsnavn eller IP"
+msgstr "MythTV backend værtsnavn eller IP"
 
 msgctxt "#30001"
 msgid "MythTV Backend Port"
-msgstr "MythTV Backend port"
+msgstr "MythTV backend port"
 
 msgctxt "#30002"
 msgid "MythTV Database Username"
-msgstr "MythTV Database brugernavn"
+msgstr "MythTV database brugernavn"
 
 msgctxt "#30003"
 msgid "MythTV Database Password"
-msgstr "MythTV Database adgangskode"
+msgstr "MythTV database adgangskode"
 
 msgctxt "#30004"
 msgid "MythTV Database Databasename"
-msgstr "MythTV database databasenavn"
+msgstr "MythTV databasens databasenavn"
 
 msgctxt "#30005"
 msgid "Include more debug information in the log file"
-msgstr "Tilføj mere debug-information i logfilen"
+msgstr "Tilføj mere fejfingingsinformation i logfilen"
 
 msgctxt "#30006"
 msgid "Enable Live TV"
-msgstr "Aktivér TV"
+msgstr "Aktivér direkte tv"
 
 msgctxt "#30007"
 msgid "Allow Live TV to move scheduled shows"
-msgstr "Tillad direkte TV at flytte planlagte programmer"
+msgstr "Tillad direkte tv at flytte planlagte programmer"
 
 msgctxt "#30008"
 msgid "Conflict handling"
@@ -82,15 +82,15 @@ msgstr "Foretræk direkte tv og aflys modstridende optagelser"
 
 msgctxt "#30012"
 msgid "MythTV Backend Ethernet address (WOL)"
-msgstr "MythTV Backend Ethernet-adressen (WOL)"
+msgstr "MythTV backend ethernet-adresse (WOL)"
 
 msgctxt "#30013"
 msgid "MythTV Backend Port for API services"
-msgstr "MythTV Backend API service port"
+msgstr "MythTV backend port til API-service"
 
 msgctxt "#30014"
 msgid "MythTV Security Pin for API services"
-msgstr "MythTV PIN kode til API service"
+msgstr "MythTV PIN-kode til API-service"
 
 # empty strings from id 30015 to 30018
 msgctxt "#30019"
@@ -116,7 +116,7 @@ msgstr "Intern skabelon"
 
 msgctxt "#30026"
 msgid "Automatically Look Up Metadata"
-msgstr "Automatisk hentning af Metadata"
+msgstr "Automatisk hentning af metadata"
 
 msgctxt "#30027"
 msgid "Commercial Flag new recordings"
@@ -153,7 +153,7 @@ msgstr "Tillad at optagelser udløber"
 # empty strings from id 30035 to 30045
 msgctxt "#30046"
 msgid "Show damaged recordings as color"
-msgstr ""
+msgstr "Vis ødelagte optagelser som farve"
 
 # empty strings from id 30035 to 30046
 msgctxt "#30047"
@@ -178,11 +178,11 @@ msgstr "Indstillinger"
 
 msgctxt "#30052"
 msgid "Enable demuxing MPEG-TS"
-msgstr "Aktivér demuxing MPEG-TS"
+msgstr "Aktivér demuxing af MPEG-TS"
 
 msgctxt "#30053"
 msgid "Tuning delay (sec)"
-msgstr "Tuning forsinkelse (sekunder)"
+msgstr "Forsinkelse på tuning (sekunder)"
 
 msgctxt "#30054"
 msgid "Group recordings by title"
@@ -218,23 +218,23 @@ msgstr "Aldrig"
 
 msgctxt "#30062"
 msgid "Allow backend shutdown"
-msgstr "Tillad backend nedlukning"
+msgstr "Tillad nedlukning af backend"
 
 msgctxt "#30063"
 msgid "Enable channel icons"
-msgstr "Aktivér kanal ikoner"
+msgstr "Aktivér kanal-ikoner"
 
 msgctxt "#30064"
 msgid "Enable recording fanart/thumbnails"
-msgstr "Aktivér optagelser af Fanart/Thumbnails"
+msgstr "Aktivér fankunst/miniaturebilleder til optagelser"
 
 msgctxt "#30065"
 msgid "Limit channel tuning attempts"
-msgstr "Begræns kanal tuningsforsøg"
+msgstr "Begræns tuningsforsøg for kanal"
 
 msgctxt "#30066"
 msgid "Show inactive upcomings (alternative/recorded/expired)"
-msgstr "Vis inaktive optagelsesregler (alternativ/optaget/udløbet)"
+msgstr "Vis inaktive kommende optagelser (alternativ/optaget/udløbet)"
 
 msgctxt "#30067"
 msgid "Show LiveTV recordings"
@@ -246,11 +246,11 @@ msgstr "Brug bogmærker fra MythTV backenden"
 
 msgctxt "#30069"
 msgid "Show default recording group as root"
-msgstr "Vis standard optagegruppe som root"
+msgstr "Vis standard optagegruppe som rod"
 
 msgctxt "#30070"
 msgid "Scene Only"
-msgstr ""
+msgstr "Kun scene"
 
 # empty strings from id 30070 to 30099
 # Systeminformation labels
@@ -270,7 +270,7 @@ msgid ""
 "Do you want to activate EDL functionality for this show ?"
 msgstr ""
 "En reklameudeladelsesliste (EDL) er blevet fundet.\n"
-"Vil du aktivere automatisk reklame-skip for dette show?"
+"Vil du aktivere automatisk reklame-skip for dette program?"
 
 msgctxt "#30112"
 msgid "Connection failed"
@@ -288,7 +288,7 @@ msgstr "Forbundet"
 # Notifications
 msgctxt "#30300"
 msgid "Failed to connect the MythTV backend with the known protocol versions. Please check the compatibility map of the addon and upgrade your backend to a supported version."
-msgstr "Kunne ikke forbinde til MythTV backend med den aktuelle protokolversion. Tjek venligst kompatibiliteten af tilføjelsen og opgrader din backend til en understøttet version."
+msgstr "Kunne ikke forbinde til MythTV backend med den aktuelle protokolversion. Tjek venligst kompatibiliteten af add-on og opgrader din backend til en understøttet version."
 
 msgctxt "#30301"
 msgid "Failed to connect the API services of MythTV backend. Please check your PIN code or backend setup. The PIN code has to be configured in your backend to allow connection."
