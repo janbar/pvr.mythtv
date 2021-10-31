@@ -1,4 +1,4 @@
-v19.0.1
+v19.0.2
 - Translations updates from Weblate
 
 v19.0.0
