@@ -9,7 +9,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: pvr.mythtv\n"
-"Report-Msgid-Bugs-To: translations@kodi.tv\n"
+"Report-Msgid-Bugs-To: http://trac.kodi.tv/\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "PO-Revision-Date: 2021-09-26 14:30+0000\n"
 "Last-Translator: Klojum <klojum@kodi.tv>\n"
