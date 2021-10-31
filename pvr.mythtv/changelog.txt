@@ -1,3 +1,6 @@
+v19.0.1
+- Translations updates from Weblate
+
 v19.0.0
 - Translations updates from Weblate
 - Changed test builds to 'Kodi 19 Matrix'
