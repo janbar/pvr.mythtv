@@ -586,7 +586,10 @@ int LiveTVPlayback::_read(void* buffer, unsigned n)
       }
     }
     else if (s < 0)
-      return -1;
+    {
+      // file size not up to date
+      return 0;
+    }
   }
   while (retry);
 
