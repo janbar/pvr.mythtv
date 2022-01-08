@@ -38,6 +38,9 @@
 namespace Myth
 {
 
+  class RingBuffer;
+  class RingBufferPacket;
+
   class LiveTVPlayback : private ProtoMonitor, public Stream, private EventSubscriber
   {
   public:
@@ -109,7 +112,7 @@ namespace Myth
     int64_t _seek(int64_t offset, WHENCE_t whence);
     // data buffer
     unsigned m_chunk; // the size of block to read
-    struct { unsigned pos; unsigned len; unsigned char * data; } m_buffer;
+    struct { RingBuffer * rbuf; RingBufferPacket * packet; int consumed; } m_buffer;
   };
 
 }

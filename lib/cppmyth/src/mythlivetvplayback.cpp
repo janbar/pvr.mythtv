@@ -22,6 +22,7 @@
 #include "mythlivetvplayback.h"
 #include "private/debug.h"
 #include "private/socket.h"
+#include "private/ringbuffer.h"
 #include "private/os/threads/mutex.h"
 #include "private/os/threads/timeout.h"
 #include "private/builtin.h"
@@ -36,6 +37,7 @@
 #define START_TIMEOUT         2000    // millisec
 #define AHEAD_TIMEOUT         10000   // millisec
 #define BREAK_TIMEOUT         4000    // millisec
+#define BUFFER_CAPACITY       2       // 2 chunks
 
 using namespace Myth;
 
@@ -55,9 +57,10 @@ LiveTVPlayback::LiveTVPlayback(EventHandler& handler)
 , m_chain()
 , m_chunk(MYTH_LIVETV_CHUNK_SIZE)
 {
-  m_buffer.pos = 0;
-  m_buffer.len = 0;
-  m_buffer.data = new unsigned char[m_chunk];
+  m_buffer.rbuf = new RingBuffer(BUFFER_CAPACITY);
+  m_buffer.packet = nullptr;
+  m_buffer.consumed = 0;
+
   m_eventSubscriberId = m_eventHandler.CreateSubscription(this);
   m_eventHandler.SubscribeForEvent(m_eventSubscriberId, EVENT_SIGNAL);
   m_eventHandler.SubscribeForEvent(m_eventSubscriberId, EVENT_LIVETV_CHAIN);
@@ -77,9 +80,10 @@ LiveTVPlayback::LiveTVPlayback(const std::string& server, unsigned port)
 , m_chain()
 , m_chunk(MYTH_LIVETV_CHUNK_SIZE)
 {
-  m_buffer.pos = 0;
-  m_buffer.len = 0;
-  m_buffer.data = new unsigned char[m_chunk];
+  m_buffer.rbuf = new RingBuffer(BUFFER_CAPACITY);
+  m_buffer.packet = nullptr;
+  m_buffer.consumed = 0;
+
   // Private handler will be stopped and closed by destructor.
   m_eventSubscriberId = m_eventHandler.CreateSubscription(this);
   m_eventHandler.SubscribeForEvent(m_eventSubscriberId, EVENT_SIGNAL);
@@ -95,7 +99,9 @@ LiveTVPlayback::~LiveTVPlayback()
   if (m_eventSubscriberId)
     m_eventHandler.RevokeSubscription(m_eventSubscriberId);
   Close();
-  delete[] m_buffer.data;
+  if (m_buffer.packet)
+    m_buffer.rbuf->freePacket(m_buffer.packet);
+  delete m_buffer.rbuf;
 }
 
 bool LiveTVPlayback::Open()
@@ -480,10 +486,6 @@ void LiveTVPlayback::SetChunk(unsigned size)
     size = MYTH_LIVETV_CHUNK_MIN;
   else if (size > MYTH_LIVETV_CHUNK_MAX)
     size = MYTH_LIVETV_CHUNK_MAX;
-
-  m_buffer.pos = m_buffer.len = 0;
-  delete[] m_buffer.data;
-  m_buffer.data = new unsigned char[size];
   m_chunk = size;
 }
 
@@ -498,37 +500,43 @@ int64_t LiveTVPlayback::GetSize() const
 
 int LiveTVPlayback::Read(void* buffer, unsigned n)
 {
-  int c = 0;
-  bool refill = true;
   for (;;)
   {
-    // all requested data are in the buffer
-    if (m_buffer.len >= n)
+    if (m_buffer.packet == nullptr)
     {
-      memcpy(static_cast<unsigned char*>(buffer) + c, m_buffer.data + m_buffer.pos, n);
-      c += n;
-      m_buffer.pos += n;
-      m_buffer.len -= n;
-      return c;
+      // get next available packet
+      m_buffer.packet = m_buffer.rbuf->read();
+      m_buffer.consumed = 0;
     }
-    // fill with the rest of data before read a new chunk
-    if (m_buffer.len > 0)
+    // read available packet
+    if (m_buffer.packet)
     {
-      memcpy(static_cast<unsigned char*>(buffer) + c, m_buffer.data + m_buffer.pos, m_buffer.len);
-      c += m_buffer.len;
-      n -= m_buffer.len;
-      m_buffer.len = 0;
+      int s = m_buffer.packet->size - m_buffer.consumed;
+      int r = ((int)n < s ? (int)n : s);
+      memcpy(static_cast<char*>(buffer), m_buffer.packet->data + m_buffer.consumed, r);
+      m_buffer.consumed += r;
+      if (m_buffer.consumed >= m_buffer.packet->size)
+      {
+        m_buffer.rbuf->freePacket(m_buffer.packet);
+        m_buffer.packet = nullptr;
+      }
+      return r;
     }
-    if (!refill)
-      break;
-    m_buffer.pos = 0;
-    int r = _read(m_buffer.data, m_chunk);
-    if (r < 0)
-      return -1;
-    m_buffer.len += r;
-    refill = false; // won't read again
+    // no packet available, so read to fill the buffer
+    {
+      RingBufferPacket * p = m_buffer.rbuf->newPacket(m_chunk);
+      int r = _read(p->data, m_chunk);
+      if (r > 0)
+      {
+        p->size = r;
+        m_buffer.rbuf->writePacket(p);
+        continue;
+      }
+      m_buffer.rbuf->freePacket(p);
+      return r;
+    }
   }
-  return c;
+  return -1;
 }
 
 int LiveTVPlayback::_read(void* buffer, unsigned n)
@@ -604,16 +612,25 @@ int64_t LiveTVPlayback::Seek(int64_t offset, WHENCE_t whence)
 {
   if (whence == WHENCE_CUR)
   {
+    // Unread bytes: remaining bytes in the ring buffer + remaining bytes in the available packet
+    unsigned unread = m_buffer.rbuf->bytesUnread() + (m_buffer.packet ? m_buffer.packet->size - m_buffer.consumed : 0);
     if (offset == 0)
     {
       int64_t p = _seek(offset, whence);
-      // it returns the current position of the first byte in buffer
-      return (p >= m_buffer.len ? p - m_buffer.len : p);
+      // it must returns the current position of the first byte in buffer
+      return (p >= unread ? p - unread : p);
     }
     // rebase to the first position in the buffer
-    offset -= m_buffer.len;
+    offset -= unread;
   }
-  m_buffer.len = 0; // clear data in buffer
+  // clear all buffered data
+  if (m_buffer.packet)
+  {
+    m_buffer.rbuf->freePacket(m_buffer.packet);
+    m_buffer.packet = nullptr;
+  }
+  m_buffer.rbuf->clear();
+
   return _seek(offset, whence);
 }
 
@@ -703,8 +720,9 @@ int64_t LiveTVPlayback::GetPosition() const
       pos += m_chain.chained[i].first->GetSize();
     pos += m_chain.currentTransfer->GetPosition();
   }
-  // it returns the current position of first byte in buffer
-  return pos - m_buffer.len;
+  // it must returns the current position of first byte in buffer
+  unsigned unread = m_buffer.rbuf->bytesUnread() + (m_buffer.packet ? m_buffer.packet->size - m_buffer.consumed : 0);
+  return pos - unread;
 }
 
 bool LiveTVPlayback::IsPlaying() const
