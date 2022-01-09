@@ -99,7 +99,7 @@ int RingBuffer::capacity() const
 int RingBuffer::bytesAvailable() const
 {
   OS::CLockGuard g(m_lock->mutex);
-  return (m_read != m_write ? m_read->packet->size : 0);
+  return (m_unread ? m_read->packet->size : 0);
 }
 
 unsigned RingBuffer::bytesUnread() const
@@ -117,6 +117,14 @@ bool RingBuffer::full() const
 void RingBuffer::clear()
 {
   OS::CLockGuard g(m_lock->mutex);
+  // reset of unread implies the reset of packet size
+  // so clean all chunks in the buffer
+  for (std::vector<Chunk*>::iterator it = m_buffer.begin(); it != m_buffer.end(); ++it)
+  {
+    if ((*it)->packet)
+      freePacket((*it)->packet);
+    (*it)->packet = nullptr;
+  }
   m_count = m_unread = 0;
   m_read = m_write;
 }
@@ -131,7 +139,12 @@ int RingBuffer::write(const char * data, int len)
     {
       OS::CLockGuard g(m_lock->mutex);
       if (m_write->packet)
+      {
+        // overwriting a packet implies to update unread because the data will be destroyed,
+        // and no longer available for reading.
+        m_unread -= m_write->packet->size;
         freePacket(m_write->packet);
+      }
       m_write->packet = _packet;
       m_write->packet->id = ++m_count;
       m_write = m_write->next;
@@ -154,7 +167,12 @@ void RingBuffer::writePacket(RingBufferPacket* packet)
   {
     OS::CLockGuard g(m_lock->mutex);
     if (m_write->packet)
+    {
+      // overwriting a packet implies to update unread because the data will be destroyed,
+      // and no longer available for reading.
+      m_unread -= m_write->packet->size;
       freePacket(m_write->packet);
+    }
     m_write->packet = packet;
     m_write->packet->id = ++m_count;
     m_write = m_write->next;
@@ -167,7 +185,7 @@ RingBufferPacket * RingBuffer::read()
   RingBufferPacket * p = nullptr;
   {
     OS::CLockGuard g(m_lock->mutex);
-    if (m_read != m_write)
+    if (m_unread)
     {
       p = m_read->packet;
       m_read->packet = nullptr;

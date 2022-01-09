@@ -91,7 +91,7 @@ private:
   mutable Lockable * m_lock;
   const int m_capacity;           /// buffer size
   volatile unsigned m_count;      /// total count of processed chunk
-  volatile unsigned m_unread;     /// cache the size of unread data in the buffer
+  volatile unsigned m_unread;     /// total size of unread data in the buffer
 
   struct Chunk
   {
