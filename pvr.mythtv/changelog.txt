@@ -1,5 +1,5 @@
-v19.0.5
-- Sync upstream lib cppmyth 2.14.4
+v19.0.6
+- Sync upstream lib cppmyth 2.14.5
   - cppmyth introduces a new ring buffer
 
 v19.0.3
