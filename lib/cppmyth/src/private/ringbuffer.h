@@ -53,10 +53,24 @@ public:
   RingBuffer(int capacity);
   virtual ~RingBuffer();
 
+  /**
+   * Buffer capacity is defined in CTOR and it cannot be changed.
+   * It is the number of chunk chained in the ring of the buffer.
+   * Each chunk can hold different size of payload.
+   * @return the number of chunk in the ring buffer
+   */
   int capacity() const;
 
+  /**
+   * It returns the size in bytes of the next chunk to read.
+   * @return the number of bytes
+   */
   int bytesAvailable() const;
 
+  /**
+   * It returns the total size in bytes of all chunks remaining to be read.
+   * @return the number of bytes
+   */
   unsigned bytesUnread() const;
 
   /**
@@ -66,19 +80,48 @@ public:
    */
   bool full() const;
 
+  /**
+   * Clear all unread chunks.
+   */
   void clear();
 
+  /**
+   * Write a chunk in the buffer.
+   * @param data pointer to data
+   * @param len length of data
+   * @return the number of bytes written
+   */
   int write(const char * data, int len);
+
+  /**
+   * It returns a pointer to payload to be written. Its capacity is at least
+   * equal to requested size (len). After copying data and assigning the size,
+   * the payload can be written to the buffer. An unused payload MUST BE freed
+   * by caller using freePacket(RingBufferPacket*).
+   * @param len requested size in bytes
+   * @return payload
+   * @see writePacket(RingBufferPacket*)
+   */
   RingBufferPacket * newPacket(int len);
+
+  /**
+   * Write a chunk in the buffer.
+   * @param packet payload
+   * @see newPacket(int)
+   */
   void writePacket(RingBufferPacket * packet);
 
   /**
-   * Returned pointer MUST BE freed by caller
-   * @see freePacket(FramePacket *)
-   * @return new FramePacket or nullptr
+   * Read the next chunk available. Returned pointer MUST BE freed by caller.
+   * @see freePacket(RingBufferPacket*)
+   * @return new packet or nullptr
    */
   RingBufferPacket * read();
 
+  /**
+   * Recycle the payload for reuse.
+   * @param p payload
+   */
   void freePacket(RingBufferPacket * p);
 
 private:
@@ -88,7 +131,8 @@ private:
 
 private:
   struct Lockable;
-  mutable Lockable * m_lock;
+  mutable Lockable * m_ringlock;
+  mutable Lockable * m_poollock;
   const int m_capacity;           /// buffer size
   volatile unsigned m_count;      /// total count of processed chunk
   volatile unsigned m_unread;     /// total size of unread data in the buffer
