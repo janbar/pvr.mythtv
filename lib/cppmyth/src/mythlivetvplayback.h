@@ -92,8 +92,8 @@ namespace Myth
       std::string UID;
       chained_t chained;
       ProtoTransferPtr currentTransfer;
-      volatile unsigned currentSequence;
-      volatile unsigned lastSequence;
+      unsigned currentSequence;
+      unsigned lastSequence;
       volatile bool watch;
       volatile bool switchOnCreate;
     } m_chain;

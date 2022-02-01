@@ -134,8 +134,8 @@ private:
   mutable Lockable * m_ringlock;
   mutable Lockable * m_poollock;
   const int m_capacity;           /// buffer size
-  volatile unsigned m_count;      /// total count of processed chunk
-  volatile unsigned m_unread;     /// total size of unread data in the buffer
+  unsigned m_count;               /// total count of processed chunk
+  unsigned m_unread;              /// total size of unread data in the buffer
 
   struct Chunk
   {
@@ -146,8 +146,8 @@ private:
   };
 
   std::vector<Chunk*> m_buffer;   /// buffer of chunk
-  volatile Chunk * m_read;        /// chunk to read
-  volatile Chunk * m_write;       /// chunk to write
+  Chunk * m_read;                 /// chunk to read
+  Chunk * m_write;                /// chunk to write
 
   void init();
 
