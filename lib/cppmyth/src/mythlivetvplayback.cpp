@@ -563,7 +563,10 @@ int LiveTVPlayback::_read(void* buffer, unsigned n)
       for (;;)
       {
         // Reading ahead
-        if (m_chain.currentSequence == m_chain.lastSequence)
+        m_mutex->Lock();
+        unsigned lastseq = m_chain.lastSequence;
+        m_mutex->Unlock();
+        if (m_chain.currentSequence == lastseq)
         {
           int64_t rp = recorder->GetFilePosition();
           if (rp > fp)
@@ -587,7 +590,7 @@ int LiveTVPlayback::_read(void* buffer, unsigned n)
           if (m_chain.currentTransfer->GetPosition() != 0)
             recorder->TransferSeek(*(m_chain.currentTransfer), 0, WHENCE_SET);
           DBG(DBG_DEBUG, "%s: liveTV (%s): chain last (%u), watching (%u)\n", __FUNCTION__,
-                m_chain.UID.c_str(), m_chain.lastSequence, m_chain.currentSequence);
+                m_chain.UID.c_str(), lastseq, m_chain.currentSequence);
           retry = true;
           break;
         }
