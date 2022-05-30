@@ -933,6 +933,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(kodi::addon::PVRRecordingsResultSet& re
     return PVR_ERROR_SERVER_ERROR;
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
+  unsigned schemaVersion = m_control->GetVersion()->schema;
 
   Myth::OS::CLockGuard lock(*m_recordingsLock);
 
@@ -981,7 +982,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(kodi::addon::PVRRecordingsResultSet& re
 
       std::string str; // a temporary string to build formating label
       std::string title(it->second.Title());
-      if (it->second.IsDamaged() && !CMythSettings::GetDamagedColor().empty())
+      if (it->second.IsDamaged(schemaVersion) && !CMythSettings::GetDamagedColor().empty())
       {
         str.assign(title);
         title.assign("[COLOR ").append(CMythSettings::GetDamagedColor()).append("]").append(str).append("[/COLOR]");

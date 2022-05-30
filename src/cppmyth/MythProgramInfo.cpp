@@ -322,9 +322,12 @@ std::string MythProgramInfo::Airdate() const
   return (m_proginfo ? m_proginfo->airdate : "");
 }
 
-bool MythProgramInfo::IsDamaged() const
+bool MythProgramInfo::IsDamaged(uint32_t schemaVersion) const
 {
-  return ((m_proginfo && (m_proginfo->videoProps & 0x0020)) ? true : false);
+  if (schemaVersion >= 1362)
+    return ((m_proginfo && (m_proginfo->videoProps & 0x0400)) ? true : false);
+  else
+    return ((m_proginfo && (m_proginfo->videoProps & 0x0020)) ? true : false);
 }
 
 int64_t MythProgramInfo::FileSize() const

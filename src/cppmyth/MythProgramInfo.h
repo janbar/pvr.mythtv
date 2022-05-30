@@ -72,7 +72,7 @@ public:
   uint16_t Season() const;
   uint16_t Episode() const;
   std::string Airdate() const;
-  bool IsDamaged() const;
+  bool IsDamaged(uint32_t schemaVersion) const;
   int64_t FileSize() const;
 
   std::string GroupingTitle() const;
