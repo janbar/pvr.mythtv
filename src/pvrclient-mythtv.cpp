@@ -2734,23 +2734,22 @@ PVR_ERROR PVRClientMythTV::CallRecordingMenuHook(const kodi::addon::PVRMenuhook&
 
     items[9].append("AudioProps : [COLOR white]");
     unsigned ap = pinfo.GetPtr()->audioProps;
-    items[9].append((ap & 0x01) ? "0 " : "");
-    items[9].append((ap & 0x02) ? "1 " : "");
-    items[9].append((ap & 0x04) ? "2 " : "");
-    items[9].append((ap & 0x08) ? "3 " : "");
-    items[9].append((ap & 0x10) ? "4 " : "");
-    items[9].append((ap & 0x20) ? "5 " : "");
+    items[9].append((ap & 0x01) ? "STE " : "");
+    items[9].append((ap & 0x02) ? "MON " : "");
+    items[9].append((ap & 0x04) ? "SUR " : "");
+    items[9].append((ap & 0x08) ? "DOL " : "");
+    items[9].append((ap & 0x10) ? "HDH " : "");
+    items[9].append((ap & 0x20) ? "VIS " : "");
     items[9].append("[/COLOR]");
 
     items[10].append("VideoProps : [COLOR white]");
     unsigned vp = pinfo.GetPtr()->videoProps;
-    items[10].append((vp & 0x01) ? "0 " : "");
-    items[10].append((vp & 0x02) ? "1 " : "");
-    items[10].append((vp & 0x04) ? "2 " : "");
-    items[10].append((vp & 0x08) ? "3 " : "");
-    items[10].append((vp & 0x10) ? "4 " : "");
-    items[10].append((vp & 0x20) ? "5 " : "");
-    items[10].append((vp & 0x40) ? "6 " : "");
+    items[10].append((vp & 0x001) ? "WID " : "");
+    items[10].append((vp & 0x002) ? "HDT " : "");
+    items[10].append((vp & 0x008) ? "AVC " : "");
+    items[10].append((vp & 0x020) ? "HDR " : "");
+    items[10].append((vp & 0x040) ? "FHD " : "");
+    items[10].append((vp & 0x400) ? "DAM " : "");
     items[10].append("[/COLOR]");
 
     items[11].append("FrameRate : [COLOR white]");
