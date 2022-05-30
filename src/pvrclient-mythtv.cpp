@@ -2168,7 +2168,7 @@ PVR_ERROR PVRClientMythTV::GetTimerTypes(std::vector<kodi::addon::PVRTimerType>&
   if (m_scheduleManager)
   {
     MythTimerTypeList typeList = m_scheduleManager->GetTimerTypes();
-    for (const auto typeEntry : typeList)
+    for (const auto& typeEntry : typeList)
     {
       kodi::addon::PVRTimerType type;
       typeEntry->Fill(type);
