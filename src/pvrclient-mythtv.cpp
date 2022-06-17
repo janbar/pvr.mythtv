@@ -976,7 +976,13 @@ PVR_ERROR PVRClientMythTV::GetRecordings(kodi::addon::PVRRecordingsResultSet& re
       tag.SetRecordingTime(GetRecordingTime(airTime, it->second.RecordingStartTime()));
       tag.SetDuration(it->second.Duration());
       tag.SetPlayCount(it->second.IsWatched() ? 1 : 0);
-      tag.SetLastPlayedPosition(it->second.HasBookmark() ? 1 : 0);
+
+      if (CMythSettings::GetUseBackendBookmarks() && it->second.HasBookmark())
+      {
+        // put the known value or something differ from zero to show the right symbol on the GUI
+        int bookmark = it->second.GetPropsBookmark();
+        tag.SetLastPlayedPosition(bookmark > 0 ? bookmark : 1);
+      }
 
       std::string id = it->second.UID();
 
@@ -1379,8 +1385,6 @@ PVR_ERROR PVRClientMythTV::SetRecordingPlayCount(const kodi::addon::PVRRecording
   }
 }
 
-PVRClientMythTV::cachedBookmark_t PVRClientMythTV::_cachedBookmark = { 0, 0, 0 };
-
 PVR_ERROR PVRClientMythTV::SetRecordingLastPlayedPosition(const kodi::addon::PVRRecording& recording, int lastplayedposition)
 {
   if (CMythSettings::GetExtraDebug())
@@ -1398,9 +1402,8 @@ PVR_ERROR PVRClientMythTV::SetRecordingLastPlayedPosition(const kodi::addon::PVR
       // Write the bookmark
       if (m_control->SetSavedBookmark(*prog, 2, duration))
       {
-        _cachedBookmark = { recording.GetChannelUid(), recording.GetRecordingTime(), lastplayedposition };
-        if (CMythSettings::GetExtraDebug())
-          kodi::Log(ADDON_LOG_DEBUG, "%s: Setting Bookmark successful", __FUNCTION__);
+        it->second.SetPropsBookmark(lastplayedposition);
+        kodi::Log(ADDON_LOG_INFO, "%s: Setting Bookmark successful: %d", __FUNCTION__, lastplayedposition);
         return PVR_ERROR_NO_ERROR;
       }
     }
@@ -1413,13 +1416,6 @@ PVR_ERROR PVRClientMythTV::SetRecordingLastPlayedPosition(const kodi::addon::PVR
 
 PVR_ERROR PVRClientMythTV::GetRecordingLastPlayedPosition(const kodi::addon::PVRRecording& recording, int& position)
 {
-  if (recording.GetChannelUid() == _cachedBookmark.channelUid && recording.GetRecordingTime() == _cachedBookmark.recordingTime)
-  {
-    kodi::Log(ADDON_LOG_DEBUG, "%s: Returning cached Bookmark for: %s", __FUNCTION__, recording.GetTitle().c_str());
-    position = _cachedBookmark.position;
-    return PVR_ERROR_NO_ERROR;
-  }
-
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s: Reading Bookmark for: %s", __FUNCTION__, recording.GetTitle().c_str());
 
@@ -1429,17 +1425,23 @@ PVR_ERROR PVRClientMythTV::GetRecordingLastPlayedPosition(const kodi::addon::PVR
   {
     if (it->second.HasBookmark())
     {
+      // return the known value from properties
+      position = it->second.GetPropsBookmark();
+      if (position > 0)
+      {
+        kodi::Log(ADDON_LOG_DEBUG, "%s: %d", __FUNCTION__, position);
+        return PVR_ERROR_NO_ERROR;
+      }
+      // else make backend request to fetch it
       Myth::ProgramPtr prog(it->second.GetPtr());
-      lock.Unlock();
       if (prog)
       {
         int64_t duration = m_control->GetSavedBookmark(*prog, 2); // returns 0 if no bookmark was found
         if (duration > 0)
         {
           position = (int)(duration / 1000);
-          _cachedBookmark = { recording.GetChannelUid(), recording.GetRecordingTime(), position };
-          if (CMythSettings::GetExtraDebug())
-            kodi::Log(ADDON_LOG_DEBUG, "%s: %d", __FUNCTION__, position);
+          it->second.SetPropsBookmark(position);
+          kodi::Log(ADDON_LOG_INFO, "%s: Fetching from backend: %d", __FUNCTION__, position);
           return PVR_ERROR_NO_ERROR;
         }
       }
@@ -1450,7 +1452,6 @@ PVR_ERROR PVRClientMythTV::GetRecordingLastPlayedPosition(const kodi::addon::PVR
   }
   else
     kodi::Log(ADDON_LOG_ERROR, "%s: Recording %s does not exist", __FUNCTION__, recording.GetRecordingId().c_str());
-  _cachedBookmark = { recording.GetChannelUid(), recording.GetRecordingTime(), 0 };
   return PVR_ERROR_INVALID_PARAMETERS;
 }
 

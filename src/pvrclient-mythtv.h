@@ -221,17 +221,4 @@ private:
 
   /// Get the time that should be reported for this recording
   time_t GetRecordingTime(time_t airdate, time_t startDate);
-
-  /**
-   * @FIXME In some circumstances PVR calls GetRecordingLastPlayedPosition() in loop.
-   * To prevent backend stressing, the previous value is cached and will be returned
-   * next time for the same recording.
-   */
-  typedef struct
-  {
-    int channelUid;
-    time_t recordingTime;
-    int position;
-  } cachedBookmark_t;
-  static cachedBookmark_t _cachedBookmark;
 };
