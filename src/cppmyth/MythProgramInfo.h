@@ -42,6 +42,8 @@ public:
   float GetPropsVideoAspec() const;
   void SetPropsSerie(bool flag);
   bool GetPropsSerie() const;
+  void SetPropsBookmark(int seconds);
+  int GetPropsBookmark() const;
   // Program fields
   std::string UID() const;
   std::string ProgramID() const;
@@ -89,12 +91,14 @@ private:
     : m_videoFrameRate(0)
     , m_videoAspec(0)
     , m_serie(false)
+    , m_bookmark(0)
     {}
     ~Props() {}
 
     float m_videoFrameRate;
     float m_videoAspec;
     bool m_serie;               ///< true if program is serie else false
+    int m_bookmark;             ///< last played position in seconds
   };
   MYTH_SHARED_PTR<Props> m_props;
 

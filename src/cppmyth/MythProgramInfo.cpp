@@ -171,6 +171,16 @@ bool MythProgramInfo::GetPropsSerie() const
   return m_props->m_serie;
 }
 
+void MythProgramInfo::SetPropsBookmark(int seconds)
+{
+  m_props->m_bookmark = seconds;
+}
+
+int MythProgramInfo::GetPropsBookmark() const
+{
+  return m_props->m_bookmark;
+}
+
 std::string MythProgramInfo::UID() const
 {
   char buf[48] = "";
