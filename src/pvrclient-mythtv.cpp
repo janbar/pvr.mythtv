@@ -162,7 +162,7 @@ bool PVRClientMythTV::Connect()
   m_eventHandler = new Myth::EventHandler(CMythSettings::GetMythHostname(), CMythSettings::GetProtoPort());
   subid = m_eventHandler->CreateSubscription(this);
   m_eventHandler->SubscribeForEvent(subid, Myth::EVENT_HANDLER_STATUS);
-  m_eventHandler->SubscribeForEvent(subid, Myth::EVENT_HANDLER_TIMER);
+//  m_eventHandler->SubscribeForEvent(subid, Myth::EVENT_HANDLER_TIMER);
   m_eventHandler->SubscribeForEvent(subid, Myth::EVENT_ASK_RECORDING);
   m_eventHandler->SubscribeForEvent(subid, Myth::EVENT_RECORDING_LIST_CHANGE);
 
