@@ -1,3 +1,8 @@
+v21.1.9
+- Update settings to new format
+- Add build script for mac
+- Adding missing shasum for zlib depends
+
 v21.1.8
 - Translations updates from Weblate
 	- it_it

@@ -1,48 +1,294 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<settings>
-  <category label="30019">
-    <setting id="host" type="text" label="30000" default="127.0.0.1" />
-    <setting id="port" type="number" option="int" label="30001" default="6543" />
-    <setting id="wsport" type="number" option="int" label="30013" default="6544" />
-    <setting id="wssecuritypin" type="text" label="30014" default="0000" />
-    <setting id="host_ether" type="text" label="30012" default="" />
-    <setting id="livetv" type="bool" label="30006" default="true" />
-    <setting id="livetv_priority" type="bool" label="30007" default="true" />
-    <setting id="livetv_conflict_strategy" type="enum" label="30008" lvalues="30009|30010|30011" default="0" />
-  </category>
-  <category label="30051">
-    <setting id="channel_icons" type="bool" label="30063" default="true" />
-    <setting id="recording_icons" type="bool" label="30064" default="true" />
-    <setting id="livetv_recordings" type="bool" label="30067" default="true" />
-    <setting id="group_recordings" type="enum" label="30054" lvalues="30055|30056|30057" default="1" />
-    <setting id="use_airdate" type="bool" label="30048" default="false" />
-    <setting id="enable_edl" type="enum" label="30058" lvalues="30059|30060|30061|30070" default="0" />
-    <setting id="inactive_upcomings" type="bool" label="30066" default="true" />
-    <setting id="prompt_delete" type="bool" label="30047" default="false" />
-    <setting id="root_default_group" type="bool" label="30069" default="false" />
-    <setting id="damaged_color" type="labelenum" label="30046"  default="[COLOR yellow]yellow[/COLOR]"
-             values="neutral|[COLOR yellow]yellow[/COLOR]|[COLOR red]red[/COLOR]|[COLOR green]green[/COLOR]|[COLOR blue]blue[/COLOR]|[COLOR orange]orange[/COLOR]|[COLOR lime]lime[/COLOR]|[COLOR pink]pink[/COLOR]|[COLOR magenta]magenta[/COLOR]|[COLOR brown]brown[/COLOR]|[COLOR cyan]cyan[/COLOR]|[COLOR indigo]indigo[/COLOR]|[COLOR gray]gray[/COLOR]|[COLOR olive]olive[/COLOR]|[COLOR purple]purple[/COLOR]|[COLOR sienna]sienna[/COLOR]|[COLOR teal]teal[/COLOR]|[COLOR tomato]tomato[/COLOR]|[COLOR violet]violet[/COLOR]"
-    />
-  </category>
-  <category label="30049">
-    <setting id="rec_template_provider" type="enum" label="30020" lvalues="30021|30022" default="1" />
-    <setting id="rec_separator1" label="30025" type="lsep" />
-    <setting id="rec_autometadata" type="bool" label="30026" enable="eq(-2,0)" default="true" />
-    <setting id="rec_autocommflag" type="bool" label="30027" enable="eq(-3,0)" default="true" />
-    <setting id="rec_autoexpire" type="bool" label="30034" enable="eq(-4,0)" default="true" />
-    <setting id="rec_autotranscode" type="bool" label="30028" enable="eq(-5,0)" default="false" />
-    <setting id="rec_transcoder" type="number" option="int" label="30033" enable="eq(-6,0)" default="0" />
-    <setting id="rec_autorunjob1" type="bool" label="30029" enable="eq(-7,0)" default="false" />
-    <setting id="rec_autorunjob2" type="bool" label="30030" enable="eq(-8,0)" default="false" />
-    <setting id="rec_autorunjob3" type="bool" label="30031" enable="eq(-9,0)" default="false" />
-    <setting id="rec_autorunjob4" type="bool" label="30032" enable="eq(-10,0)" default="false" />
-  </category>
-  <category label="30050">
-    <setting id="extradebug" type="bool" label="30005" default="false" />
-    <setting id="demuxing" type="bool" label="30052" default="false" />
-    <setting id="allow_shutdown" type="bool" label="30062" default="true" />
-    <setting id="tunedelay" type="slider" option="int" range="5,1,30" label="30053" default="5" />
-    <setting id="limit_tune_attempts" type="bool" label="30065" default="true" />
-    <setting id="backend_bookmarks" type="bool" label="30068" default="true" />
-  </category>
+<settings version="1">
+  <section id="addon" label="-1" help="-1">
+    <!-- General -->
+    <category id="connection" label="30019" help="-1">
+      <group id="1" label="-1">
+        <setting id="host" type="string" label="30000" help="-1">
+          <level>0</level>
+          <default>127.0.0.1</default>
+          <control type="edit" format="string" />
+        </setting>
+        <setting id="port" type="integer" label="30001" help="-1">
+          <level>0</level>
+          <default>6543</default>
+          <constraints>
+            <minimum>1</minimum>
+            <step>1</step>
+            <maximum>65535</maximum>
+          </constraints>
+          <control type="edit" format="integer" />
+        </setting>
+        <setting id="wsport" type="integer" label="30013" help="-1">
+          <level>0</level>
+          <default>6544</default>
+          <constraints>
+            <minimum>1</minimum>
+            <step>1</step>
+            <maximum>65535</maximum>
+          </constraints>
+          <control type="edit" format="integer" />
+        </setting>
+        <setting id="wssecuritypin" type="string" label="30014" help="-1">
+          <level>0</level>
+          <default>0000</default>
+          <control type="edit" format="string" />
+        </setting>
+        <setting id="host_ether" type="string" label="30012" help="-1">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string" />
+        </setting>
+        <setting id="livetv" type="boolean" label="30006" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="livetv_priority" type="boolean" label="30007" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="livetv_conflict_strategy" type="integer" label="30008" help="-1">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="30009">0</option> <!-- Prefer Live TV when recording has later slot -->
+              <option label="30010">1</option> <!-- Prefer recording and stop Live TV -->
+              <option label="30011">2</option> <!-- Prefer Live TV and cancel conflicting recording -->
+            </options>
+          </constraints>
+          <control type="spinner" format="integer" />
+        </setting>
+      </group>
+    </category>
+
+    <!-- Preferences -->
+    <category id="preferences" label="30051" help="-1">
+      <group id="1" label="-1">
+        <setting id="channel_icons" type="boolean" label="30063" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="recording_icons" type="boolean" label="30064" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="livetv_recordings" type="boolean" label="30067" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="group_recordings" type="integer" label="30054" help="-1">
+          <level>0</level>
+          <default>1</default>
+          <constraints>
+            <options>
+              <option label="30055">0</option> <!-- ALWAYS -->
+              <option label="30056">1</option> <!-- ONLY_FOR_SERIES -->
+              <option label="30057">2</option> <!-- NEVER -->
+            </options>
+          </constraints>
+          <control type="spinner" format="integer" />
+        </setting>
+        <setting id="use_airdate" type="boolean" label="30048" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="enable_edl" type="integer" label="30058" help="-1">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="30059">0</option> <!-- ALWAYS -->
+              <option label="30060">1</option> <!-- DIALOG -->
+              <option label="30061">2</option> <!-- NEVER -->
+              <option label="30070">3</option> <!-- SCENE_ONLY -->
+            </options>
+          </constraints>
+          <control type="spinner" format="integer" />
+        </setting>
+        <setting id="inactive_upcomings" type="boolean" label="30066" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="prompt_delete" type="boolean" label="30047" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="root_default_group" type="boolean" label="30069" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="damaged_color" type="string" label="30046" help="-1">
+          <level>0</level>
+          <default>[COLOR yellow]yellow[/COLOR]</default>
+          <constraints>
+            <options>
+              <option label="neutral">neutral</option> <!-- NEUTRAL -->
+              <option label="[COLOR yellow]yellow[/COLOR]">[COLOR yellow]yellow[/COLOR]</option> <!-- YELLOW -->
+              <option label="[COLOR red]red[/COLOR]">[COLOR red]red[/COLOR]</option> <!-- RED -->
+              <option label="[COLOR green]green[/COLOR]">[COLOR green]green[/COLOR]</option> <!-- GREEN -->
+              <option label="[COLOR blue]blue[/COLOR]">[COLOR blue]blue[/COLOR]</option> <!-- BLUE -->
+              <option label="[COLOR orange]orange[/COLOR]">[COLOR orange]orange[/COLOR]</option> <!-- ORANGE -->
+              <option label="[COLOR lime]lime[/COLOR]">[COLOR lime]lime[/COLOR]</option> <!-- LIME -->
+              <option label="[COLOR pink]pink[/COLOR]">[COLOR pink]pink[/COLOR]</option> <!-- PINK -->
+              <option label="[COLOR magenta]magenta[/COLOR]">[COLOR magenta]magenta[/COLOR]</option> <!-- MAGENTA -->
+              <option label="[COLOR brown]brown[/COLOR]">[COLOR brown]brown[/COLOR]</option> <!-- BROWN -->
+              <option label="[COLOR cyan]cyan[/COLOR]">[COLOR cyan]cyan[/COLOR]</option> <!-- CYAN -->
+              <option label="[COLOR indigo]indigo[/COLOR]">[COLOR indigo]indigo[/COLOR]</option> <!-- INDIGO -->
+              <option label="[COLOR gray]gray[/COLOR]">[COLOR gray]gray[/COLOR]</option> <!-- GRAY -->
+              <option label="[COLOR olive]olive[/COLOR]">[COLOR olive]olive[/COLOR]</option> <!-- OLIVE -->
+              <option label="[COLOR purple]purple[/COLOR]">[COLOR purple]purple[/COLOR]</option> <!-- PURPLE -->
+              <option label="[COLOR sienna]sienna[/COLOR]">[COLOR sienna]sienna[/COLOR]</option> <!-- SIENNA -->
+              <option label="[COLOR teal]teal[/COLOR]">[COLOR teal]teal[/COLOR]</option> <!-- TEAL -->
+              <option label="[COLOR tomato]tomato[/COLOR]">[COLOR tomato]tomato[/COLOR]</option> <!-- TOMATO -->
+              <option label="[COLOR violet]violet[/COLOR]">[COLOR violet]violet[/COLOR]</option> <!-- VIOLET -->
+            </options>
+          </constraints>
+          <control type="spinner" format="string" />
+        </setting>
+      </group>
+    </category>
+
+    <!-- Recording template -->
+    <category id="recording_template" label="30049" help="-1">
+      <group id="1" label="-1">
+        <setting id="rec_template_provider" type="integer" label="30020" help="-1">
+          <level>0</level>
+          <default>1</default>
+          <constraints>
+            <options>
+              <option label="30021">0</option> <!-- INTERNAL -->
+              <option label="30022">1</option> <!-- MYTH_TV -->
+            </options>
+          </constraints>
+          <control type="spinner" format="integer" />
+        </setting>
+        <setting id="rec_autometadata" type="boolean" parent="rec_template_provider" label="30026" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="visible" setting="rec_template_provider" operator="is">0</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="rec_autocommflag" type="boolean" parent="rec_template_provider" label="30027" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="visible" setting="rec_template_provider" operator="is">0</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="rec_autoexpire" type="boolean" parent="rec_template_provider" label="30034" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="visible" setting="rec_template_provider" operator="is">0</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="rec_autotranscode" type="boolean" parent="rec_template_provider" label="30028" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="visible" setting="rec_template_provider" operator="is">0</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="rec_transcoder" type="integer" parent="rec_template_provider" label="30033" help="-1">
+          <level>0</level>
+          <default>0</default>
+          <dependencies>
+            <dependency type="visible" setting="rec_template_provider" operator="is">0</dependency>
+          </dependencies>
+          <control type="edit" format="integer" />
+        </setting>
+        <setting id="rec_autorunjob1" type="boolean" parent="rec_template_provider" label="30029" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="visible" setting="rec_template_provider" operator="is">0</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="rec_autorunjob2" type="boolean" parent="rec_template_provider" label="30030" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="visible" setting="rec_template_provider" operator="is">0</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="rec_autorunjob3" type="boolean" parent="rec_template_provider" label="30031" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="visible" setting="rec_template_provider" operator="is">0</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="rec_autorunjob4" type="boolean" parent="rec_template_provider" label="30032" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="visible" setting="rec_template_provider" operator="is">0</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+      </group>
+    </category>
+
+    <!-- Advanced -->
+    <category id="advanced" label="30050" help="-1">
+      <group id="1" label="-1">
+        <setting id="extradebug" type="boolean" label="30005" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="demuxing" type="boolean" label="30052" help="-1">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="allow_shutdown" type="boolean" label="30062" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="tunedelay" type="integer" label="30053" help="-1">
+          <level>0</level>
+          <default>5</default>
+          <constraints>
+            <minimum>5</minimum>
+            <step>1</step>
+            <maximum>30</maximum>
+          </constraints>
+          <control type="slider" format="integer" />
+        </setting>
+        <setting id="limit_tune_attempts" type="boolean" label="30065" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="backend_bookmarks" type="boolean" label="30068" help="-1">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+      </group>
+    </category>
+  </section>
 </settings>
