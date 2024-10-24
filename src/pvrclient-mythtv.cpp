@@ -2480,7 +2480,7 @@ bool PVRClientMythTV::SeekTime(double time, bool backwards, double& startpts)
   return m_demux ? m_demux->SeekTime(time, backwards, &startpts) : false;
 }
 
-bool PVRClientMythTV::OpenRecordedStream(const kodi::addon::PVRRecording& recording)
+bool PVRClientMythTV::OpenRecordedStream(const kodi::addon::PVRRecording& recording, int64_t& streamId)
 {
   if (!m_control || !m_eventHandler)
     return false;
@@ -2578,7 +2578,7 @@ bool PVRClientMythTV::OpenRecordedStream(const kodi::addon::PVRRecording& record
   return false;
 }
 
-void PVRClientMythTV::CloseRecordedStream()
+void PVRClientMythTV::CloseRecordedStream(int64_t streamId)
 {
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
@@ -2596,13 +2596,13 @@ void PVRClientMythTV::CloseRecordedStream()
     kodi::Log(ADDON_LOG_DEBUG, "%s: Done", __FUNCTION__);
 }
 
-int PVRClientMythTV::ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
+int PVRClientMythTV::ReadRecordedStream(int64_t streamId, unsigned char *pBuffer, unsigned int iBufferSize)
 {
   // Keep unlocked
   return (m_recordingStream ? m_recordingStream->Read(pBuffer, iBufferSize) : -1);
 }
 
-int64_t PVRClientMythTV::SeekRecordedStream(int64_t iPosition, int iWhence)
+int64_t PVRClientMythTV::SeekRecordedStream(int64_t streamId, int64_t iPosition, int iWhence)
 {
   if (iWhence == SEEK_POSSIBLE)
     return 1;
@@ -2640,7 +2640,7 @@ int64_t PVRClientMythTV::SeekRecordedStream(int64_t iPosition, int iWhence)
   return retval;
 }
 
-int64_t PVRClientMythTV::LengthRecordedStream()
+int64_t PVRClientMythTV::LengthRecordedStream(int64_t streamId)
 {
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);

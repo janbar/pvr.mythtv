@@ -122,11 +122,11 @@ public:
   bool SeekTime(double time, bool backwards, double& startpts) override;
 
   // Recording playback
-  bool OpenRecordedStream(const kodi::addon::PVRRecording& recinfo) override;
-  void CloseRecordedStream() override;
-  int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize) override;
-  int64_t SeekRecordedStream(int64_t iPosition, int iWhence) override;
-  int64_t LengthRecordedStream() override;
+  bool OpenRecordedStream(const kodi::addon::PVRRecording& recinfo, int64_t& streamId) override;
+  void CloseRecordedStream(int64_t streamId) override;
+  int ReadRecordedStream(int64_t streamId, unsigned char *pBuffer, unsigned int iBufferSize) override;
+  int64_t SeekRecordedStream(int64_t streamId, int64_t iPosition, int iWhence) override;
+  int64_t LengthRecordedStream(int64_t streamId) override;
 
   // Menu hook
   PVR_ERROR CallChannelMenuHook(const kodi::addon::PVRMenuhook& menuhook, const kodi::addon::PVRChannel& item) override;
