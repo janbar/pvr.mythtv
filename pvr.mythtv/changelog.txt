@@ -1,3 +1,6 @@
+v21.1.10
+- Demuxing: complete streams setup
+
 v21.1.9
 - Update settings to new format
 - Add build script for mac
