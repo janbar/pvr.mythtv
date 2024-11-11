@@ -1,6 +1,6 @@
 #pragma once
 /*
- *  Copyright (C) 2018-2021 Jean-Luc Barrière
+ *  Copyright (C) 2018-2024 Jean-Luc Barrière
  *  Copyright (C) 2018 Team Kodi (https://kodi.tv)
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -57,7 +57,7 @@ private:
 
   // PVR interfaces
   void populate_pvr_streams();
-  bool update_pvr_stream(uint16_t pid);
+  bool update_pvr_stream(TSDemux::ElementaryStream* es);
   void push_stream_change();
   DEMUX_PACKET* stream_pvr_data(TSDemux::STREAM_PKT* pkt);
   bool push_stream_data(DEMUX_PACKET* dxp);
