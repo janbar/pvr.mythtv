@@ -551,7 +551,7 @@ bool Demux::update_pvr_stream(TSDemux::ElementaryStream* es)
         {
         case PVR_CODEC_TYPE_VIDEO:
           kodi::Log(ADDON_LOG_INFO, LOGTAG "%d: %dx%d %3.3f", es->pid,
-                  it->GetWidth(), it->GetHeight(), it->GetFPSRate());
+                  it->GetWidth(), it->GetHeight(), (double)it->GetFPSRate()/(double)it->GetFPSScale());
           break;
         case PVR_CODEC_TYPE_AUDIO:
           kodi::Log(ADDON_LOG_INFO, LOGTAG "%d: %d %dch %d %s", es->pid,
