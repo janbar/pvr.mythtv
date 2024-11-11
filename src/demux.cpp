@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2018-2021 Jean-Luc Barrière
+ *  Copyright (C) 2018-2024 Jean-Luc Barrière
  *  Copyright (C) 2018 Team Kodi (https://kodi.tv)
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -182,12 +182,6 @@ void* Demux::Process()
       TSDemux::STREAM_PKT pkt;
       while (get_stream_data(&pkt))
       {
-        if (pkt.streamChange)
-        {
-          // Update stream properties. Change will be pushed once setup is completed for all streams.
-          if (update_pvr_stream(pkt.pid) && m_nosetup.empty())
-            push_stream_change();
-        }
         push_stream_data(stream_pvr_data(&pkt));
       }
     }
@@ -217,7 +211,7 @@ void* Demux::Process()
 bool Demux::GetStreamProperties(std::vector<kodi::addon::PVRStreamProperties>& props)
 {
   if (!m_nosetup.empty())
-    kodi::Log(ADDON_LOG_INFO, LOGTAG "%s: incomplete setup", __FUNCTION__);
+    kodi::Log(ADDON_LOG_WARNING, LOGTAG "%s: incomplete setup", __FUNCTION__);
 
   Myth::OS::CLockGuard guard(m_lock);
   m_isChangePlaced = false;
@@ -359,6 +353,13 @@ bool Demux::get_stream_data(TSDemux::STREAM_PKT* pkt)
 
   if (!es->GetStreamPacket(pkt))
     return false;
+
+  if (pkt->streamChange)
+  {
+    // Update stream properties. Change will be pushed once setup is completed for all streams.
+    if (update_pvr_stream(es) && m_nosetup.empty())
+      push_stream_change();
+  }
 
   // start by mainstream frame
   if (m_posmap.empty() && pkt->pid != m_mainStreamPID)
@@ -513,15 +514,11 @@ void Demux::populate_pvr_streams()
   m_mainStreamPID = mainPid;
 }
 
-bool Demux::update_pvr_stream(uint16_t pid)
+bool Demux::update_pvr_stream(TSDemux::ElementaryStream* es)
 {
-  TSDemux::ElementaryStream* es = m_AVContext->GetStream(pid);
-  if (!es)
-    return false;
-
   const char* codec_name = es->GetStreamCodecName();
   kodi::addon::PVRCodec codec = m_handler.GetCodecByName(codec_name);
-  kodi::Log(ADDON_LOG_DEBUG, LOGTAG "%s: update info PES %.4x %s", __FUNCTION__, es->pid, codec_name);
+  kodi::Log(ADDON_LOG_INFO, LOGTAG "update info PES %d %s", es->pid, codec_name);
 
   Myth::OS::CLockGuard guard(m_lock);
 
@@ -549,14 +546,36 @@ bool Demux::update_pvr_stream(uint16_t pid)
 
       if (es->has_stream_info)
       {
-        // Now stream is setup. Remove it from no setup set
+        // Log infos
+        switch(it->GetCodecType())
+        {
+        case PVR_CODEC_TYPE_VIDEO:
+          kodi::Log(ADDON_LOG_INFO, LOGTAG "%d: %dx%d %3.3f", es->pid,
+                  it->GetWidth(), it->GetHeight(), it->GetFPSRate());
+          break;
+        case PVR_CODEC_TYPE_AUDIO:
+          kodi::Log(ADDON_LOG_INFO, LOGTAG "%d: %d %dch %d %s", es->pid,
+                  it->GetBitRate(), it->GetChannels(), it->GetSampleRate(),
+                  it->GetLanguage().c_str());
+          break;
+        default:
+          kodi::Log(ADDON_LOG_INFO, LOGTAG "%d: %s %s", es->pid, codec_name,
+                  it->GetLanguage().c_str());
+          break;
+        }
+
+        // Now stream has setup. Remove it from no setup set
         std::set<uint16_t>::iterator it = m_nosetup.find(es->pid);
         if (it != m_nosetup.end())
         {
           m_nosetup.erase(it);
           if (m_nosetup.empty())
-            kodi::Log(ADDON_LOG_DEBUG, LOGTAG "%s: setup is completed", __FUNCTION__);
+            kodi::Log(ADDON_LOG_INFO, LOGTAG "setup is completed");
         }
+      }
+      else
+      {
+        kodi::Log(ADDON_LOG_WARNING, LOGTAG "%d: no stream info", es->pid);
       }
       return true;
     }
