@@ -39,9 +39,7 @@ ES_h264::ES_h264(uint16_t pes_pid)
 {
   m_Height                      = 0;
   m_Width                       = 0;
-  m_FPS                         = 25;
   m_FpsScale                    = 0;
-  m_FrameDuration               = 0;
   m_vbvDelay                    = -1;
   m_vbvSize                     = 0;
   m_PixelAspect.den             = 1;
@@ -520,11 +518,11 @@ bool ES_h264::Parse_SPS(uint8_t *buf, int len)
 
     if (bs.readBits1()) // timing_info_present_flag
     {
-//      uint32_t num_units_in_tick = bs.readBits(32);
-//      uint32_t time_scale = bs.readBits(32);
-//      int fixed_frame_rate = bs.readBits1();
-//      if (num_units_in_tick > 0)
-//        m_FPS = time_scale / (num_units_in_tick * 2);
+      // uint32_t num_units_in_tick = bs.readBits(32);
+      // uint32_t time_scale = bs.readBits(32);
+      // int fixed_frame_rate = bs.readBits1();
+      // if (num_units_in_tick > 0)
+      //  m_FPS = time_scale / (num_units_in_tick * 2);
     }
   }
 
