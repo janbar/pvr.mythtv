@@ -42,7 +42,6 @@ int         CMythSettings::m_iEnableEDL              = ENABLE_EDL_ALWAYS;
 bool        CMythSettings::m_bAllowMythShutdown      = DEFAULT_ALLOW_SHUTDOWN;
 bool        CMythSettings::m_bLimitTuneAttempts      = DEFAULT_LIMIT_TUNE_ATTEMPTS;
 bool        CMythSettings::m_bShowNotRecording       = DEFAULT_SHOW_NOT_RECORDING;
-bool        CMythSettings::m_bPromptDeleteAtEnd      = DEFAULT_PROMPT_DELETE;
 bool        CMythSettings::m_bUseBackendBookmarks    = DEFAULT_BACKEND_BOOKMARKS;
 bool        CMythSettings::m_bRootDefaultGroup       = DEFAULT_ROOT_DEFAULT_GROUP;
 std::string CMythSettings::m_szDamagedColor          = DEFAULT_DAMAGED_COLOR;
@@ -207,14 +206,6 @@ bool CMythSettings::Load()
     /* If setting is unknown fallback to defaults */
     kodi::Log(ADDON_LOG_ERROR, "Couldn't get 'inactive_upcomings' setting, falling back to '%u' as default", DEFAULT_SHOW_NOT_RECORDING);
     m_bShowNotRecording = DEFAULT_SHOW_NOT_RECORDING;
-  }
-
-  /* Read setting "prompt_delete" from settings.xml */
-  if (!kodi::addon::CheckSettingBoolean("prompt_delete", m_bPromptDeleteAtEnd))
-  {
-    /* If setting is unknown fallback to defaults */
-    kodi::Log(ADDON_LOG_ERROR, "Couldn't get 'prompt_delete' setting, falling back to '%u' as default", DEFAULT_PROMPT_DELETE);
-    m_bPromptDeleteAtEnd = DEFAULT_PROMPT_DELETE;
   }
 
   /* Read setting "livetv_recordings" from settings.xml */
@@ -469,12 +460,6 @@ ADDON_STATUS CMythSettings::SetSetting(PVRClientMythTV& client,
       m_bShowNotRecording = settingValue.GetBoolean();
       client.HandleScheduleChange();
     }
-  }
-  else if (settingName == "prompt_delete")
-  {
-    kodi::Log(ADDON_LOG_INFO, "Changed Setting 'prompt_delete' from %u to %u", m_bPromptDeleteAtEnd, settingValue.GetBoolean());
-    if (m_bPromptDeleteAtEnd != settingValue.GetBoolean())
-      m_bPromptDeleteAtEnd = settingValue.GetBoolean();
   }
   else if (settingName == "livetv_recordings")
   {

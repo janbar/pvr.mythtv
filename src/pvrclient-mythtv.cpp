@@ -558,22 +558,6 @@ void PVRClientMythTV::HandleRecordingListChange(const Myth::EventMessage& msg)
   }
 }
 
-void PVRClientMythTV::PromptDeleteRecording(const MythProgramInfo &prog)
-{
-  if (IsPlaying() || prog.IsNull())
-    return;
-  std::string dispTitle = MakeProgramTitle(prog.Title(), prog.Subtitle());
-  if (kodi::gui::dialogs::YesNo::ShowAndGetInput(kodi::addon::GetLocalizedString(122),
-          kodi::addon::GetLocalizedString(19112), "", dispTitle,
-          "", kodi::addon::GetLocalizedString(117)))
-  {
-    if (m_control->DeleteRecording(*(prog.GetPtr())))
-      kodi::Log(ADDON_LOG_DEBUG, "%s: Deleted recording %s", __FUNCTION__, prog.UID().c_str());
-    else
-      kodi::Log(ADDON_LOG_ERROR, "%s: Failed to delete recording %s", __FUNCTION__, prog.UID().c_str());
-  }
-}
-
 void PVRClientMythTV::RunHouseKeeping()
 {
   if (!m_control || !m_eventHandler)
@@ -1343,23 +1327,6 @@ PVR_ERROR PVRClientMythTV::DeleteAndForgetRecording(const kodi::addon::PVRRecord
   return PVR_ERROR_FAILED;
 }
 
-class ATTR_DLL_LOCAL PromptDeleteRecordingTask : public Task
-{
-public:
-  PromptDeleteRecordingTask(PVRClientMythTV* pvr, const MythProgramInfo& prog)
-  : Task()
-  , m_pvr(pvr)
-  , m_prog(prog) { }
-
-  virtual void Execute()
-  {
-    m_pvr->PromptDeleteRecording(m_prog);
-  }
-
-  PVRClientMythTV *m_pvr;
-  MythProgramInfo m_prog;
-};
-
 PVR_ERROR PVRClientMythTV::SetRecordingPlayCount(const kodi::addon::PVRRecording& recording, int count)
 {
   if (!m_control)
@@ -1379,10 +1346,6 @@ PVR_ERROR PVRClientMythTV::SetRecordingPlayCount(const kodi::addon::PVRRecording
     else
     {
       kodi::Log(ADDON_LOG_DEBUG, "%s: Failed setting watched state for: %s", __FUNCTION__, recording.GetRecordingId().c_str());
-    }
-    if (CMythSettings::GetPromptDeleteAtEnd())
-    {
-      m_todo->ScheduleTask(new PromptDeleteRecordingTask(this, it->second), 1000);
     }
     return PVR_ERROR_NO_ERROR;
   }

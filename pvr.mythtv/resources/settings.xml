@@ -120,11 +120,6 @@
           <default>true</default>
           <control type="toggle" />
         </setting>
-        <setting id="prompt_delete" type="boolean" label="30047" help="-1">
-          <level>0</level>
-          <default>false</default>
-          <control type="toggle" />
-        </setting>
         <setting id="root_default_group" type="boolean" label="30069" help="-1">
           <level>0</level>
           <default>false</default>

@@ -47,7 +47,6 @@
 #define DEFAULT_ALLOW_SHUTDOWN              true
 #define DEFAULT_LIMIT_TUNE_ATTEMPTS         true
 #define DEFAULT_SHOW_NOT_RECORDING          true
-#define DEFAULT_PROMPT_DELETE               false
 #define DEFAULT_LIVETV_RECORDINGS           true
 #define DEFAULT_BACKEND_BOOKMARKS           true
 #define DEFAULT_ROOT_DEFAULT_GROUP          false
@@ -95,7 +94,6 @@ public:
   static bool GetLimitTuneAttempts() { return m_bLimitTuneAttempts; }
   static bool GetShowNotRecording() { return m_bShowNotRecording; }
   static void ToogleShowNotRecording() { m_bShowNotRecording ^= true; }
-  static bool GetPromptDeleteAtEnd() { return m_bPromptDeleteAtEnd; }
   static bool GetUseBackendBookmarks() { return m_bUseBackendBookmarks; }
   static bool GetRootDefaultGroup() { return m_bRootDefaultGroup; }
   static const std::string& GetDamagedColor() { return m_szDamagedColor; }
@@ -131,7 +129,6 @@ private:
   static bool          m_bAllowMythShutdown;
   static bool          m_bLimitTuneAttempts;
   static bool          m_bShowNotRecording;
-  static bool          m_bPromptDeleteAtEnd;
   static bool          m_bUseBackendBookmarks;
   static bool          m_bRootDefaultGroup;
   static std::string   m_szDamagedColor;

@@ -67,7 +67,6 @@ public:
   void HandleScheduleChange();
   void HandleAskRecording(const Myth::EventMessage& msg);
   void HandleRecordingListChange(const Myth::EventMessage& msg);
-  void PromptDeleteRecording(const MythProgramInfo &prog);
   void RunHouseKeeping();
 
   // EPG
