@@ -207,20 +207,20 @@ PVR_ERROR PVRClientMythTV::GetCapabilities(kodi::addon::PVRCapabilities& capabil
   capabilities.SetSupportsTimers(true);
 
   capabilities.SetHandlesInputStream(true);
-  capabilities.SetHandlesDemuxing(false);
-
   capabilities.SetHandlesDemuxing(CMythSettings::GetDemuxing());
+
   capabilities.SetSupportsRecordings(true);
   capabilities.SetSupportsRecordingsDelete(true);
   capabilities.SetSupportsRecordingsUndelete(true);
-  capabilities.SetSupportsRecordingPlayCount((version < 80 ? false : true));
-  capabilities.SetSupportsLastPlayedPosition((version < 88 || !CMythSettings::GetUseBackendBookmarks() ? false : true));
-  capabilities.SetSupportsRecordingEdl(true);
   capabilities.SetSupportsRecordingsRename(false);
   capabilities.SetSupportsRecordingsLifetimeChange(false);
+  capabilities.SetSupportsRecordingSize(true);
+  capabilities.SetSupportsRecordingEdl(true);
+  capabilities.SetSupportsRecordingPlayCount((version < 80 ? false : true));
+  capabilities.SetSupportsLastPlayedPosition((version < 88 || !CMythSettings::GetUseBackendBookmarks() ? false : true));
+
   capabilities.SetSupportsDescrambleInfo(false);
   capabilities.SetSupportsAsyncEPGTransfer(false);
-  capabilities.SetSupportsRecordingSize(true);
 
   return PVR_ERROR_NO_ERROR;
 }
