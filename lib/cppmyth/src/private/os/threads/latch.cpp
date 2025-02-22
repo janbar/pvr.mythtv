@@ -164,7 +164,7 @@ void CLatch::lock()
   if (!thread_equal(x_owner, tid))
   {
     /* increments the count of request in wait */
-    ++x_wait;
+    x_wait += 1;
     for (;;)
     {
       /* if flag is 0 or 2 then it hold X with no wait,
@@ -173,7 +173,7 @@ void CLatch::lock()
       if (x_flag == X_STEP_0 || x_flag == X_STEP_2)
       {
         x_flag = X_STEP_1;
-        --x_wait;
+        x_wait -= 1;
         break;
       }
       else
@@ -222,7 +222,7 @@ void CLatch::lock()
   else
   {
     /* recursive X lock */
-    ++x_flag;
+    x_flag += 1;
   }
 
   spin_unlock();
@@ -236,7 +236,8 @@ void CLatch::unlock()
   if (thread_equal(x_owner, tid))
   {
     /* decrement recursive lock */
-    if (--x_flag == X_STEP_2)
+    x_flag -= 1;
+    if (x_flag == X_STEP_2)
     {
       x_owner = {};
       /* hand-over to a request in wait for X, else release */

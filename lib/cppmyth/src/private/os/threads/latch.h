@@ -62,8 +62,8 @@ namespace OS
     mutable Atomic s_spin;
     thread_t x_owner;
 
-    volatile int x_wait;                /* counts requests in wait for X  */
-    volatile int x_flag;                /* X status: 0, 1, 2, or 3        */
+    int x_wait;                         /* counts requests in wait for X  */
+    int x_flag;                         /* X status: 0, 1, 2, or 3        */
 
     mutex_t x_gate_lock;
     condition_t x_gate;                 /* wait for release of X          */
