@@ -28,16 +28,16 @@ namespace NSROOT {
 namespace OS
 {
 
-  class CMutex
+  class Mutex
   {
   public:
-    CMutex()
+    Mutex()
     : m_lockCount(0)
     {
       mutex_init(&m_handle);
     }
 
-    ~CMutex()
+    ~Mutex()
     {
       Clear();
       mutex_destroy(&m_handle);
@@ -88,26 +88,34 @@ namespace OS
       }
     }
 
+#if __cplusplus >= 201103L
+    // Prevent copy
+    Mutex(const Mutex& other) = delete;
+    Mutex& operator=(const Mutex& other) = delete;
+#endif
+
   private:
     mutex_t           m_handle;
     unsigned          m_lockCount;
 
+#if __cplusplus < 201103L
     // Prevent copy
-    CMutex(const CMutex& other);
-    CMutex& operator=(const CMutex& other);
+    Mutex(const Mutex& other);
+    Mutex& operator=(const Mutex& other);
+#endif
   };
 
-  class CLockGuard
+  class LockGuard
   {
   public:
-    CLockGuard(CMutex& mutex)
+    LockGuard(Mutex& mutex)
     : m_mutex(mutex)
     , m_lockCount(0)
     {
       Lock();
     }
 
-    ~CLockGuard()
+    ~LockGuard()
     {
       Clear();
     }
@@ -152,13 +160,21 @@ namespace OS
       }
     }
 
+#if __cplusplus >= 201103L
+    // Prevent copy
+    LockGuard(const LockGuard& other) = delete;
+    LockGuard& operator=(const LockGuard& other) = delete;
+#endif
+
   private:
-    CMutex&           m_mutex;
+    Mutex&           m_mutex;
     unsigned          m_lockCount;
 
+#if __cplusplus < 201103L
     // Prevent copy
-    CLockGuard(const CLockGuard& other);
-    CLockGuard& operator=(const CLockGuard& other);
+    LockGuard(const LockGuard& other);
+    LockGuard& operator=(const LockGuard& other);
+#endif
   };
 
 }

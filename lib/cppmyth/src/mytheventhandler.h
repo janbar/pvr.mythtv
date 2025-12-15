@@ -52,7 +52,7 @@ namespace Myth
     void Reset() { m_imp->Reset(); }
     std::string GetServer() const { return m_imp->GetServer(); }
     unsigned GetPort() const { return m_imp->GetPort(); }
-    bool IsRunning() { return m_imp->IsRunning(); }
+    bool IsRunning() { return m_imp->HasStarted(); }
     bool IsConnected() { return m_imp->IsConnected(); }
 
     unsigned CreateSubscription(EventSubscriber *sub) { return m_imp->CreateSubscription(sub); }
@@ -71,7 +71,7 @@ namespace Myth
       virtual bool Start() = 0;
       virtual void Stop() = 0;
       virtual void Reset() = 0;
-      virtual bool IsRunning() = 0;
+      virtual bool HasStarted() = 0;
       virtual bool IsConnected() = 0;
       virtual unsigned CreateSubscription(EventSubscriber *sub) = 0;
       virtual bool SubscribeForEvent(unsigned subid, EVENT_t event) = 0;

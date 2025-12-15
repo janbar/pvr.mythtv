@@ -29,20 +29,20 @@ using namespace NSROOT::OS;
 using namespace OS;
 #endif
 
-CLatch::TNode * CLatch::find_node(const thread_t& id)
+Latch::TNode * Latch::find_node(const thread_t& id)
 {
   TNode * p = s_nodes;
-  while (p != NULL && thread_equal(p->id, id) == 0)
+  while (p != nullptr && thread_equal(p->id, id) == 0)
   {
     p = p->_next;
   }
   return p;
 }
 
-CLatch::TNode * CLatch::new_node(const thread_t& id)
+Latch::TNode * Latch::new_node(const thread_t& id)
 {
   TNode * p;
-  if (s_freed == NULL)
+  if (s_freed == nullptr)
   {
     /* create node */
     p = new TNode();
@@ -59,9 +59,9 @@ CLatch::TNode * CLatch::new_node(const thread_t& id)
   p->count = 0;
 
   /* push front in list */
-  p->_prev = NULL;
+  p->_prev = nullptr;
   p->_next = s_nodes;
-  if (s_nodes != NULL)
+  if (s_nodes != nullptr)
   {
     s_nodes->_prev = p;
   }
@@ -69,7 +69,7 @@ CLatch::TNode * CLatch::new_node(const thread_t& id)
   return p;
 }
 
-void CLatch::free_node(TNode * n)
+void Latch::free_node(TNode * n)
 {
   /* remove from list */
   if (n == s_nodes)
@@ -80,28 +80,28 @@ void CLatch::free_node(TNode * n)
   {
     n->_prev->_next = n->_next;
   }
-  if (n->_next != NULL)
+  if (n->_next != nullptr)
   {
     n->_next->_prev = n->_prev;
   }
 
   /* push front in free list */
-  if (s_freed != NULL)
+  if (s_freed != nullptr)
   {
     s_freed->_prev = n;
   }
   n->_next = s_freed;
-  n->_prev = NULL;
+  n->_prev = nullptr;
   s_freed = n;
 }
 
-CLatch::CLatch(bool _px)
+Latch::Latch(bool _px)
 : s_spin(0)
 , x_wait(0)
 , x_flag(0)
 , px(_px)
-, s_freed(NULL)
-, s_nodes(NULL)
+, s_freed(nullptr)
+, s_nodes(nullptr)
 {
   mutex_init(&x_gate_lock);
   cond_init(&x_gate);
@@ -115,7 +115,7 @@ CLatch::CLatch(bool _px)
   free_node(n2);
 }
 
-CLatch::~CLatch()
+Latch::~Latch()
 {
   /* destroy free nodes */
   while (s_freed != nullptr) {
@@ -155,7 +155,7 @@ CLatch::~CLatch()
  */
 #define EXIT_TIMEOUT 1000
 
-void CLatch::lock()
+void Latch::lock()
 {
   thread_t tid = thread_self();
 
@@ -195,7 +195,7 @@ void CLatch::lock()
       /* if the count of S is zeroed, or equal to self count, then it finalizes
        * with no wait,
        * in other case it has to wait for S gate */
-      if (s_nodes == NULL || (s_nodes == n && s_nodes->_next == NULL))
+      if (s_nodes == nullptr || (s_nodes == n && s_nodes->_next == nullptr))
       {
         x_flag = X_STEP_3;
         break;
@@ -228,7 +228,7 @@ void CLatch::lock()
   spin_unlock();
 }
 
-void CLatch::unlock()
+void Latch::unlock()
 {
   thread_t tid = thread_self();
 
@@ -262,7 +262,7 @@ void CLatch::unlock()
   }
 }
 
-void CLatch::lock_shared()
+void Latch::lock_shared()
 {
   thread_t tid = thread_self();
 
@@ -291,7 +291,7 @@ void CLatch::lock_shared()
         /* X precedence is true,
          * test if this thread holds a recursive S lock
          */
-        if (x_flag == X_STEP_0 || (x_flag == X_STEP_1 && n != NULL))
+        if (x_flag == X_STEP_0 || (x_flag == X_STEP_1 && n != nullptr))
         {
           break;
         }
@@ -304,7 +304,7 @@ void CLatch::lock_shared()
       spin_lock();
     }
   }
-  if (n == NULL)
+  if (n == nullptr)
   {
     n = new_node(tid);
   }
@@ -314,7 +314,7 @@ void CLatch::lock_shared()
   spin_unlock();
 }
 
-void CLatch::unlock_shared()
+void Latch::unlock_shared()
 {
   thread_t tid = thread_self();
 
@@ -323,7 +323,7 @@ void CLatch::unlock_shared()
   /* find the thread node */
   TNode * n = find_node(tid);
   /* does it own shared lock ? */
-  assert(n != NULL);
+  assert(n != nullptr);
 
   /* decrement recursive count for this thread, finally free */
   if (--n->count == 0)
@@ -332,7 +332,7 @@ void CLatch::unlock_shared()
     /* on last S, finalize X request in wait, and notify */
     if (x_flag == X_STEP_1 && !thread_equal(x_owner, tid))
     {
-      if (s_nodes == NULL)
+      if (s_nodes == nullptr)
       {
         x_flag = X_STEP_3;
       }
@@ -353,7 +353,7 @@ void CLatch::unlock_shared()
   }
 }
 
-bool CLatch::try_lock_shared()
+bool Latch::try_lock_shared()
 {
   thread_t tid = thread_self();
 
@@ -365,7 +365,7 @@ bool CLatch::try_lock_shared()
   {
     /* find the thread node, else create */
     TNode * n = find_node(tid);
-    if (n == NULL)
+    if (n == nullptr)
     {
       n = new_node(tid);
     }

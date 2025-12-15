@@ -29,25 +29,25 @@ namespace NSROOT {
 namespace OS
 {
 
-  class CThread
+  class Thread
   {
   public:
-    CThread()
+    Thread()
     : m_finalizeOnStop(false)
     , m_handle(new Handle()) { }
 
-    virtual ~CThread()
+    virtual ~Thread()
     {
       delete m_handle;
     }
 
-    CThread(const CThread& _thread)
+    Thread(const Thread& _thread)
     {
       this->m_handle = new Handle();
       this->m_finalizeOnStop = _thread.m_finalizeOnStop;
     }
 
-    CThread& operator=(const CThread& _thread)
+    Thread& operator=(const Thread& _thread)
     {
       if (this != &_thread)
       {
@@ -65,11 +65,11 @@ namespace OS
 
     bool StartThread(bool wait = true)
     {
-      CLockGuard lock(m_handle->mutex);
+      LockGuard lock(m_handle->mutex);
       if (!m_handle->running)
       {
         m_handle->notifiedStop = false;
-        if (thread_create(&(m_handle->nativeHandle), CThread::ThreadHandler, ((void*)static_cast<CThread*>(this))))
+        if (thread_create(&(m_handle->nativeHandle), Thread::ThreadHandler, ((void*)static_cast<Thread*>(this))))
         {
           if (wait)
             m_handle->condition.Wait(m_handle->mutex, m_handle->running);
@@ -83,47 +83,47 @@ namespace OS
     {
       // First signal stop
       {
-        CLockGuard lock(m_handle->mutex);
+        LockGuard lock(m_handle->mutex);
         m_handle->notifiedStop = true;
         m_handle->condition.Broadcast();
       }
       // Waiting stopped
       if (wait)
       {
-        CLockGuard lock(m_handle->mutex);
+        LockGuard lock(m_handle->mutex);
         m_handle->condition.Wait(m_handle->mutex, m_handle->stopped);
       }
     }
 
     bool WaitThread(unsigned timeout)
     {
-      CLockGuard lock(m_handle->mutex);
+      LockGuard lock(m_handle->mutex);
       return m_handle->stopped ? true : m_handle->condition.Wait(m_handle->mutex, m_handle->stopped, timeout);
     }
 
     bool IsRunning()
     {
-      CLockGuard lock(m_handle->mutex);
+      LockGuard lock(m_handle->mutex);
       return m_handle->running;
     }
 
     bool IsStopped()
     {
-      CLockGuard lock(m_handle->mutex);
+      LockGuard lock(m_handle->mutex);
       return m_handle->notifiedStop || m_handle->stopped;
     }
 
     void Sleep(unsigned timeout)
     {
-      CTimeout _timeout(timeout);
-      CLockGuard lock(m_handle->mutex);
+      Timeout _timeout(timeout);
+      LockGuard lock(m_handle->mutex);
       while (!m_handle->notifiedStop && !m_handle->notifiedWake && m_handle->condition.Wait(m_handle->mutex, _timeout));
       m_handle->notifiedWake = false; // Reset the wake flag
     }
 
     void WakeUp()
     {
-      CLockGuard lock(m_handle->mutex);
+      LockGuard lock(m_handle->mutex);
       m_handle->notifiedWake = true;
       m_handle->condition.Broadcast();
     }
@@ -141,8 +141,8 @@ namespace OS
       volatile bool stopped;
       volatile bool notifiedStop;
       volatile bool notifiedWake;
-      CCondition<volatile bool> condition;
-      CMutex        mutex;
+      Condition<volatile bool> condition;
+      Mutex        mutex;
 
       Handle()
       : nativeHandle(0)
@@ -158,14 +158,14 @@ namespace OS
 
     static void* ThreadHandler(void* _thread)
     {
-      CThread* thread = static_cast<CThread*>(_thread);
-      void* ret = NULL;
+      Thread* thread = static_cast<Thread*>(_thread);
+      void* ret = nullptr;
 
       if (thread)
       {
         bool finalize = thread->m_finalizeOnStop;
         {
-          CLockGuard lock(thread->m_handle->mutex);
+          LockGuard lock(thread->m_handle->mutex);
           thread->m_handle->running = true;
           thread->m_handle->stopped = false;
           thread->m_handle->condition.Broadcast();

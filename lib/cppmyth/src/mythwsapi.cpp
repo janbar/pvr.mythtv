@@ -51,7 +51,7 @@ std::string WSAPI::encode_param(const std::string& str)
 }
 
 WSAPI::WSAPI(const std::string& server, unsigned port, const std::string& securityPin)
-: m_mutex(new OS::CMutex)
+: m_mutex(new OS::Mutex)
 , m_server(server)
 , m_port(port)
 , m_securityPin(securityPin)
@@ -216,7 +216,7 @@ bool WSAPI::CheckVersion2_0()
 
 unsigned WSAPI::CheckService()
 {
-  OS::CLockGuard lock(*m_mutex);
+  OS::LockGuard lock(*m_mutex);
   if (m_checked || (m_checked = InitWSAPI()))
     return (unsigned)m_version.protocol;
   return 0;
@@ -224,7 +224,7 @@ unsigned WSAPI::CheckService()
 
 WSServiceVersion_t WSAPI::CheckService(WSServiceId_t id)
 {
-  OS::CLockGuard lock(*m_mutex);
+  OS::LockGuard lock(*m_mutex);
   if (m_checked || (m_checked = InitWSAPI()))
     return m_serviceVersion[id];
   return m_serviceVersion[WS_INVALID];
@@ -248,7 +248,7 @@ VersionPtr WSAPI::GetVersion()
 
 std::string WSAPI::ResolveHostName(const std::string& hostname)
 {
-  OS::CLockGuard lock(*m_mutex);
+  OS::LockGuard lock(*m_mutex);
   std::map<std::string, std::string>::const_iterator it = m_namedCache.find(hostname);
   if (it != m_namedCache.end())
     return it->second;

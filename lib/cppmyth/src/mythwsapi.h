@@ -33,7 +33,7 @@ namespace Myth
 
   namespace OS
   {
-    class CMutex;
+    class Mutex;
   }
 
   typedef enum
@@ -509,7 +509,7 @@ namespace Myth
     }
 
   private:
-    OS::CMutex *m_mutex;
+    OS::Mutex *m_mutex;
     std::string m_server;
     unsigned m_port;
     std::string m_securityPin;

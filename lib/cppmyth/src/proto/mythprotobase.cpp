@@ -58,7 +58,7 @@ static myth_protomap_t protomap[] = {
 };
 
 ProtoBase::ProtoBase(const std::string& server, unsigned port)
-: m_latch(new OS::CLatch)
+: m_latch(new OS::Latch)
 , m_socket(new TcpSocket())
 , m_protoVersion(0)
 , m_server(server)
@@ -286,7 +286,7 @@ bool ProtoBase::OpenConnection(int rcvbuf)
   myth_protomap_t *map;
   unsigned tmp_ver;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
 
   if (!my_version)
     // try first version of the map
@@ -355,7 +355,7 @@ bool ProtoBase::OpenConnection(int rcvbuf)
 
 void ProtoBase::Close()
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
 
   if (m_socket->IsValid())
   {

@@ -50,7 +50,7 @@ FilePlayback::~FilePlayback()
 bool FilePlayback::Open()
 {
   // Begin critical section
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (ProtoPlayback::IsOpen())
     return true;
   return ProtoPlayback::Open();
@@ -59,7 +59,7 @@ bool FilePlayback::Open()
 void FilePlayback::Close()
 {
   // Begin critical section
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   CloseTransfer();
   ProtoPlayback::Close();
 }
@@ -67,7 +67,7 @@ void FilePlayback::Close()
 bool FilePlayback::OpenTransfer(const std::string& pathname, const std::string& sgname)
 {
   // Begin critical section
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!ProtoPlayback::IsOpen())
     return false;
   CloseTransfer();
@@ -80,7 +80,7 @@ bool FilePlayback::OpenTransfer(const std::string& pathname, const std::string& 
 void FilePlayback::CloseTransfer()
 {
   // Begin critical section
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (m_transfer)
   {
     TransferDone(*m_transfer);
