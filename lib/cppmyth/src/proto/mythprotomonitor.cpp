@@ -85,7 +85,7 @@ bool ProtoMonitor::IsOpen()
 
 bool ProtoMonitor::Announce75()
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
 
   std::string cmd("ANN Monitor ");
   cmd.append(m_socket->GetMyHostName()).append(" 0");
@@ -104,7 +104,7 @@ out:
 
 bool ProtoMonitor::Announce88()
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
 
   std::string cmd((m_frontend ? "ANN Frontend " : "ANN Monitor "));
   cmd.append(m_socket->GetMyHostName()).append(" 0");
@@ -129,7 +129,7 @@ ProtoRecorderPtr ProtoMonitor::GetRecorderFromNum75(int rnum)
   std::string hostname;
   uint16_t port;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return recorder;
   std::string cmd("GET_RECORDER_FROM_NUM");
@@ -158,7 +158,7 @@ bool ProtoMonitor::QueryFreeSpaceSummary75(int64_t *total, int64_t *used)
 {
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("QUERY_FREE_SPACE_SUMMARY");
@@ -182,7 +182,7 @@ std::string ProtoMonitor::GetSetting75(const std::string& hostname, const std::s
 {
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return field;
   std::string cmd("QUERY_SETTING ");
@@ -206,7 +206,7 @@ bool ProtoMonitor::SetSetting75(const std::string& hostname, const std::string& 
 {
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("SET_SETTING ");
@@ -229,7 +229,7 @@ bool ProtoMonitor::QueryGenpixmap75(const Program& program)
 {
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("QUERY_GENPIXMAP2");
@@ -255,7 +255,7 @@ bool ProtoMonitor::DeleteRecording75(const Program& program, bool force, bool fo
   BUILTIN_BUFFER buf;
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("DELETE_RECORDING ");
@@ -289,7 +289,7 @@ bool ProtoMonitor::UndeleteRecording75(const Program& program)
 {
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("UNDELETE_RECORDING");
@@ -315,7 +315,7 @@ bool ProtoMonitor::StopRecording75(const Program& program)
   std::string field;
   int32_t num;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("STOP_RECORDING");
@@ -341,7 +341,7 @@ bool ProtoMonitor::CancelNextRecording75(int rnum, bool cancel)
   BUILTIN_BUFFER buf;
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("QUERY_RECORDER ");
@@ -369,7 +369,7 @@ StorageGroupFilePtr ProtoMonitor::QuerySGFile75(const std::string& hostname, con
   int64_t tmpi;
   StorageGroupFilePtr sgfile;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return sgfile;
   std::string cmd("QUERY_SG_FILEQUERY");
@@ -408,7 +408,7 @@ MarkListPtr ProtoMonitor::GetCutList75(const Program& program)
   int32_t nb;
   MarkListPtr list(new MarkList);
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return list;
   std::string cmd("QUERY_CUTLIST ");
@@ -451,7 +451,7 @@ MarkListPtr ProtoMonitor::GetCommBreakList75(const Program& program)
   int32_t nb;
   MarkListPtr list(new MarkList);
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return list;
   std::string cmd("QUERY_COMMBREAK ");
@@ -491,7 +491,7 @@ bool ProtoMonitor::BlockShutdown75()
 {
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("BLOCK_SHUTDOWN");
@@ -513,7 +513,7 @@ bool ProtoMonitor::AllowShutdown75()
 {
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("ALLOW_SHUTDOWN");
@@ -537,7 +537,7 @@ std::vector<int> ProtoMonitor::GetFreeCardIdList75()
   std::vector<int> ids;
   int32_t rnum;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return ids;
   std::string cmd("GET_FREE_RECORDER_LIST");
@@ -571,7 +571,7 @@ CardInputListPtr ProtoMonitor::GetFreeInputs75()
     BUILTIN_BUFFER buf;
     std::string field;
 
-    OS::CWriteLock lock(*m_latch);
+    OS::WriteLock lock(*m_latch);
     if (!IsOpen())
       break;
     std::string cmd("QUERY_RECORDER ");
@@ -618,7 +618,7 @@ CardInputListPtr ProtoMonitor::GetFreeInputs79()
     BUILTIN_BUFFER buf;
     std::string field;
 
-    OS::CWriteLock lock(*m_latch);
+    OS::WriteLock lock(*m_latch);
     if (!IsOpen())
       break;
     std::string cmd("QUERY_RECORDER ");
@@ -673,7 +673,7 @@ CardInputListPtr ProtoMonitor::GetFreeInputs81()
     BUILTIN_BUFFER buf;
     std::string field;
 
-    OS::CWriteLock lock(*m_latch);
+    OS::WriteLock lock(*m_latch);
     if (!IsOpen())
       break;
     std::string cmd("QUERY_RECORDER ");
@@ -726,7 +726,7 @@ CardInputListPtr ProtoMonitor::GetFreeInputs87(int rnum)
   BUILTIN_BUFFER buf;
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return list;
   std::string cmd("GET_FREE_INPUT_INFO ");
@@ -773,7 +773,7 @@ CardInputListPtr ProtoMonitor::GetFreeInputs89(int rnum)
   BUILTIN_BUFFER buf;
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return list;
   std::string cmd("GET_FREE_INPUT_INFO ");
@@ -822,7 +822,7 @@ CardInputListPtr ProtoMonitor::GetFreeInputs90(int rnum)
   BUILTIN_BUFFER buf;
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return list;
   std::string cmd("GET_FREE_INPUT_INFO ");
@@ -872,7 +872,7 @@ CardInputListPtr ProtoMonitor::GetFreeInputs91(int rnum)
   BUILTIN_BUFFER buf;
   std::string field;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return list;
   std::string cmd("GET_FREE_INPUT_INFO ");

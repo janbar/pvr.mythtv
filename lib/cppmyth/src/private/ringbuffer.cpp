@@ -30,7 +30,7 @@ namespace NSROOT
 {
   struct RingBuffer::Lockable
   {
-    OS::CMutex mutex;
+    OS::Mutex mutex;
   };
 }
 
@@ -104,25 +104,25 @@ int RingBuffer::capacity() const
 
 int RingBuffer::bytesAvailable() const
 {
-  OS::CLockGuard g(m_ringlock->mutex);
+  OS::LockGuard g(m_ringlock->mutex);
   return (m_unread ? m_read->packet->size : 0);
 }
 
 unsigned RingBuffer::bytesUnread() const
 {
-  OS::CLockGuard g(m_ringlock->mutex);
+  OS::LockGuard g(m_ringlock->mutex);
   return m_unread;
 }
 
 bool RingBuffer::full() const
 {
-  OS::CLockGuard g(m_ringlock->mutex);
+  OS::LockGuard g(m_ringlock->mutex);
   return (m_unread && m_read == m_write);
 }
 
 void RingBuffer::clear()
 {
-  OS::CLockGuard g(m_ringlock->mutex);
+  OS::LockGuard g(m_ringlock->mutex);
   // reset of unread implies the reset of packet size
   // so clean all chunks in the buffer
   for (std::vector<Chunk*>::iterator it = m_buffer.begin(); it != m_buffer.end(); ++it)
@@ -143,7 +143,7 @@ int RingBuffer::write(const char * data, int len)
     _packet->size = len;
     memcpy(_packet->data, data, len);
     {
-      OS::CLockGuard g(m_ringlock->mutex);
+      OS::LockGuard g(m_ringlock->mutex);
       if (m_write->packet)
       {
         // overwriting a packet implies to update unread because the data will be destroyed,
@@ -171,7 +171,7 @@ void RingBuffer::writePacket(RingBufferPacket* packet)
 {
   if (packet)
   {
-    OS::CLockGuard g(m_ringlock->mutex);
+    OS::LockGuard g(m_ringlock->mutex);
     if (m_write->packet)
     {
       // overwriting a packet implies to update unread because the data will be destroyed,
@@ -190,7 +190,7 @@ RingBufferPacket * RingBuffer::read()
 {
   RingBufferPacket * p = nullptr;
   {
-    OS::CLockGuard g(m_ringlock->mutex);
+    OS::LockGuard g(m_ringlock->mutex);
     if (m_unread)
     {
       p = m_read->packet;

@@ -83,7 +83,7 @@ void ProtoEvent::Close()
 
 bool ProtoEvent::Announce75()
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
 
   std::string cmd("ANN Monitor ");
   cmd.append(m_socket->GetMyHostName()).append(" 1");
@@ -130,7 +130,7 @@ SignalStatusPtr ProtoEvent::RcvSignalStatus()
 
 int ProtoEvent::RcvBackendMessage(unsigned timeout, EventMessage **msg)
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   struct timeval tv;
   tv.tv_sec = timeout;
   tv.tv_usec = 0;

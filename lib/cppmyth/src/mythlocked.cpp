@@ -20,50 +20,34 @@
  */
 
 #include "mythlocked.h"
-#include "private/os/threads/mutex.h"
+#include "private/os/threads/latch.h"
 
 using namespace Myth;
 
-namespace Myth
+Lockable::Lockable()
+: m_lock(new OS::Latch()) { }
+
+Lockable::~Lockable()
 {
-  struct LockGuard::Lockable
-  {
-    OS::CMutex mutex;
-  };
+  delete m_lock;
 }
 
-LockGuard::LockGuard(Lockable* lock)
-: m_lock(lock)
+void Lockable::Lock()
 {
-  m_lock->mutex.Lock();
+  m_lock->lock();
 }
 
-LockGuard::~LockGuard()
+void Lockable::Unlock()
 {
-  m_lock->mutex.Unlock();
+  m_lock->unlock();
 }
 
-LockGuard::Lockable* LockGuard::CreateLock()
+void Lockable::LockShared()
 {
-  return new Lockable();
+  m_lock->lock_shared();
 }
 
-void LockGuard::DestroyLock(Lockable* lock)
+void Lockable::UnlockShared()
 {
-  delete lock;
-}
-
-void LockGuard::Lock(Lockable* lock)
-{
-  lock->mutex.Lock();
-}
-
-void LockGuard::Unlock(Lockable* lock)
-{
-  lock->mutex.Unlock();
-}
-
-void LockGuard::ClearLock(Lockable* lock)
-{
-  lock->mutex.Clear();
+  m_lock->unlock_shared();
 }

@@ -24,130 +24,227 @@
 
 namespace Myth
 {
-  /**
-   * This implements a "guard" pattern
-   */
-  class LockGuard
+
+  namespace OS {
+    class Latch;
+  }
+
+  class Lockable
   {
   public:
-    struct Lockable;
-    /**
-     * Initialize a guard which hold the lock. The lock will be released by the
-     * destructor.
-     * @param lock The pointer to lockable object
-     */
-    LockGuard(Lockable* lock);
-    ~LockGuard();
+    Lockable();
+    ~Lockable();
 
     /**
-     * Create a new lockable object. The allocated resource must be freed by
-     * calling DestroyLock.
-     * @return The pointer to the new lockable object
+     * Blocks until exclusive lock is held.
      */
-    static Lockable* CreateLock();
+    void Lock();
     /**
-     * Destroy lockable object previously allocated with CreateLock.
-     * @param lock The pointer to lockable object
+     * Release exclusive lock.
      */
-    static void DestroyLock(Lockable* lock);
+    void Unlock();
+
     /**
-     * Return once the lock is held and recursive count has been incremented.
-     * @param lock The pointer to lockable object
+     * Blocks until shared lock is held.
      */
-    static void Lock(Lockable* lock);
+    void LockShared();
     /**
-     * Return once the lock is released or recursive count has been decremented.
-     * @param lock The pointer to lockable object
+     * Release shared lock.
      */
-    static void Unlock(Lockable* lock);
-    /**
-     * Return once recursive count has been cleared and the lock is released.
-     * @param lock
-     */
-    static void ClearLock(Lockable* lock);
+    void UnlockShared();
+
+#if __cplusplus >= 201103L
+    Lockable(const Lockable&) = delete;
+    Lockable& operator=(const Lockable&) = delete;
+#endif
+
+    class ExclusiveGuard
+    {
+      Lockable& m_lock;
+#if __cplusplus < 201103L
+      ExclusiveGuard(const ExclusiveGuard&);
+      ExclusiveGuard& operator=(const ExclusiveGuard&);
+#endif
+    public:
+      ExclusiveGuard(Lockable& lock) : m_lock(lock) { m_lock.Lock(); }
+      ~ExclusiveGuard() { m_lock.Unlock(); }
+#if __cplusplus >= 201103L
+      ExclusiveGuard(const ExclusiveGuard&) = delete;
+      ExclusiveGuard& operator=(const ExclusiveGuard&) = delete;
+#endif
+    };
+
+    class SharedGuard
+    {
+      Lockable& m_lock;
+#if __cplusplus < 201103L
+      SharedGuard(const SharedGuard&);
+      SharedGuard& operator=(const SharedGuard&);
+#endif
+    public:
+      SharedGuard(Lockable& lock) : m_lock(lock) { m_lock.LockShared(); }
+      ~SharedGuard() { m_lock.UnlockShared(); }
+#if __cplusplus >= 201103L
+      SharedGuard(const SharedGuard&) = delete;
+      SharedGuard& operator=(const SharedGuard&) = delete;
+#endif
+    };
 
   private:
-    Lockable* m_lock;
+    OS::Latch* m_lock;
+
+#if __cplusplus < 201103L
+    Lockable(const Lockable&);
+    Lockable& operator=(const Lockable&);
+#endif
   };
 
   template<typename T>
   class Locked
   {
   public:
-    Locked(const T& val)
-    : m_val(val)
-    , m_lock(LockGuard::CreateLock()) {}
+    Locked()
+    : m_val(), m_latch() {}
 
-    ~Locked()
-    {
-      LockGuard::DestroyLock(m_lock);
-    }
+    Locked(const T& val)
+    : m_val(val), m_latch() {}
+
+    ~Locked() {}
 
     T Load()
     {
-      LockGuard g(m_lock);
+      Lockable::SharedGuard g(m_latch);
       return m_val; // return copy
     }
 
     const T& Store(const T& newval)
     {
-      LockGuard g(m_lock);
+      Lockable::ExclusiveGuard g(m_latch);
       m_val = newval;
       return newval; // return input
     }
 
-    class value
+    class pointer
     {
+      friend class Locked;
     public:
-      value(T& val, LockGuard::Lockable*& lock) : m_val(val), m_g(lock) {}
-      T& operator()() const { return m_val; }
+      T& operator* () const { return *m_val; }
+      T *operator->() const { return m_val; }
+
+      pointer() : m_val(nullptr), m_x(nullptr) { }
+      ~pointer() { if (m_x) m_x->Unlock(); }
+
+      pointer(const pointer& other)
+      : m_val(other.m_val), m_x(other.m_x) { m_x->Lock(); }
+
+      pointer& operator=(const pointer& other)
+      {
+        if (m_x) m_x->Unlock();
+        m_val = other.m_val;
+        m_x = other.m_x;
+        m_x->Lock();
+        return *this;
+      }
+
+#if __cplusplus >= 201103L
+      pointer(pointer&& other) noexcept
+      : m_val(other.m_val), m_x(other.m_x)
+      {
+        other.m_val = nullptr;
+        other.m_x = nullptr;
+      }
+
+      pointer& operator=(pointer&& other) noexcept
+      {
+        if (m_x) m_x->Unlock();
+        m_val = other.m_val;
+        m_x = other.m_x;
+        other.m_val = nullptr;
+        other.m_x = nullptr;
+        return *this;
+      }
+#endif
+
     private:
-      T& m_val;
-      LockGuard m_g;
+      pointer(T* val, Lockable* latch)
+      : m_val(val), m_x(latch) { m_x->Lock(); }
+      T* m_val;
+      Lockable* m_x;
     };
 
-    value Get()
+    pointer GetExclusive()
     {
-      return value(m_val, m_lock);
+      return pointer(&m_val, &m_latch);
     }
 
-  protected:
-    T m_val;
-    LockGuard::Lockable* m_lock;
+    class const_pointer
+    {
+      friend class Locked;
+    public:
+      const T& operator* () const { return *m_val; }
+      const T *operator->() const { return m_val; }
 
+      const_pointer() : m_val(nullptr), m_s(nullptr) { }
+      ~const_pointer() { if (m_s) m_s->UnlockShared(); }
+
+      const_pointer(const const_pointer& other)
+      : m_val(other.m_val), m_s(other.m_s) { m_s->LockShared(); }
+
+      const_pointer& operator=(const const_pointer& other)
+      {
+        if (m_s) m_s->UnlockShared();
+        m_val = other.m_val;
+        m_s = other.m_s;
+        m_s->LockShared();
+        return *this;
+      }
+
+#if __cplusplus >= 201103L
+      const_pointer(const_pointer&& other) noexcept
+      : m_val(other.m_val), m_s(other.m_s)
+      {
+        other.m_val = nullptr;
+        other.m_s = nullptr;
+      }
+
+      const_pointer& operator=(const_pointer&& other) noexcept
+      {
+        if (m_s) m_s->UnlockShared();
+        m_val = other.m_val;
+        m_s = other.m_s;
+        other.m_val = nullptr;
+        other.m_s = nullptr;
+        return *this;
+      }
+#endif
+
+    private:
+      const_pointer(const T* val, Lockable* latch)
+      : m_val(val), m_s(latch) { m_s->LockShared(); }
+      const T* m_val;
+      Lockable* m_s;
+    };
+
+    const_pointer GetShared()
+    {
+      return const_pointer(&m_val, &m_latch);
+    }
+
+#if __cplusplus >= 201103L
+    // Prevent copy
+    Locked(const Locked<T>& other) = delete;
+    Locked<T>& operator=(const Locked<T>& other) = delete;
+#endif
+
+    protected:
+    T m_val;
+    Lockable m_latch;
+
+#if __cplusplus < 201103L
     // Prevent copy
     Locked(const Locked<T>& other);
     Locked<T>& operator=(const Locked<T>& other);
-  };
-
-  template <typename T>
-  class LockedNumber : public Locked<T>
-  {
-  public:
-    LockedNumber(T val)
-    : Locked<T>(val) {}
-
-    T Add(T amount)
-    {
-      LockGuard g(Locked<T>::m_lock);
-      return Locked<T>::m_val += amount;
-    }
-
-    T operator+=(T amount)
-    {
-      return Add(amount);
-    }
-
-    T Sub(T amount)
-    {
-      LockGuard g(Locked<T>::m_lock);
-      return Locked<T>::m_val -= amount;
-    }
-
-    T operator-=(T amount)
-    {
-      return Sub(amount);
-    }
+#endif
   };
 
 }

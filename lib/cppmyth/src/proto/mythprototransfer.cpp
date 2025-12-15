@@ -69,7 +69,7 @@ bool ProtoTransfer::Open()
 
 void ProtoTransfer::Close()
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   ProtoBase::Close();
   // Clean hanging and disable retry
   m_tainted = m_hang = false;
@@ -90,7 +90,7 @@ void ProtoTransfer::Unlock()
 
 void ProtoTransfer::Flush()
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   int64_t unread = m_fileRequest - m_filePosition;
   if (unread > 0)
   {
@@ -111,7 +111,7 @@ void ProtoTransfer::Flush()
 
 bool ProtoTransfer::Announce75()
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   m_filePosition = m_fileSize = m_fileRequest = 0;
   std::string cmd("ANN FileTransfer ");
   cmd.append(m_socket->GetMyHostName());
@@ -152,42 +152,42 @@ std::string ProtoTransfer::GetStorageGroupName() const
 
 int64_t ProtoTransfer::GetSize() const
 {
-  OS::CReadLock lock(*m_latch);
+  OS::ReadLock lock(*m_latch);
   return m_fileSize;
 }
 
 int64_t ProtoTransfer::GetPosition() const
 {
-  OS::CReadLock lock(*m_latch);
+  OS::ReadLock lock(*m_latch);
   return m_filePosition;
 }
 
 int64_t ProtoTransfer::GetRequested() const
 {
-  OS::CReadLock lock(*m_latch);
+  OS::ReadLock lock(*m_latch);
   return m_fileRequest;
 }
 
 int64_t ProtoTransfer::GetRemaining() const
 {
-  OS::CReadLock lock(*m_latch);
+  OS::ReadLock lock(*m_latch);
   return (m_fileSize - m_filePosition);
 }
 
 void ProtoTransfer::SetSize(int64_t size)
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   m_fileSize = size;
 }
 
 void ProtoTransfer::SetPosition(int64_t position)
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   m_filePosition = position;
 }
 
 void ProtoTransfer::SetRequested(int64_t requested)
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   m_fileRequest = requested;
 }

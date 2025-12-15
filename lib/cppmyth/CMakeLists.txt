@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...3.20)
 project (cppmyth)
 
 set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -14,8 +14,8 @@ endif ()
 ###############################################################################
 # set lib version here
 set (PACKAGE_VERSION_MAJOR 2)
-set (PACKAGE_VERSION_MINOR 17)
-set (PACKAGE_VERSION_PATCH 5)
+set (PACKAGE_VERSION_MINOR 18)
+set (PACKAGE_VERSION_PATCH 1)
 
 set (PACKAGE_VERSION ${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH})
 set (PACKAGE_LIB_SOVERSION ${PACKAGE_VERSION_MAJOR})

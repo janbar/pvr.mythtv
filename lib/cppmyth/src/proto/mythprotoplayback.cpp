@@ -80,7 +80,7 @@ bool ProtoPlayback::IsOpen()
 
 bool ProtoPlayback::Announce75()
 {
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
 
   std::string cmd("ANN Playback ");
   cmd.append(m_socket->GetMyHostName()).append(" 0");
@@ -101,7 +101,7 @@ void ProtoPlayback::TransferDone75(ProtoTransfer& transfer)
 {
   BUILTIN_BUFFER buf;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!transfer.IsOpen())
     return;
   std::string cmd("QUERY_FILETRANSFER ");
@@ -121,7 +121,7 @@ bool ProtoPlayback::TransferIsOpen75(ProtoTransfer& transfer)
   std::string field;
   int8_t status = 0;
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!IsOpen())
     return false;
   std::string cmd("QUERY_FILETRANSFER ");
@@ -334,7 +334,7 @@ int64_t ProtoPlayback::TransferSeek75(ProtoTransfer& transfer, int64_t offset, W
       return -1;
   }
 
-  OS::CWriteLock lock(*m_latch);
+  OS::WriteLock lock(*m_latch);
   if (!transfer.IsOpen())
     return -1;
   std::string cmd("QUERY_FILETRANSFER ");
