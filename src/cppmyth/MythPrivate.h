@@ -5,10 +5,10 @@ namespace Myth
 {
 namespace OS
 {
-class CMutex;
-class CThread;
-class CTimeout;
-class CEvent;
+class Mutex;
+class Thread;
+class Timeout;
+class Event;
 }
 }
 

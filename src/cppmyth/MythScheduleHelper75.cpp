@@ -22,7 +22,7 @@
 
 MythTimerTypeList MythScheduleHelper75::GetTimerTypes() const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   if (!m_timerTypeListInit)
   {
     m_timerTypeListInit = true;

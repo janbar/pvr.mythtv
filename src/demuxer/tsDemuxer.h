@@ -88,7 +88,7 @@ namespace TSDemux
     int parse_ts_pes();
 
     // Critical section
-    mutable Myth::OS::CMutex mutex;
+    mutable Myth::OS::Mutex mutex;
 
     // AV stream owner
     TSDemuxer* m_demux;

@@ -43,7 +43,7 @@ AVContext::AVContext(TSDemuxer* const demux, uint64_t pos, uint16_t channel)
 
 void AVContext::Reset(void)
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   pid = 0xffff;
   transport_error = false;
@@ -62,7 +62,7 @@ uint16_t AVContext::GetPID() const
 
 PACKET_TYPE AVContext::GetPIDType() const
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   if (packet)
     return packet->packet_type;
@@ -71,7 +71,7 @@ PACKET_TYPE AVContext::GetPIDType() const
 
 uint16_t AVContext::GetPIDChannel() const
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   if (packet)
     return packet->channel;
@@ -80,7 +80,7 @@ uint16_t AVContext::GetPIDChannel() const
 
 bool AVContext::HasPIDStreamData() const
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   // PES packets append frame buffer of elementary stream until next start of unit
   // On new unit start, flag is held
@@ -96,7 +96,7 @@ bool AVContext::HasPIDPayload() const
 
 ElementaryStream* AVContext::GetPIDStream()
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   if (packet && packet->packet_type == PACKET_TYPE_PES)
     return packet->stream;
@@ -105,7 +105,7 @@ ElementaryStream* AVContext::GetPIDStream()
 
 std::vector<ElementaryStream*> AVContext::GetStreams()
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   std::vector<ElementaryStream*> v;
   for (std::map<uint16_t, Packet>::iterator it = packets.begin(); it != packets.end(); ++it)
@@ -116,7 +116,7 @@ std::vector<ElementaryStream*> AVContext::GetStreams()
 
 void AVContext::StartStreaming(uint16_t pid)
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   std::map<uint16_t, Packet>::iterator it = packets.find(pid);
   if (it != packets.end())
@@ -125,7 +125,7 @@ void AVContext::StartStreaming(uint16_t pid)
 
 void AVContext::StopStreaming(uint16_t pid)
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   std::map<uint16_t, Packet>::iterator it = packets.find(pid);
   if (it != packets.end())
@@ -134,7 +134,7 @@ void AVContext::StopStreaming(uint16_t pid)
 
 ElementaryStream* AVContext::GetStream(uint16_t pid) const
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   std::map<uint16_t, Packet>::const_iterator it = packets.find(pid);
   if (it != packets.end())
@@ -144,7 +144,7 @@ ElementaryStream* AVContext::GetStream(uint16_t pid) const
 
 uint16_t AVContext::GetChannel(uint16_t pid) const
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   std::map<uint16_t, Packet>::const_iterator it = packets.find(pid);
   if (it != packets.end())
@@ -154,7 +154,7 @@ uint16_t AVContext::GetChannel(uint16_t pid) const
 
 void AVContext::ResetPackets()
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   for (std::map<uint16_t, Packet>::iterator it = packets.begin(); it != packets.end(); ++it)
   {
@@ -379,7 +379,7 @@ uint64_t AVContext::GetPosition() const
  */
 int AVContext::ProcessTSPacket()
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   int ret = AVCONTEXT_CONTINUE;
   std::map<uint16_t, Packet>::iterator it;
@@ -504,7 +504,7 @@ int AVContext::ProcessTSPacket()
  */
 int AVContext::ProcessTSPayload()
 {
-  Myth::OS::CLockGuard lock(mutex);
+  Myth::OS::LockGuard lock(mutex);
 
   if (!this->packet)
     return AVCONTEXT_CONTINUE;

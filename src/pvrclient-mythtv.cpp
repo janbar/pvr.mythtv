@@ -39,11 +39,11 @@ PVRClientMythTV::PVRClientMythTV(const kodi::addon::IInstanceInfo& instance)
 , m_stopTV(false)
 , m_artworksManager(NULL)
 , m_scheduleManager(NULL)
-, m_lock(new Myth::OS::CMutex)
+, m_lock(new Myth::OS::Mutex)
 , m_todo(NULL)
 , m_demux(NULL)
-, m_channelsLock(new Myth::OS::CMutex)
-, m_recordingsLock(new Myth::OS::CMutex)
+, m_channelsLock(new Myth::OS::Mutex)
+, m_recordingsLock(new Myth::OS::Mutex)
 , m_recordingChangePinCount(0)
 , m_recordingsAmountChange(false)
 , m_recordingsAmount(0)
@@ -449,7 +449,7 @@ void PVRClientMythTV::HandleRecordingListChange(const Myth::EventMessage& msg)
   {
     if (CMythSettings::GetExtraDebug())
       kodi::Log(ADDON_LOG_DEBUG, "%s: Reload all recordings", __FUNCTION__);
-    Myth::OS::CLockGuard lock(*m_recordingsLock);
+    Myth::OS::LockGuard lock(*m_recordingsLock);
     FillRecordings();
     ++m_recordingChangePinCount;
   }
@@ -460,7 +460,7 @@ void PVRClientMythTV::HandleRecordingListChange(const Myth::EventMessage& msg)
     MythProgramInfo prog(m_control->GetRecorded(chanid, startts));
     if (!prog.IsNull())
     {
-      Myth::OS::CLockGuard lock(*m_recordingsLock);
+      Myth::OS::LockGuard lock(*m_recordingsLock);
       ProgramInfoMap::iterator it = m_recordings.find(prog.UID());
       if (it == m_recordings.end())
       {
@@ -480,7 +480,7 @@ void PVRClientMythTV::HandleRecordingListChange(const Myth::EventMessage& msg)
     MythProgramInfo prog(m_control->GetRecorded(recordedid));
     if (!prog.IsNull())
     {
-      Myth::OS::CLockGuard lock(*m_recordingsLock);
+      Myth::OS::LockGuard lock(*m_recordingsLock);
       ProgramInfoMap::iterator it = m_recordings.find(prog.UID());
       if (it == m_recordings.end())
       {
@@ -496,7 +496,7 @@ void PVRClientMythTV::HandleRecordingListChange(const Myth::EventMessage& msg)
   }
   else if (cs == 2 && msg.subject[1] == "UPDATE" && msg.program)
   {
-    Myth::OS::CLockGuard lock(*m_recordingsLock);
+    Myth::OS::LockGuard lock(*m_recordingsLock);
     MythProgramInfo prog(msg.program);
     ProgramInfoMap::iterator it = m_recordings.find(prog.UID());
     if (it != m_recordings.end())
@@ -524,7 +524,7 @@ void PVRClientMythTV::HandleRecordingListChange(const Myth::EventMessage& msg)
     MythProgramInfo prog(m_control->GetRecorded(chanid, startts));
     if (!prog.IsNull())
     {
-      Myth::OS::CLockGuard lock(*m_recordingsLock);
+      Myth::OS::LockGuard lock(*m_recordingsLock);
       ProgramInfoMap::iterator it = m_recordings.find(prog.UID());
       if (it != m_recordings.end())
       {
@@ -544,7 +544,7 @@ void PVRClientMythTV::HandleRecordingListChange(const Myth::EventMessage& msg)
     MythProgramInfo prog(m_control->GetRecorded(recordedid));
     if (!prog.IsNull())
     {
-      Myth::OS::CLockGuard lock(*m_recordingsLock);
+      Myth::OS::LockGuard lock(*m_recordingsLock);
       ProgramInfoMap::iterator it = m_recordings.find(prog.UID());
       if (it != m_recordings.end())
       {
@@ -593,7 +593,7 @@ void PVRClientMythTV::RunHouseKeeping()
   // Trigger recording update as needed
   if (m_recordingChangePinCount)
   {
-    Myth::OS::CLockGuard lock(*m_recordingsLock);
+    Myth::OS::LockGuard lock(*m_recordingsLock);
     m_recordingChangePinCount = 0;
     m_recordingsAmountChange = true; // Need count recording amount
     m_deletedRecAmountChange = true; // Need count of deleted amount
@@ -670,7 +670,7 @@ PVR_ERROR PVRClientMythTV::GetChannelsAmount(int& amount)
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_channelsLock);
+  Myth::OS::LockGuard lock(*m_channelsLock);
   amount = m_PVRChannels.size();
   return PVR_ERROR_NO_ERROR;
 }
@@ -682,7 +682,7 @@ PVR_ERROR PVRClientMythTV::GetChannels(bool radio, kodi::addon::PVRChannelsResul
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s: radio: %s", __FUNCTION__, (radio ? "true" : "false"));
 
-  Myth::OS::CLockGuard lock(*m_channelsLock);
+  Myth::OS::LockGuard lock(*m_channelsLock);
 
   // Load channels list
   if (m_PVRChannels.empty())
@@ -729,7 +729,7 @@ PVR_ERROR PVRClientMythTV::GetChannelGroupsAmount(int& amount)
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_channelsLock);
+  Myth::OS::LockGuard lock(*m_channelsLock);
   amount = m_PVRChannelGroups.size();
   return PVR_ERROR_NO_ERROR;
 }
@@ -741,7 +741,7 @@ PVR_ERROR PVRClientMythTV::GetChannelGroups(bool radio, kodi::addon::PVRChannelG
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s: radio: %s", __FUNCTION__, (radio ? "true" : "false"));
 
-  Myth::OS::CLockGuard lock(*m_channelsLock);
+  Myth::OS::LockGuard lock(*m_channelsLock);
 
   // Transfer channel groups of the given type (radio / tv)
   for (PVRChannelGroupMap::iterator itg = m_PVRChannelGroups.begin(); itg != m_PVRChannelGroups.end(); ++itg)
@@ -776,7 +776,7 @@ PVR_ERROR PVRClientMythTV::GetChannelGroupMembers(const kodi::addon::PVRChannelG
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s: group: %s", __FUNCTION__, group.GetGroupName().c_str());
 
-  Myth::OS::CLockGuard lock(*m_channelsLock);
+  Myth::OS::LockGuard lock(*m_channelsLock);
 
   PVRChannelGroupMap::iterator itg = m_PVRChannelGroups.find(group.GetGroupName());
   if (itg == m_PVRChannelGroups.end())
@@ -807,7 +807,7 @@ PVR_ERROR PVRClientMythTV::GetChannelGroupMembers(const kodi::addon::PVRChannelG
 
 bool PVRClientMythTV::IsPlaying() const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   if (m_liveStream || m_dummyStream || m_recordingStream)
     return true;
   return false;
@@ -820,7 +820,7 @@ int PVRClientMythTV::FillChannelsAndChannelGroups()
   int count = 0;
   kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_channelsLock);
+  Myth::OS::LockGuard lock(*m_channelsLock);
   m_PVRChannels.clear();
   m_PVRChannelGroups.clear();
   m_PVRChannelUidById.clear();
@@ -882,7 +882,7 @@ int PVRClientMythTV::FillChannelsAndChannelGroups()
 
 MythChannel PVRClientMythTV::FindChannel(uint32_t channelId) const
 {
-  Myth::OS::CLockGuard lock(*m_channelsLock);
+  Myth::OS::LockGuard lock(*m_channelsLock);
   ChannelIdMap::const_iterator it = m_channelsById.find(channelId);
   if (it != m_channelsById.end())
     return it->second;
@@ -891,7 +891,7 @@ MythChannel PVRClientMythTV::FindChannel(uint32_t channelId) const
 
 int PVRClientMythTV::FindPVRChannelUid(uint32_t channelId) const
 {
-  Myth::OS::CLockGuard lock(*m_channelsLock);
+  Myth::OS::LockGuard lock(*m_channelsLock);
   PVRChannelMap::const_iterator it = m_PVRChannelUidById.find(channelId);
   if (it != m_PVRChannelUidById.end())
     return it->second;
@@ -922,7 +922,7 @@ int PVRClientMythTV::GetRecordingsAmount()
   if (m_recordingsAmountChange)
   {
     int res = 0;
-    Myth::OS::CLockGuard lock(*m_recordingsLock);
+    Myth::OS::LockGuard lock(*m_recordingsLock);
     for (ProgramInfoMap::iterator it = m_recordings.begin(); it != m_recordings.end(); ++it)
     {
       if (!it->second.IsNull() && it->second.IsVisible() && (CMythSettings::GetLiveTVRecordings() || !it->second.IsLiveTV()))
@@ -943,7 +943,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(kodi::addon::PVRRecordingsResultSet& re
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
   unsigned schemaVersion = m_control->GetVersion()->schema;
 
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
 
   // Setup series
   if (CMythSettings::GetGroupRecordings() == GROUP_RECORDINGS_ONLY_FOR_SERIES)
@@ -1096,7 +1096,7 @@ int PVRClientMythTV::GetDeletedRecordingsAmount()
   if (m_deletedRecAmountChange)
   {
     int res = 0;
-    Myth::OS::CLockGuard lock(*m_recordingsLock);
+    Myth::OS::LockGuard lock(*m_recordingsLock);
     for (ProgramInfoMap::iterator it = m_recordings.begin(); it != m_recordings.end(); ++it)
     {
       if (!it->second.IsNull() && it->second.IsDeleted() && (CMythSettings::GetLiveTVRecordings() || !it->second.IsLiveTV()))
@@ -1116,7 +1116,7 @@ PVR_ERROR PVRClientMythTV::GetDeletedRecordings(kodi::addon::PVRRecordingsResult
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
 
   // Transfer to PVR
   for (ProgramInfoMap::iterator it = m_recordings.begin(); it != m_recordings.end(); ++it)
@@ -1269,7 +1269,7 @@ PVR_ERROR PVRClientMythTV::DeleteRecording(const kodi::addon::PVRRecording& reco
     return PVR_ERROR_SERVER_ERROR;
   kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
 
   ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
   if (it != m_recordings.end())
@@ -1309,7 +1309,7 @@ PVR_ERROR PVRClientMythTV::DeleteAndForgetRecording(const kodi::addon::PVRRecord
     return PVR_ERROR_SERVER_ERROR;
   kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
 
   ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
   if (it != m_recordings.end())
@@ -1366,7 +1366,7 @@ PVR_ERROR PVRClientMythTV::SetRecordingPlayCount(const kodi::addon::PVRRecording
     return PVR_ERROR_SERVER_ERROR;
   kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
   ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
   if (it != m_recordings.end())
   {
@@ -1398,7 +1398,7 @@ PVR_ERROR PVRClientMythTV::SetRecordingLastPlayedPosition(const kodi::addon::PVR
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s: Setting Bookmark for: %s to %d", __FUNCTION__, recording.GetTitle().c_str(), lastplayedposition);
 
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
   ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
   if (it != m_recordings.end())
   {
@@ -1427,7 +1427,7 @@ PVR_ERROR PVRClientMythTV::GetRecordingLastPlayedPosition(const kodi::addon::PVR
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s: Reading Bookmark for: %s", __FUNCTION__, recording.GetTitle().c_str());
 
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
   ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
   if (it != m_recordings.end())
   {
@@ -1474,7 +1474,7 @@ PVR_ERROR PVRClientMythTV::GetRecordingEdl(const kodi::addon::PVRRecording& reco
   // Check recording
   MythProgramInfo prog;
   {
-    Myth::OS::CLockGuard lock(*m_recordingsLock);
+    Myth::OS::LockGuard lock(*m_recordingsLock);
     ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
     if (it == m_recordings.end())
     {
@@ -1621,7 +1621,7 @@ PVR_ERROR PVRClientMythTV::UndeleteRecording(const kodi::addon::PVRRecording& re
     return PVR_ERROR_SERVER_ERROR;
   kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
 
   ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
   if (it != m_recordings.end())
@@ -1652,7 +1652,7 @@ PVR_ERROR PVRClientMythTV::DeleteAllRecordingsFromTrash()
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
 
   for (ProgramInfoMap::iterator it = m_recordings.begin(); it != m_recordings.end(); ++it)
   {
@@ -1680,7 +1680,7 @@ PVR_ERROR PVRClientMythTV::GetRecordingSize(const kodi::addon::PVRRecording& rec
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s: %s", __FUNCTION__, recording.GetTitle().c_str());
   // Check recording
-  Myth::OS::CLockGuard lock(*m_recordingsLock);
+  Myth::OS::LockGuard lock(*m_recordingsLock);
   ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
   if (it == m_recordings.end())
   {
@@ -1701,7 +1701,7 @@ bool PVRClientMythTV::IsMyLiveRecording(const MythProgramInfo& programInfo)
   if (!programInfo.IsNull())
   {
     // Begin critical section
-    Myth::OS::CLockGuard lock(*m_lock);
+    Myth::OS::LockGuard lock(*m_lock);
     if (m_liveStream && m_liveStream->IsPlaying())
     {
       MythProgramInfo live(m_liveStream->GetPlayedProgram());
@@ -1733,7 +1733,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(kodi::addon::PVRTimersResultSet& results)
 
   MythTimerEntryList entries;
   {
-    Myth::OS::CLockGuard lock(*m_lock);
+    Myth::OS::LockGuard lock(*m_lock);
     m_PVRtimerMemorandum.clear();
     entries = m_scheduleManager->GetTimerEntries();
   }
@@ -1867,7 +1867,7 @@ PVR_ERROR PVRClientMythTV::AddTimer(const kodi::addon::PVRTimer& timer)
     kodi::Log(ADDON_LOG_DEBUG, "%s: iRecordingGroup = %d", __FUNCTION__, timer.GetRecordingGroup());
   }
   kodi::Log(ADDON_LOG_DEBUG, "%s: title: %s, start: %ld, end: %ld, chanID: %u", __FUNCTION__, timer.GetTitle().c_str(), timer.GetStartTime(), timer.GetEndTime(), timer.GetClientChannelUid());
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   // Check if our timer is a quick recording of live tv
   // Assumptions: Our live recorder is locked on the same channel and the recording starts
   // at the same time as or before (includes 0) the currently in progress program
@@ -1922,7 +1922,7 @@ PVR_ERROR PVRClientMythTV::DeleteTimer(const kodi::addon::PVRTimer& timer, bool 
   // Assumptions: Recorder handle same recording.
   // If true then expire recording, setup recorder and let backend handle the rule.
   {
-    Myth::OS::CLockGuard lock(*m_lock);
+    Myth::OS::LockGuard lock(*m_lock);
     if (m_liveStream && m_liveStream->IsLiveRecording())
     {
       MythRecordingRuleNodePtr node = m_scheduleManager->FindRuleByIndex(timer.GetClientIndex());
@@ -2154,7 +2154,7 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const kodi::addon::PVRTimer& timer)
   MythTimerEntry entry;
   // Restore discarded info by PVR manager from our saved timer
   {
-    Myth::OS::CLockGuard lock(*m_lock);
+    Myth::OS::LockGuard lock(*m_lock);
     std::map<unsigned int, MYTH_SHARED_PTR<kodi::addon::PVRTimer> >::const_iterator it = m_PVRtimerMemorandum.find(timer.GetClientIndex());
     if (it == m_PVRtimerMemorandum.end())
       return PVR_ERROR_INVALID_PARAMETERS;
@@ -2201,7 +2201,7 @@ bool PVRClientMythTV::OpenLiveStream(const kodi::addon::PVRChannel& channel)
     kodi::Log(ADDON_LOG_DEBUG,"%s: channel uid: %u, num: %u", __FUNCTION__, channel.GetUniqueId(), channel.GetChannelNumber());
 
   // Begin critical section
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   // First we have to get merged channels for the selected channel
   Myth::ChannelList chanset;
   for (PVRChannelMap::const_iterator it = m_PVRChannelUidById.begin(); it != m_PVRChannelUidById.end(); ++it)
@@ -2260,7 +2260,7 @@ void PVRClientMythTV::CloseLiveStream()
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
   // Begin critical section
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   // Destroy my demuxer
   if (m_demux)
     delete m_demux;
@@ -2365,7 +2365,7 @@ PVR_ERROR PVRClientMythTV::GetSignalStatus(int channelUid, kodi::addon::PVRSigna
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   if (!m_liveStream)
     return PVR_ERROR_REJECTED;
 
@@ -2395,7 +2395,7 @@ PVR_ERROR PVRClientMythTV::GetStreamTimes(kodi::addon::PVRStreamTimes& streamTim
 {
   time_t begTs, endTs;
   {
-    Myth::OS::CLockGuard lock(*m_lock);
+    Myth::OS::LockGuard lock(*m_lock);
     if (m_liveStream)
     {
       if (!m_liveStream->IsPlaying())
@@ -2493,7 +2493,7 @@ bool PVRClientMythTV::OpenRecordedStream(const kodi::addon::PVRRecording& record
     kodi::Log(ADDON_LOG_DEBUG, "%s: title: %s, ID: %s, duration: %d", __FUNCTION__, recording.GetTitle().c_str(), recording.GetRecordingId().c_str(), recording.GetDuration());
 
   // Begin critical section
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   if (m_recordingStream)
   {
     kodi::Log(ADDON_LOG_INFO, "%s: Recorded stream is busy", __FUNCTION__);
@@ -2502,7 +2502,7 @@ bool PVRClientMythTV::OpenRecordedStream(const kodi::addon::PVRRecording& record
 
   MythProgramInfo prog;
   {
-    Myth::OS::CLockGuard lock(*m_recordingsLock);
+    Myth::OS::LockGuard lock(*m_recordingsLock);
     ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
     if (it == m_recordings.end())
     {
@@ -2589,7 +2589,7 @@ void PVRClientMythTV::CloseRecordedStream()
     kodi::Log(ADDON_LOG_DEBUG, "%s", __FUNCTION__);
 
   // Begin critical section
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   // Destroy my stream
   delete m_recordingStream;
@@ -2723,7 +2723,7 @@ PVR_ERROR PVRClientMythTV::CallRecordingMenuHook(const kodi::addon::PVRMenuhook&
 
   if (menuhook.GetHookId() == MENUHOOK_KEEP_RECORDING)
   {
-    Myth::OS::CLockGuard lock(*m_recordingsLock);
+    Myth::OS::LockGuard lock(*m_recordingsLock);
     ProgramInfoMap::iterator it = m_recordings.find(item.GetRecordingId());
     if (it == m_recordings.end())
     {
@@ -2734,7 +2734,7 @@ PVR_ERROR PVRClientMythTV::CallRecordingMenuHook(const kodi::addon::PVRMenuhook&
     // If recording is current live show then keep it and set live recorder
     if (IsMyLiveRecording(it->second))
     {
-      Myth::OS::CLockGuard lock(*m_lock);
+      Myth::OS::LockGuard lock(*m_lock);
       if (m_liveStream && m_liveStream->KeepLiveRecording(true))
         return PVR_ERROR_NO_ERROR;
       return PVR_ERROR_FAILED;
@@ -2757,7 +2757,7 @@ PVR_ERROR PVRClientMythTV::CallRecordingMenuHook(const kodi::addon::PVRMenuhook&
   {
     MythProgramInfo pinfo;
     {
-      Myth::OS::CLockGuard lock(*m_recordingsLock);
+      Myth::OS::LockGuard lock(*m_recordingsLock);
       ProgramInfoMap::iterator it = m_recordings.find(item.GetRecordingId());
       if (it == m_recordings.end())
       {

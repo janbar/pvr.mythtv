@@ -12,7 +12,7 @@
 #include "private/os/threads/event.h"
 #include "private/os/threads/thread.h"
 
-class TaskHandlerPrivate : private Myth::OS::CThread
+class TaskHandlerPrivate : private Myth::OS::Thread
 {
 public:
   TaskHandlerPrivate();
@@ -27,11 +27,11 @@ protected:
     void *Process();
 
 private:
-  typedef std::pair<Task*, Myth::OS::CTimeout*> Scheduled;
+  typedef std::pair<Task*, Myth::OS::Timeout*> Scheduled;
   std::queue<Scheduled> m_queue;
   std::vector<Scheduled> m_delayed;
-  Myth::OS::CMutex m_mutex;
-  Myth::OS::CEvent m_queueContent;
+  Myth::OS::Mutex m_mutex;
+  Myth::OS::Event m_queueContent;
 };
 
 TaskHandler::TaskHandler()
@@ -66,7 +66,7 @@ bool TaskHandler::Resume()
 
 
 TaskHandlerPrivate::TaskHandlerPrivate()
-: Myth::OS::CThread()
+: Myth::OS::Thread()
 {
   StartThread(false);
 }
@@ -81,14 +81,14 @@ TaskHandlerPrivate::~TaskHandlerPrivate()
 
 void TaskHandlerPrivate::ScheduleTask(Task *task, unsigned delayMs)
 {
-  Myth::OS::CLockGuard lock(m_mutex);
-  m_queue.push(std::make_pair(task, new Myth::OS::CTimeout(delayMs)));
+  Myth::OS::LockGuard lock(m_mutex);
+  m_queue.push(std::make_pair(task, new Myth::OS::Timeout(delayMs)));
   m_queueContent.Signal();
 }
 
 void TaskHandlerPrivate::Clear()
 {
-  Myth::OS::CLockGuard lock(m_mutex);
+  Myth::OS::LockGuard lock(m_mutex);
   for (std::vector<Scheduled>::const_iterator it = m_delayed.begin(); it != m_delayed.end(); ++it)
   {
     delete it->second;
@@ -126,10 +126,10 @@ bool TaskHandlerPrivate::Resume()
 
 void *TaskHandlerPrivate::Process()
 {
-  Myth::OS::CLockGuard lock(m_mutex);
+  Myth::OS::LockGuard lock(m_mutex);
   while (!IsStopped())
   {
-    Myth::OS::CTimeout later;
+    Myth::OS::Timeout later;
     unsigned left = 0;
 
     // refill all delayed in queue

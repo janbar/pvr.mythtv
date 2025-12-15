@@ -206,7 +206,7 @@ public:
   static uint32_t MakeIndex(const MythRecordingRule& rule);
 
 private:
-  mutable Myth::OS::CMutex *m_lock;
+  mutable Myth::OS::Mutex *m_lock;
   Myth::Control *m_control;
 
   int m_protoVersion;

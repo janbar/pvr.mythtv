@@ -22,7 +22,7 @@
 
 #define AV_BUFFER_SIZE          131072
 
-class ATTR_DLL_LOCAL Demux : public TSDemux::TSDemuxer, Myth::OS::CThread
+class ATTR_DLL_LOCAL Demux : public TSDemux::TSDemuxer, Myth::OS::Thread
 {
 public:
   Demux(kodi::addon::CInstancePVRClient& handler, Myth::Stream *file, time_t starttime);
@@ -49,7 +49,7 @@ private:
   double m_starttime;
   uint16_t m_channel;
   FIFO<DEMUX_PACKET*> m_demuxPacketBuffer;
-  Myth::OS::CMutex m_lock;
+  Myth::OS::Mutex m_lock;
   std::vector<kodi::addon::PVRStreamProperties> m_streams;
 
   bool get_stream_data(TSDemux::STREAM_PKT* pkt);
