@@ -12,7 +12,7 @@
 
 #include <kodi/General.h>
 
-class ATTR_DLL_LOCAL PVRClientLauncherPrivate : private Myth::OS::CThread
+class ATTR_DLL_LOCAL PVRClientLauncherPrivate : private Myth::OS::Thread
 {
 public:
   PVRClientLauncherPrivate(PVRClientMythTV* client);
@@ -26,7 +26,7 @@ protected:
 
 private:
   PVRClientMythTV* m_client;
-  Myth::OS::CEvent m_alarm;
+  Myth::OS::Event m_alarm;
 };
 
 PVRClientLauncher::PVRClientLauncher(PVRClientMythTV* client)
@@ -50,7 +50,7 @@ bool PVRClientLauncher::WaitForCompletion(unsigned timeout)
 }
 
 PVRClientLauncherPrivate::PVRClientLauncherPrivate(PVRClientMythTV* client)
-: Myth::OS::CThread()
+: Myth::OS::Thread()
 , m_client(client)
 {
   std::string name;

@@ -42,7 +42,7 @@ void DemuxLog(int level, char *msg)
 }
 
 Demux::Demux(kodi::addon::CInstancePVRClient& handler, Myth::Stream *file, time_t starttime)
-  : CThread()
+  : Thread()
   , m_handler(handler)
   , m_file(file)
   , m_starttime((double)starttime)
@@ -135,7 +135,7 @@ const unsigned char* Demux::ReadAV(uint64_t pos, size_t n)
   m_av_pos = pos;
   // fill new data
   unsigned int len = (unsigned int)(m_av_buf_size - dataread);
-  Myth::OS::CTimeout timeout;
+  Myth::OS::Timeout timeout;
   while (!IsStopped())
   {
     int ret = m_file->Read(m_av_rbe, len);
@@ -169,7 +169,7 @@ void* Demux::Process()
   while (!IsStopped())
   {
     {
-      Myth::OS::CLockGuard guard(m_lock);
+      Myth::OS::LockGuard guard(m_lock);
       ret = m_AVContext->TSResync();
     }
     if (ret != TSDemux::AVCONTEXT_CONTINUE)
@@ -213,7 +213,7 @@ bool Demux::GetStreamProperties(std::vector<kodi::addon::PVRStreamProperties>& p
   if (!m_nosetup.empty())
     kodi::Log(ADDON_LOG_WARNING, LOGTAG "%s: incomplete setup", __FUNCTION__);
 
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
   m_isChangePlaced = false;
   for (std::vector<kodi::addon::PVRStreamProperties>::const_iterator it = m_streams.begin(); it != m_streams.end(); ++it)
     props.push_back(*it);
@@ -223,7 +223,7 @@ bool Demux::GetStreamProperties(std::vector<kodi::addon::PVRStreamProperties>& p
 
 void Demux::Flush(void)
 {
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
   DEMUX_PACKET* pkt(NULL);
   while (m_demuxPacketBuffer.pop(pkt))
     m_handler.FreeDemuxPacket(pkt);
@@ -254,7 +254,7 @@ bool Demux::SeekTime(double time, bool backwards, double* startpts)
 
   StopThread(true);
 
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
 
   // Current PTS must be valid to estimate offset
   int64_t firstpts = m_posmap.front().av_pts;
@@ -316,7 +316,7 @@ bool Demux::SeekTime(double time, bool backwards, double* startpts)
 
 int Demux::GetPlayingTime()
 {
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
   double time_ms = (double)m_curTime * 1000 / PTS_TIME_BASE;
   if (time_ms > INT_MAX)
     return INT_MAX;
@@ -325,13 +325,13 @@ int Demux::GetPlayingTime()
 
 time_t Demux::GetStartTime()
 {
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
   return (time_t)m_starttime;
 }
 
 int64_t Demux::GetStartPTS()
 {
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
   if (m_posmap.empty())
     return PTS_UNSET;
   return (int64_t)((double)(m_posmap.front().av_pts) * STREAM_TIME_BASE / PTS_TIME_BASE);
@@ -339,7 +339,7 @@ int64_t Demux::GetStartPTS()
 
 int64_t Demux::GetEndPTS()
 {
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
   if (m_posmap.empty())
     return PTS_UNSET;
   return (int64_t)((double)(m_posmap.back().av_pts) * STREAM_TIME_BASE / PTS_TIME_BASE);
@@ -372,7 +372,7 @@ bool Demux::get_stream_data(TSDemux::STREAM_PKT* pkt)
   }
   else if (pkt->pid == m_mainStreamPID)
   {
-    Myth::OS::CLockGuard guard(m_lock);
+    Myth::OS::LockGuard guard(m_lock);
 
     // no discontinuity is permitted to allow seeking in the stream, therefore
     // it is necessary to manage this case which could arise when passing to the
@@ -414,7 +414,7 @@ bool Demux::get_stream_data(TSDemux::STREAM_PKT* pkt)
 
 void Demux::reset_posmap()
 {
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
   if (m_posmap.empty())
     return;
   // adjust start time to current time
@@ -456,7 +456,7 @@ static void recode_language(const char* muxLanguage, char* strLanguage)
 
 void Demux::populate_pvr_streams()
 {
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
 
   uint16_t mainPid = 0xffff;
   int mainType = PVR_CODEC_TYPE_UNKNOWN;
@@ -520,7 +520,7 @@ bool Demux::update_pvr_stream(TSDemux::ElementaryStream* es)
   kodi::addon::PVRCodec codec = m_handler.GetCodecByName(codec_name);
   kodi::Log(ADDON_LOG_INFO, LOGTAG "update info PES %d %s", es->pid, codec_name);
 
-  Myth::OS::CLockGuard guard(m_lock);
+  Myth::OS::LockGuard guard(m_lock);
 
   // find stream index for pid
   for (std::vector<kodi::addon::PVRStreamProperties>::iterator it = m_streams.begin(); it != m_streams.end(); ++it)

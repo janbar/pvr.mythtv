@@ -160,7 +160,7 @@ private:
   // Backend
   ArtworkManager *m_artworksManager;
   MythScheduleManager *m_scheduleManager;
-  mutable Myth::OS::CMutex *m_lock;
+  mutable Myth::OS::Mutex *m_lock;
 
   // Frontend
   TaskHandler *m_todo;
@@ -188,14 +188,14 @@ private:
   PVRChannelGroupMap m_PVRChannelGroups;
   typedef std::map<unsigned int, unsigned int> PVRChannelMap;
   PVRChannelMap m_PVRChannelUidById;
-  mutable Myth::OS::CMutex *m_channelsLock;
+  mutable Myth::OS::Mutex *m_channelsLock;
   int FillChannelsAndChannelGroups();
   MythChannel FindChannel(uint32_t channelId) const;
   int FindPVRChannelUid(uint32_t channelId) const;
 
   // Recordings
   ProgramInfoMap m_recordings;
-  mutable Myth::OS::CMutex *m_recordingsLock;
+  mutable Myth::OS::Mutex *m_recordingsLock;
   unsigned m_recordingChangePinCount;
   bool m_recordingsAmountChange;
   int m_recordingsAmount;

@@ -17,7 +17,7 @@
 #include <kodi/General.h>
 
 MythScheduleHelperNoHelper::MythScheduleHelperNoHelper(MythScheduleManager *manager)
-: m_lock(new Myth::OS::CMutex)
+: m_lock(new Myth::OS::Mutex)
 , m_manager(manager)
 , m_timerTypeListInit(false)
 , m_priorityListInit(false)
@@ -39,7 +39,7 @@ MythScheduleHelperNoHelper::~MythScheduleHelperNoHelper()
 
 MythTimerTypeList MythScheduleHelperNoHelper::GetTimerTypes() const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   return m_timerTypeList;
 }
 
@@ -103,7 +103,7 @@ static inline uint32_t expiration_key(const MythScheduleHelperNoHelper::RuleExpi
 
 int MythScheduleHelperNoHelper::GetRuleExpirationId(const RuleExpiration& expiration) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   if (!m_expirationByKeyInit)
   {
     m_expirationByKeyInit = true;
@@ -119,7 +119,7 @@ int MythScheduleHelperNoHelper::GetRuleExpirationId(const RuleExpiration& expira
 
 MythScheduleHelperNoHelper::RuleExpiration MythScheduleHelperNoHelper::GetRuleExpiration(int id) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   static RuleExpiration _empty(false, 0, false);
   RuleExpirationMap::const_iterator it = GetRuleExpirationMap().find(id);
   if (it != m_expirationMap.end())
@@ -129,7 +129,7 @@ MythScheduleHelperNoHelper::RuleExpiration MythScheduleHelperNoHelper::GetRuleEx
 
 int MythScheduleHelperNoHelper::GetRuleRecordingGroupId(const std::string& name) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   if (!m_recGroupByNameInit)
   {
     m_recGroupByNameInit = true;
@@ -145,7 +145,7 @@ int MythScheduleHelperNoHelper::GetRuleRecordingGroupId(const std::string& name)
 
 std::string MythScheduleHelperNoHelper::GetRuleRecordingGroupName(int id) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   static std::string _empty = "";
   if (!m_recGroupByIdInit)
   {

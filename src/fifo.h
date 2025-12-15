@@ -27,7 +27,7 @@ public:
 
   bool push(ENTRY entry)
   {
-    Myth::OS::CLockGuard guard(m_lock);
+    Myth::OS::LockGuard guard(m_lock);
     if (m_c.size() < m_capacity)
     {
       m_c.push(entry);
@@ -40,7 +40,7 @@ public:
 
   bool pop(ENTRY& entry, unsigned timeout = 0)
   {
-    Myth::OS::CLockGuard guard(m_lock);
+    Myth::OS::LockGuard guard(m_lock);
     if (!m_filled)
     {
       if (timeout == 0)
@@ -56,7 +56,7 @@ public:
 
   void clear()
   {
-    Myth::OS::CLockGuard guard(m_lock);
+    Myth::OS::LockGuard guard(m_lock);
     while (!empty())
       m_c.pop();
     m_condition.Broadcast();
@@ -64,13 +64,13 @@ public:
 
   size_t size(void)
   {
-    Myth::OS::CLockGuard guard(m_lock);
+    Myth::OS::LockGuard guard(m_lock);
     return m_c.size();
   }
 
   bool empty(void)
   {
-    Myth::OS::CLockGuard guard(m_lock);
+    Myth::OS::LockGuard guard(m_lock);
     return m_c.empty();
   }
 
@@ -78,6 +78,6 @@ private:
   unsigned                    m_capacity;
   bool                        m_filled;
   std::queue<ENTRY>           m_c;
-  Myth::OS::CMutex            m_lock;
-  Myth::OS::CCondition<bool>  m_condition;
+  Myth::OS::Mutex            m_lock;
+  Myth::OS::Condition<bool>  m_condition;
 };

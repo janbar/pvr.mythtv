@@ -112,7 +112,7 @@ bool MythRecordingRuleNode::IsRecording() const
 ////
 
 MythScheduleManager::MythScheduleManager(const std::string& server, unsigned protoPort, unsigned wsapiPort, const std::string& wsapiSecurityPin)
-: m_lock(new Myth::OS::CMutex)
+: m_lock(new Myth::OS::Mutex)
 , m_control(NULL)
 , m_protoVersion(0)
 , m_versionHelper(NULL)
@@ -143,7 +143,7 @@ MythScheduleManager::~MythScheduleManager()
 
 MythScheduleManager::VersionHelperPtr MythScheduleManager::Setup()
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   int old = m_protoVersion;
   m_protoVersion = m_control->CheckService();
 
@@ -198,13 +198,13 @@ uint32_t MythScheduleManager::MakeIndex(const MythRecordingRule& rule)
 
 unsigned MythScheduleManager::GetUpcomingCount() const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   return (unsigned)m_recordings->size();
 }
 
 MythTimerEntryList MythScheduleManager::GetTimerEntries()
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   MythTimerEntryList entries;
 
   for (NodeList::iterator it = m_rules->begin(); it != m_rules->end(); ++it)
@@ -227,7 +227,7 @@ MythTimerEntryList MythScheduleManager::GetTimerEntries()
 
 MythScheduleManager::MSM_ERROR MythScheduleManager::SubmitTimer(const MythTimerEntry& entry)
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   switch (entry.timerType)
   {
     case TIMER_TYPE_MANUAL_SEARCH:
@@ -250,7 +250,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::SubmitTimer(const MythTimerE
 
 MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateTimer(const MythTimerEntry& entry)
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   switch (entry.timerType)
   {
     case TIMER_TYPE_UPCOMING:
@@ -320,7 +320,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteTimer(const MythTimerE
 
 MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteModifier(uint32_t index)
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   MythScheduledPtr recording = FindUpComingByIndex(index);
   if (!recording)
@@ -337,7 +337,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteModifier(uint32_t inde
 
 MythScheduleManager::MSM_ERROR MythScheduleManager::DisableRecording(uint32_t index)
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   MythScheduledPtr recording = FindUpComingByIndex(index);
   if (!recording)
@@ -438,7 +438,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DisableRecording(uint32_t in
 
 MythScheduleManager::MSM_ERROR MythScheduleManager::EnableRecording(uint32_t index)
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   MythScheduledPtr recording = FindUpComingByIndex(index);
   if (!recording)
@@ -500,7 +500,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::EnableRecording(uint32_t ind
 
 MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecording(uint32_t index, MythRecordingRule& newrule)
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   if (newrule.Type() == Myth::RT_UNKNOWN)
     return MSM_ERROR_FAILED;
@@ -629,7 +629,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::AddRecordingRule(MythRecordi
 
 MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteRecordingRule(uint32_t index)
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   MythRecordingRuleNodePtr node = FindRuleByIndex(index);
   if (node)
@@ -679,7 +679,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::DeleteRecordingRule(uint32_t
 
 MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t index, MythRecordingRule& newrule)
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   if (newrule.Type() == Myth::RT_UNKNOWN)
     return MSM_ERROR_FAILED;
@@ -766,7 +766,7 @@ MythScheduleManager::MSM_ERROR MythScheduleManager::UpdateRecordingRule(uint32_t
 
 MythRecordingRuleNodePtr MythScheduleManager::FindRuleById(uint32_t recordid) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   NodeById::const_iterator it = m_rulesById->find(recordid);
   if (it != m_rulesById->end())
@@ -776,7 +776,7 @@ MythRecordingRuleNodePtr MythScheduleManager::FindRuleById(uint32_t recordid) co
 
 MythRecordingRuleNodePtr MythScheduleManager::FindRuleByIndex(uint32_t index) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   NodeByIndex::const_iterator it = m_rulesByIndex->find(index);
   if (it != m_rulesByIndex->end())
@@ -786,7 +786,7 @@ MythRecordingRuleNodePtr MythScheduleManager::FindRuleByIndex(uint32_t index) co
 
 MythScheduleList MythScheduleManager::FindUpComingByRuleId(uint32_t recordid) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   MythScheduleList found;
   std::pair<RecordingIndexByRuleId::const_iterator, RecordingIndexByRuleId::const_iterator> range = m_recordingIndexByRuleId->equal_range(recordid);
@@ -804,7 +804,7 @@ MythScheduleList MythScheduleManager::FindUpComingByRuleId(uint32_t recordid) co
 
 MythScheduledPtr MythScheduleManager::FindUpComingByIndex(uint32_t index) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
 
   RecordingList::const_iterator it = m_recordings->find(index);
   if (it != m_recordings->end())
@@ -922,7 +922,7 @@ void MythScheduleManager::Update()
   }
 
   {
-    Myth::OS::CLockGuard lock(*m_lock);
+    Myth::OS::LockGuard lock(*m_lock);
     SAFE_DELETE(m_recordingIndexByRuleId);
     SAFE_DELETE(m_recordings);
     SAFE_DELETE(m_templates);
@@ -941,31 +941,31 @@ void MythScheduleManager::Update()
 
 MythTimerTypeList MythScheduleManager::GetTimerTypes()
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   return m_versionHelper->GetTimerTypes();
 }
 
 bool MythScheduleManager::FillTimerEntryWithRule(MythTimerEntry& entry, const MythRecordingRuleNode& node) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   return m_versionHelper->FillTimerEntryWithRule(entry, node);
 }
 
 bool MythScheduleManager::FillTimerEntryWithUpcoming(MythTimerEntry& entry, const MythProgramInfo& recording) const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   return m_versionHelper->FillTimerEntryWithUpcoming(entry, recording);
 }
 
 MythRecordingRule MythScheduleManager::NewFromTimer(const MythTimerEntry& entry, bool withTemplate)
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   return m_versionHelper->NewFromTimer(entry, withTemplate);
 }
 
 MythRecordingRuleList MythScheduleManager::GetTemplateRules() const
 {
-  Myth::OS::CLockGuard lock(*m_lock);
+  Myth::OS::LockGuard lock(*m_lock);
   return *m_templates;
 }
 

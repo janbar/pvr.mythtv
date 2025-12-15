@@ -63,7 +63,7 @@ protected:
   virtual const MythTimerType::AttributeList& GetRuleExpirationNameList() const;
   virtual const MythTimerType::AttributeList& GetRuleRecordingGroupList() const;
 
-  mutable Myth::OS::CMutex *m_lock;
+  mutable Myth::OS::Mutex *m_lock;
   mutable MythScheduleManager *m_manager;
 
   mutable bool                            m_timerTypeListInit;
