@@ -5,89 +5,90 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: http://trac.kodi.tv/\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Kodi Translation Team\n"
-"Language-Team: Bosnian (Bosnia and Herzegovina) (http://www.transifex.com/projects/p/kodi-main/language/bs_BA/)\n"
-"Language: bs_BA\n"
+"PO-Revision-Date: 2025-09-01 07:29+0000\n"
+"Last-Translator: SecularSteve <fairfull.playing@gmail.com>\n"
+"Language-Team: Bosnian (Bosnia and Herzegovina) <https://kodi.weblate.cloud/projects/kodi-add-ons-pvr-clients/pvr-mythtv/bs_ba/>\n"
+"Language: bs_ba\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 5.13\n"
 
 msgctxt "Addon Summary"
 msgid "Kodi frontend for MythTV"
-msgstr ""
+msgstr "Kodi frontend za MythTV"
 
 msgctxt "Addon Description"
 msgid "MythTV frontend (up to MythTV 34). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
-msgstr ""
+msgstr "MythTV predokraj (do MythTV 34). Podržava prijenos uživo TV programa i snimaka, slušanje radio kanala, EPG i mjerače vremena."
 
 msgctxt "Addon Disclaimer"
 msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."
-msgstr ""
+msgstr "Ovo je nestabilan softver! Autori ni na koji način nisu odgovorni za neuspjela snimanja, netačne mjerače vremena, izgubljene sate ili bilo koje druge neželjene efekte."
 
 # Settings labels
 msgctxt "#30000"
 msgid "MythTV Backend Hostname or IP"
-msgstr ""
+msgstr "Naziv ili IP adresa MythTV Backend hosta"
 
 msgctxt "#30001"
 msgid "MythTV Backend Port"
-msgstr ""
+msgstr "MythTV izokrajski port"
 
 msgctxt "#30002"
 msgid "MythTV Database Username"
-msgstr ""
+msgstr "Korisničko ime MythTV baze podataka"
 
 msgctxt "#30003"
 msgid "MythTV Database Password"
-msgstr ""
+msgstr "Lozinka baze podataka MythTV-a"
 
 msgctxt "#30004"
 msgid "MythTV Database Databasename"
-msgstr ""
+msgstr "MythTV baza podatakaNaziv baze podataka"
 
 msgctxt "#30005"
 msgid "Include more debug information in the log file"
-msgstr ""
+msgstr "Uključite više informacija o otklanjanju grešaka u datoteku dnevnika"
 
 msgctxt "#30006"
 msgid "Enable Live TV"
-msgstr ""
+msgstr "Omogući TV uživo"
 
 msgctxt "#30007"
 msgid "Allow Live TV to move scheduled shows"
-msgstr ""
+msgstr "Dozvoli Live TV-u da premjesti zakazane emisije"
 
 msgctxt "#30008"
 msgid "Conflict handling"
-msgstr ""
+msgstr "Rješavanje sukoba"
 
 msgctxt "#30009"
 msgid "Prefer Live TV when recording has later slot"
-msgstr ""
+msgstr "Preferiraj TV uživo kada snimanje ima kasniji termin"
 
 msgctxt "#30010"
 msgid "Prefer recording and stop Live TV"
-msgstr ""
+msgstr "Preferiraj snimanje i zaustavi TV uživo"
 
 msgctxt "#30011"
 msgid "Prefer Live TV and cancel conflicting recording"
-msgstr ""
+msgstr "Preferiraj TV uživo i otkazivanje konfliktnog snimanja"
 
 msgctxt "#30012"
 msgid "MythTV Backend Ethernet address (WOL)"
-msgstr ""
+msgstr "MythTV izokrajna Ethernet adresa (WOL)"
 
 msgctxt "#30013"
 msgid "MythTV Backend Port for API services"
-msgstr ""
+msgstr "MythTV izokrajski port za API usluge"
 
 msgctxt "#30014"
 msgid "MythTV Security Pin for API services"
-msgstr ""
+msgstr "MythTV sigurnosni PIN za API usluge"
 
 msgctxt "#30019"
 msgid "General"
@@ -95,93 +96,93 @@ msgstr "Opšte"
 
 msgctxt "#30020"
 msgid "Template provider"
-msgstr ""
+msgstr "Pružatelj predložaka"
 
 msgctxt "#30021"
 msgid "Internal"
-msgstr ""
+msgstr "Unutrašnje"
 
 msgctxt "#30022"
 msgid "MythTV"
-msgstr ""
+msgstr "MythTV"
 
 # empty strings from id 30023 to 30024
 msgctxt "#30025"
 msgid "Internal template"
-msgstr ""
+msgstr "Interni predložak"
 
 msgctxt "#30026"
 msgid "Automatically Look Up Metadata"
-msgstr ""
+msgstr "Automatsko pretraživanje metapodataka"
 
 msgctxt "#30027"
 msgid "Commercial Flag new recordings"
-msgstr ""
+msgstr "Novi snimci Commercial Flag-a"
 
 msgctxt "#30028"
 msgid "Transcode new recordings"
-msgstr ""
+msgstr "Transkodiranje novih snimaka"
 
 msgctxt "#30029"
 msgid "Run User Job #1"
-msgstr ""
+msgstr "Pokreni korisnički zadatak #1"
 
 msgctxt "#30030"
 msgid "Run User Job #2"
-msgstr ""
+msgstr "Pokreni korisnički zadatak #2"
 
 msgctxt "#30031"
 msgid "Run User Job #3"
-msgstr ""
+msgstr "Pokreni korisnički zadatak #3"
 
 msgctxt "#30032"
 msgid "Run User Job #4"
-msgstr ""
+msgstr "Pokreni korisnički zadatak #4"
 
 msgctxt "#30033"
 msgid "Transcoder"
-msgstr ""
+msgstr "Transkoder"
 
 msgctxt "#30034"
 msgid "Allow recordings to expire"
-msgstr ""
+msgstr "Dozvoli istek snimka"
 
 # empty strings from id 30035 to 30045
 msgctxt "#30046"
 msgid "Show damaged recordings as color"
-msgstr ""
+msgstr "Prikaži oštećene snimke kao boju"
 
 msgctxt "#30047"
 msgid "Prompt to delete the watched recording"
-msgstr ""
+msgstr "Upit za brisanje gledanog snimka"
 
 msgctxt "#30048"
 msgid "Show 'Original Airdate' instead of 'Recording Time'"
-msgstr ""
+msgstr "Prikaži 'Originalni datum emitiranja' umjesto 'Vrijeme snimanja'"
 
 msgctxt "#30049"
 msgid "Recording template"
-msgstr ""
+msgstr "Predložak za snimanje"
 
 msgctxt "#30050"
 msgid "Advanced"
-msgstr ""
+msgstr "Napredno"
 
 msgctxt "#30051"
 msgid "Preferences"
-msgstr ""
+msgstr "Postavke"
 
 msgctxt "#30052"
 msgid "Enable demuxing MPEG-TS"
-msgstr ""
+msgstr "Omogući demultipleksiranje MPEG-TS-a"
 
 msgctxt "#30053"
 msgid "Tuning delay (sec)"
-msgstr ""
+msgstr "Kašnjenje podešavanja (sek)"
 
 msgctxt "#30054"
 msgid "Group recordings by title"
-msgstr ""
+msgstr "Grupiraj snimke po naslovu"
 
 msgctxt "#30055"
 msgid "Always"
@@ -189,7 +190,7 @@ msgstr "Uvijek"
 
 msgctxt "#30056"
 msgid "Only for series"
-msgstr ""
+msgstr "Samo za serije"
 
 msgctxt "#30057"
 msgid "Never"
@@ -197,7 +198,7 @@ msgstr "Nikada"
 
 msgctxt "#30058"
 msgid "Enable commercial skips (EDL)"
-msgstr ""
+msgstr "Omogući preskakanje reklama (EDL)"
 
 msgctxt "#30059"
 msgid "Always"
@@ -205,7 +206,7 @@ msgstr "Uvijek"
 
 msgctxt "#30060"
 msgid "Dialog"
-msgstr ""
+msgstr "Dijalog"
 
 msgctxt "#30061"
 msgid "Never"
@@ -213,91 +214,93 @@ msgstr "Nikada"
 
 msgctxt "#30062"
 msgid "Allow backend shutdown"
-msgstr ""
+msgstr "Dozvoli gašenje pozadinskog sistema"
 
 msgctxt "#30063"
 msgid "Enable channel icons"
-msgstr ""
+msgstr "Omogući ikone kanala"
 
 msgctxt "#30064"
 msgid "Enable recording fanart/thumbnails"
-msgstr ""
+msgstr "Omogući snimanje fanarta/sličica"
 
 msgctxt "#30065"
 msgid "Limit channel tuning attempts"
-msgstr ""
+msgstr "Ograniči pokušaje podešavanja kanala"
 
 msgctxt "#30066"
 msgid "Show inactive upcomings (alternative/recorded/expired)"
-msgstr ""
+msgstr "Prikaži neaktivne nadolazeće događaje (alternativne/snimljene/istekle)"
 
 msgctxt "#30067"
 msgid "Show LiveTV recordings"
-msgstr ""
+msgstr "Prikaži snimke LiveTV-a"
 
 msgctxt "#30068"
 msgid "Use bookmarks of the backend MythTV"
-msgstr ""
+msgstr "Koristite oznake pozadinskog MythTV-a"
 
 msgctxt "#30069"
 msgid "Show default recording group as root"
-msgstr ""
+msgstr "Prikaži zadanu grupu za snimanje kao root"
 
 msgctxt "#30070"
 msgid "Scene Only"
-msgstr ""
+msgstr "Samo scena"
 
 # empty strings from id 30071 to 30099
 # Systeminformation labels
 msgctxt "#30100"
 msgid "Protocol version: %i - Database version: %i"
-msgstr ""
+msgstr "Verzija protokola: %i - Verzija baze podataka: %i"
 
 # empty strings from id 30101 to 30109
 # Dialog labels
 msgctxt "#30110"
 msgid "Enabling EDL"
-msgstr ""
+msgstr "Omogućavanje EDL-a"
 
 msgctxt "#30111"
 msgid ""
 "A cut list or commercial skips have been found.\n"
 "Do you want to activate EDL functionality for this show ?"
 msgstr ""
+"Pronađena je lista za rezanje ili preskakanje reklama.\n"
+"Želite li aktivirati EDL funkcionalnost za ovu emisiju?"
 
 msgctxt "#30112"
 msgid "Connection failed"
-msgstr ""
+msgstr "Povezivanje nije uspjelo"
 
 msgctxt "#30113"
 msgid "Do you want to retry ?"
-msgstr ""
+msgstr "Želite li pokušati ponovo?"
 
 msgctxt "#30114"
 msgid "Connected"
-msgstr ""
+msgstr "Povezano"
 
 # empty strings from id 30114 to 30299
 # Notifications
 msgctxt "#30300"
 msgid "Failed to connect the MythTV backend with the known protocol versions. Please check the compatibility map of the addon and upgrade your backend to a supported version."
-msgstr ""
+msgstr "Nije uspjelo povezivanje MythTV backenda s poznatim verzijama protokola. Molimo provjerite mapu kompatibilnosti dodatka i nadogradite svoj backend na podržanu verziju."
 
 msgctxt "#30301"
 msgid "Failed to connect the API services of MythTV backend. Please check your PIN code or backend setup. The PIN code has to be configured in your backend to allow connection."
-msgstr ""
+msgstr "Povezivanje API usluga MythTV backenda nije uspjelo. Molimo provjerite svoj PIN kod ili postavke backenda. PIN kod mora biti konfiguriran u vašem backendu da bi se omogućila veza."
 
 msgctxt "#30302"
 msgid "Connection to MythTV backend lost"
-msgstr ""
+msgstr "Veza sa MythTV backendom je prekinuta"
 
 msgctxt "#30303"
 msgid "Connection to MythTV restored"
-msgstr ""
+msgstr "Veza sa MythTV-om je obnovljena"
 
 msgctxt "#30304"
 msgid "No response from MythTV backend"
-msgstr ""
+msgstr "Nema odgovora od MythTV backenda"
 
 msgctxt "#30305"
 msgid "Channel unavailable"
@@ -305,19 +308,19 @@ msgstr "Kanal nedostupan"
 
 msgctxt "#30306"
 msgid "Recorder unavailable"
-msgstr ""
+msgstr "Snimač nije dostupan"
 
 msgctxt "#30307"
 msgid "Canceling conflicting recording: %s"
-msgstr ""
+msgstr "Otkazivanje konfliktnog snimka: %s"
 
 msgctxt "#30308"
 msgid "Stopping Live TV due to conflicting recording: %s"
-msgstr ""
+msgstr "Zaustavljanje TV-a uživo zbog konfliktnog snimka: %s"
 
 msgctxt "#30309"
 msgid "Not recording"
-msgstr ""
+msgstr "Ne snima se"
 
 msgctxt "#30310"
 msgid "Enabled"
@@ -329,79 +332,79 @@ msgstr "Onemogućeno"
 
 msgctxt "#30312"
 msgid "No broadcast found"
-msgstr ""
+msgstr "Nije pronađena emisija"
 
 # empty strings from id 30313 to 30410
 # Menu Hooks
 msgctxt "#30411"
 msgid "Delete and re-record"
-msgstr ""
+msgstr "Izbriši i ponovo snimi"
 
 msgctxt "#30412"
 msgid "Keep recording"
-msgstr ""
+msgstr "Nastavi snimanje"
 
 # empty strings from id 30413 to 30420
 msgctxt "#30421"
 msgid "Toggle display of alternative/recorded/expired"
-msgstr ""
+msgstr "Uključi/isključi prikaz alternativnog/snimljenog/isteklog"
 
 msgctxt "#30422"
 msgid "Refresh cache for channel icons"
-msgstr ""
+msgstr "Osvježi keš memoriju za ikone kanala"
 
 msgctxt "#30423"
 msgid "Trigger channels update"
-msgstr ""
+msgstr "Ažuriranje okidačkih kanala"
 
 msgctxt "#30424"
 msgid "Show status of scheduling"
-msgstr ""
+msgstr "Prikaži status zakazivanja"
 
 msgctxt "#30425"
 msgid "Show status of recording"
-msgstr ""
+msgstr "Prikaži status snimanja"
 
 msgctxt "#30426"
 msgid "Show status of broadcast"
-msgstr ""
+msgstr "Prikaži status emitiranja"
 
 # empty strings from id 30427 to 30450
 msgctxt "#30451"
 msgid "Unhandled"
-msgstr ""
+msgstr "Neobrađeno"
 
 msgctxt "#30452"
 msgid "Upcoming"
-msgstr ""
+msgstr "Nadolazeći"
 
 msgctxt "#30453"
 msgid "Overriden"
-msgstr ""
+msgstr "Poništeno"
 
 msgctxt "#30454"
 msgid "Don't record"
-msgstr ""
+msgstr "Ne snimaj"
 
 msgctxt "#30455"
 msgid "Upcoming manual"
-msgstr ""
+msgstr "Predstojeći priručnik"
 
 msgctxt "#30456"
 msgid "Zombie"
-msgstr ""
+msgstr "Zombi"
 
 msgctxt "#30457"
 msgid "Alternative"
-msgstr ""
+msgstr "Alternativa"
 
 msgctxt "#30458"
 msgid "Currently recorded"
-msgstr ""
+msgstr "Trenutno snimljeno"
 
 msgctxt "#30459"
 msgid "Expired recording"
-msgstr ""
+msgstr "Istekla snimka"
 
 msgctxt "#30460"
 msgid "Manual"
@@ -409,73 +412,73 @@ msgstr "Ručno"
 
 msgctxt "#30461"
 msgid "Record one"
-msgstr ""
+msgstr "Zabilježite jedan"
 
 msgctxt "#30462"
 msgid "Record weekly"
-msgstr ""
+msgstr "Snimaj sedmično"
 
 msgctxt "#30463"
 msgid "Record daily"
-msgstr ""
+msgstr "Snimaj dnevno"
 
 msgctxt "#30464"
 msgid "Record all"
-msgstr ""
+msgstr "Snimi sve"
 
 msgctxt "#30465"
 msgid "Record this"
-msgstr ""
+msgstr "Snimi ovo"
 
 msgctxt "#30466"
 msgid "Record series"
-msgstr ""
+msgstr "Rekordna serija"
 
 msgctxt "#30467"
 msgid "Search keyword"
-msgstr ""
+msgstr "Ključna riječ za pretragu"
 
 msgctxt "#30468"
 msgid "Search people"
-msgstr ""
+msgstr "Pretražite ljude"
 
 msgctxt "#30469"
 msgid "Rule disabled"
-msgstr ""
+msgstr "Pravilo onemogućeno"
 
 # empty strings from id 30470 to 30500
 msgctxt "#30501"
 msgid "Don't match duplicates"
-msgstr ""
+msgstr "Ne podudaraj duplikate"
 
 msgctxt "#30502"
 msgid "Match duplicates using subtitle"
-msgstr ""
+msgstr "Pronađi duplikate koristeći podnaslov"
 
 msgctxt "#30503"
 msgid "Match duplicates using description"
-msgstr ""
+msgstr "Pronađi duplikate koristeći opis"
 
 msgctxt "#30504"
 msgid "Match duplicates using subtitle & description"
-msgstr ""
+msgstr "Pronađite duplikate koristeći podnaslov i opis"
 
 msgctxt "#30505"
 msgid "Match duplicates using subtitle then description"
-msgstr ""
+msgstr "Pronađi duplikate koristeći podnaslov, a zatim opis"
 
 msgctxt "#30506"
 msgid "Recordings never expire"
-msgstr ""
+msgstr "Snimci nikad ne ističu"
 
 msgctxt "#30507"
 msgid "Allow recordings to expire"
-msgstr ""
+msgstr "Dozvoli istek snimka"
 
 msgctxt "#30508"
 msgid "Keep up to %d recordings"
-msgstr ""
+msgstr "Pratite do %d snimaka"
 
 msgctxt "#30509"
 msgid "Keep %d newest and expire old"
-msgstr ""
+msgstr "Zadrži %d najnovije i istekni staro"
