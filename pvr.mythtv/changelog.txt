@@ -1,5 +1,6 @@
-v22.2.3
-- Sync upstream lib cppmyth 2.18.1
+v22.2.4
+- Sync upstream lib cppmyth 2.18.2
+- Discard channel without chanNum: Channel Number is required
 
 v22.2.2
 - Fix build for Windows ARM64
