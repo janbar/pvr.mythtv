@@ -840,9 +840,6 @@ int PVRClientMythTV::FillChannelsAndChannelGroups()
     //channelIdentifiers.clear();
     for (Myth::ChannelList::iterator itc = channels->begin(); itc != channels->end(); ++itc)
     {
-      // discard channel without number (issue #259)
-      if ((*itc)->chanNum.empty())
-        continue;
       MythChannel channel((*itc));
       unsigned int chanid = channel.ID();
       PVRChannelItem item;
