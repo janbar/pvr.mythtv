@@ -236,7 +236,7 @@ namespace Myth
     Locked<T>& operator=(const Locked<T>& other) = delete;
 #endif
 
-    protected:
+  protected:
     T m_val;
     Lockable m_latch;
 

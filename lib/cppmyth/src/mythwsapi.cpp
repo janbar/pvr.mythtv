@@ -660,7 +660,7 @@ ChannelListPtr WSAPI::GetChannelList1_2(uint32_t sourceid, bool onlyVisible)
       ChannelPtr channel(new Channel());  // Using default constructor
       // Bind the new channel
       JSON::BindObject(chan, channel.get(), bindchan);
-      if (channel->chanId && (!onlyVisible || channel->visible))
+      if (channel->chanId && !channel->chanNum.empty() && (!onlyVisible || channel->visible))
         ret->push_back(channel);
     }
     DBG(DBG_DEBUG, "%s: received count(%d)\n", __FUNCTION__, count);
@@ -738,7 +738,7 @@ ChannelListPtr WSAPI::GetChannelList1_5(uint32_t sourceid, bool onlyVisible)
       ChannelPtr channel(new Channel());  // Using default constructor
       // Bind the new channel
       JSON::BindObject(chan, channel.get(), bindchan);
-      if (channel->chanId)
+      if (channel->chanId && !channel->chanNum.empty())
         ret->push_back(channel);
     }
     DBG(DBG_DEBUG, "%s: received count(%d)\n", __FUNCTION__, count);

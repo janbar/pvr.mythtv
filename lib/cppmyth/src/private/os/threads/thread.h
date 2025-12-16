@@ -23,6 +23,9 @@
 #include "mutex.h"
 #include "condition.h"
 
+// Compatibility with C++98 remains
+#include <cstddef> // for NULL
+
 #ifdef NSROOT
 namespace NSROOT {
 #endif
@@ -142,7 +145,7 @@ namespace OS
       volatile bool notifiedStop;
       volatile bool notifiedWake;
       Condition<volatile bool> condition;
-      Mutex        mutex;
+      Mutex         mutex;
 
       Handle()
       : nativeHandle(0)
@@ -159,7 +162,7 @@ namespace OS
     static void* ThreadHandler(void* _thread)
     {
       Thread* thread = static_cast<Thread*>(_thread);
-      void* ret = nullptr;
+      void* ret = NULL;
 
       if (thread)
       {

@@ -22,6 +22,8 @@
 
 #include "condition.h"
 
+// Compatibility with C++98 remains
+
 #ifdef NSROOT
 namespace NSROOT {
 #endif
@@ -94,8 +96,8 @@ namespace OS
     volatile bool             m_notifyOne;
     unsigned                  m_waitingCount;
     bool                      m_autoReset;
-    Condition<volatile bool> m_condition;
-    Mutex                    m_mutex;
+    Condition<volatile bool>  m_condition;
+    Mutex                     m_mutex;
 
     void __reset(bool force)
     {

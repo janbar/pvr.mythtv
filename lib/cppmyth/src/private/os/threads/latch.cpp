@@ -21,6 +21,8 @@
 
 #include "latch.h"
 
+// Compatibility with C++98 remains
+
 #include <cassert>
 
 #ifdef NSROOT
@@ -29,10 +31,24 @@ using namespace NSROOT::OS;
 using namespace OS;
 #endif
 
+void Latch::init()
+{
+  mutex_init(&x_gate_lock);
+  cond_init(&x_gate);
+  mutex_init(&s_gate_lock);
+  cond_init(&s_gate);
+
+  /* preallocate free list with 2 nodes */
+  TNode * n1 = new_node(thread_t());
+  TNode * n2 = new_node(thread_t());
+  free_node(n1);
+  free_node(n2);
+}
+
 Latch::TNode * Latch::find_node(const thread_t& id)
 {
   TNode * p = s_nodes;
-  while (p != nullptr && thread_equal(p->id, id) == 0)
+  while (p != NULL && thread_equal(p->id, id) == 0)
   {
     p = p->_next;
   }
@@ -42,7 +58,7 @@ Latch::TNode * Latch::find_node(const thread_t& id)
 Latch::TNode * Latch::new_node(const thread_t& id)
 {
   TNode * p;
-  if (s_freed == nullptr)
+  if (s_freed == NULL)
   {
     /* create node */
     p = new TNode();
@@ -59,9 +75,9 @@ Latch::TNode * Latch::new_node(const thread_t& id)
   p->count = 0;
 
   /* push front in list */
-  p->_prev = nullptr;
+  p->_prev = NULL;
   p->_next = s_nodes;
-  if (s_nodes != nullptr)
+  if (s_nodes != NULL)
   {
     s_nodes->_prev = p;
   }
@@ -80,19 +96,30 @@ void Latch::free_node(TNode * n)
   {
     n->_prev->_next = n->_next;
   }
-  if (n->_next != nullptr)
+  if (n->_next != NULL)
   {
     n->_next->_prev = n->_prev;
   }
 
   /* push front in free list */
-  if (s_freed != nullptr)
+  if (s_freed != NULL)
   {
     s_freed->_prev = n;
   }
   n->_next = s_freed;
-  n->_prev = nullptr;
+  n->_prev = NULL;
   s_freed = n;
+}
+
+Latch::Latch()
+: s_spin(0)
+, x_wait(0)
+, x_flag(0)
+, px(true)
+, s_freed(NULL)
+, s_nodes(NULL)
+{
+  init();
 }
 
 Latch::Latch(bool _px)
@@ -100,31 +127,22 @@ Latch::Latch(bool _px)
 , x_wait(0)
 , x_flag(0)
 , px(_px)
-, s_freed(nullptr)
-, s_nodes(nullptr)
+, s_freed(NULL)
+, s_nodes(NULL)
 {
-  mutex_init(&x_gate_lock);
-  cond_init(&x_gate);
-  mutex_init(&s_gate_lock);
-  cond_init(&s_gate);
-
-  /* preallocate free list with 2 nodes */
-  TNode * n1 = new_node(thread_t());
-  TNode * n2 = new_node(thread_t());
-  free_node(n1);
-  free_node(n2);
+  init();
 }
 
 Latch::~Latch()
 {
   /* destroy free nodes */
-  while (s_freed != nullptr) {
+  while (s_freed != NULL) {
     TNode * n = s_freed;
     s_freed = s_freed->_next;
     delete n;
   }
   /* it should be empty, but still tries to destroy any existing busy node */
-  while (s_nodes != nullptr) {
+  while (s_nodes != NULL) {
     TNode * n = s_nodes;
     s_nodes = s_nodes->_next;
     delete n;
@@ -195,7 +213,7 @@ void Latch::lock()
       /* if the count of S is zeroed, or equal to self count, then it finalizes
        * with no wait,
        * in other case it has to wait for S gate */
-      if (s_nodes == nullptr || (s_nodes == n && s_nodes->_next == nullptr))
+      if (s_nodes == NULL || (s_nodes == n && s_nodes->_next == NULL))
       {
         x_flag = X_STEP_3;
         break;
@@ -239,7 +257,7 @@ void Latch::unlock()
     x_flag -= 1;
     if (x_flag == X_STEP_2)
     {
-      x_owner = {};
+      x_owner = thread_t(0);
       /* hand-over to a request in wait for X, else release */
       if (x_wait == 0)
       {
@@ -291,7 +309,7 @@ void Latch::lock_shared()
         /* X precedence is true,
          * test if this thread holds a recursive S lock
          */
-        if (x_flag == X_STEP_0 || (x_flag == X_STEP_1 && n != nullptr))
+        if (x_flag == X_STEP_0 || (x_flag == X_STEP_1 && n != NULL))
         {
           break;
         }
@@ -304,7 +322,7 @@ void Latch::lock_shared()
       spin_lock();
     }
   }
-  if (n == nullptr)
+  if (n == NULL)
   {
     n = new_node(tid);
   }
@@ -323,7 +341,7 @@ void Latch::unlock_shared()
   /* find the thread node */
   TNode * n = find_node(tid);
   /* does it own shared lock ? */
-  assert(n != nullptr);
+  assert(n != NULL);
 
   /* decrement recursive count for this thread, finally free */
   if (--n->count == 0)
@@ -332,7 +350,7 @@ void Latch::unlock_shared()
     /* on last S, finalize X request in wait, and notify */
     if (x_flag == X_STEP_1 && !thread_equal(x_owner, tid))
     {
-      if (s_nodes == nullptr)
+      if (s_nodes == NULL)
       {
         x_flag = X_STEP_3;
       }
@@ -365,7 +383,7 @@ bool Latch::try_lock_shared()
   {
     /* find the thread node, else create */
     TNode * n = find_node(tid);
-    if (n == nullptr)
+    if (n == NULL)
     {
       n = new_node(tid);
     }

@@ -22,6 +22,8 @@
 
 #include "os-threads.h"
 
+// Compatibility with C++98 remains
+
 #ifdef NSROOT
 namespace NSROOT {
 #endif
@@ -167,7 +169,7 @@ namespace OS
 #endif
 
   private:
-    Mutex&           m_mutex;
+    Mutex&            m_mutex;
     unsigned          m_lockCount;
 
 #if __cplusplus < 201103L
