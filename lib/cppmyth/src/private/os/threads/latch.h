@@ -23,6 +23,9 @@
 #include "os-threads.h"
 #include "atomic.h"
 
+// Compatibility with C++98 remains
+#include <cstddef> // for NULL
+
 #ifdef NSROOT
 namespace NSROOT {
 #endif
@@ -32,8 +35,8 @@ namespace OS
   class Latch
   {
   public:
+    Latch();
     Latch(bool _px);
-    Latch() : Latch(true) { }
     ~Latch();
 
     /* Locks the latch for exclusive ownership,
@@ -105,6 +108,7 @@ namespace OS
     }
     void spin_unlock() { s_spin.store(0); }
 
+    void init();
     TNode * find_node(const thread_t& id);
     TNode * new_node(const thread_t& id);
     void free_node(TNode * n);
@@ -113,17 +117,19 @@ namespace OS
   class ReadLock
   {
   private:
-    Latch *p = nullptr;
-    bool owns = false;
+    Latch *p;
+    bool owns;
 
+#if __cplusplus < 201103L
     ReadLock(const ReadLock& other);
     ReadLock& operator=(const ReadLock& other);
+#endif
 
   public:
 
     static struct adopt_lock_t { } adopt_lock;
 
-    ReadLock() { }
+    ReadLock() : p(NULL), owns(false) { }
 
     ReadLock(Latch& latch) : p(&latch), owns(true) { latch.lock_shared(); }
 
@@ -155,7 +161,7 @@ namespace OS
 
     void lock()
     {
-      if (!owns && p != nullptr)
+      if (!owns && p != NULL)
       {
         p->lock_shared();
         owns = true;
@@ -173,26 +179,33 @@ namespace OS
 
     bool try_lock()
     {
-      if (!owns && p != nullptr)
+      if (!owns && p != NULL)
       {
         owns = p->try_lock_shared();
       }
       return owns;
     }
+
+#if __cplusplus >= 201103L
+    ReadLock(const ReadLock& other) = delete;
+    ReadLock& operator=(const ReadLock& other) = delete;
+#endif
   };
 
   class WriteLock
   {
   private:
-    Latch *p = nullptr;
-    bool owns = false;
+    Latch *p;
+    bool owns;
 
+#if __cplusplus < 201103L
     WriteLock(const WriteLock& other);
     WriteLock& operator=(const WriteLock& other);
+#endif
 
   public:
 
-    WriteLock() = default;
+    WriteLock() : p(NULL), owns(false) { }
 
     explicit WriteLock(Latch& latch) : p(&latch), owns(true) { latch.lock(); }
 
@@ -221,7 +234,7 @@ namespace OS
 
     void lock()
     {
-      if (!owns && p != nullptr)
+      if (!owns && p != NULL)
       {
         p->lock();
         owns = true;
@@ -236,6 +249,11 @@ namespace OS
         p->unlock();
       }
     }
+
+#if __cplusplus >= 201103L
+    WriteLock(const WriteLock& other) = delete;
+    WriteLock& operator=(const WriteLock& other) = delete;
+#endif
   };
 
 }

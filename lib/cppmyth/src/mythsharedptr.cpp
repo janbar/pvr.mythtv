@@ -22,25 +22,27 @@
 #include "mythsharedptr.h"
 #include "private/os/threads/atomic.h"
 
+// Compatibility with C++98 remains
+
 using namespace Myth;
 
 shared_ptr_base::shared_ptr_base()
-: pc(nullptr)
-, spare(nullptr) { }
+: pc(NULL)
+, spare(NULL) { }
 
 shared_ptr_base::~shared_ptr_base()
 {
   clear_counter();
-  if (spare != nullptr)
+  if (spare != NULL)
     delete spare;
 }
 
 shared_ptr_base::shared_ptr_base(const shared_ptr_base& s)
 : pc(s.pc)
-, spare(nullptr)
+, spare(NULL)
 {
-  if (pc != nullptr && (pc->load() == 0 || pc->add_fetch(1) < 2))
-    pc = nullptr;
+  if (pc != NULL && (pc->load() == 0 || pc->add_fetch(1) < 2))
+    pc = NULL;
 }
 
 shared_ptr_base& shared_ptr_base::operator=(const shared_ptr_base& s)
@@ -49,36 +51,36 @@ shared_ptr_base& shared_ptr_base::operator=(const shared_ptr_base& s)
   {
     clear_counter();
     pc = s.pc;
-    if (pc != nullptr && (pc->load() == 0 || pc->add_fetch(1) < 2))
-      pc = nullptr;
+    if (pc != NULL && (pc->load() == 0 || pc->add_fetch(1) < 2))
+      pc = NULL;
   }
   return *this;
 }
 
 bool shared_ptr_base::clear_counter()
 {
-  if (pc != nullptr && pc->load() > 0 && pc->sub_fetch(1) == 0)
+  if (pc != NULL && pc->load() > 0 && pc->sub_fetch(1) == 0)
   {
     /* delete later */
-    if (spare != nullptr)
+    if (spare != NULL)
       delete spare;
     spare = pc;
-    pc = nullptr;
+    pc = NULL;
     return true;
   }
-  pc = nullptr;
+  pc = NULL;
   return false;
 }
 
 void shared_ptr_base::reset_counter()
 {
   clear_counter();
-  if (spare != nullptr)
+  if (spare != NULL)
   {
     /* reuse the spare */
     spare->store(1);
     pc = spare;
-    spare = nullptr;
+    spare = NULL;
   }
   else
   {
@@ -96,5 +98,5 @@ void shared_ptr_base::swap_counter(shared_ptr_base& s)
 
 int shared_ptr_base::get_count() const
 {
-  return (pc != nullptr ? pc->load() : 0);
+  return (pc != NULL ? pc->load() : 0);
 }

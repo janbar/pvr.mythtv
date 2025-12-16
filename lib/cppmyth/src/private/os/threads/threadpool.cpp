@@ -21,6 +21,8 @@
 
 #include "threadpool.h"
 
+// Compatibility with C++98 remains
+
 #include <cassert>
 
 #define WTH_KEEPALIVE 5000
@@ -211,7 +213,7 @@ Worker* ThreadPool::PopQueue(WorkerThread* _thread)
       return worker;
     }
   }
-  return nullptr;
+  return NULL;
 }
 
 void ThreadPool::WaitQueue(WorkerThread* _thread)

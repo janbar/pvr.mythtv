@@ -23,6 +23,8 @@
 #include "thread.h"
 #include "event.h"
 
+// Compatibility with C++98 remains
+#include <cstddef> // for NULL
 #include <queue>
 #include <set>
 
@@ -77,12 +79,12 @@ namespace OS
     volatile bool m_suspended;
     volatile bool m_empty;
 
-    std::queue<Worker*>      m_queue;
-    std::set<WorkerThread*>  m_pool;
-    mutable Mutex            m_mutex;
-    Condition<volatile bool> m_condition;
-    Event                    m_queueFill;
-    Event                    m_queueEmpty;
+    std::queue<Worker*>       m_queue;
+    std::set<WorkerThread*>   m_pool;
+    mutable Mutex             m_mutex;
+    Condition<volatile bool>  m_condition;
+    Event                     m_queueFill;
+    Event                     m_queueEmpty;
 
     Worker* PopQueue(WorkerThread* _thread);
     void WaitQueue(WorkerThread* _thread);
@@ -117,7 +119,7 @@ namespace OS
       while (!IsStopped())
       {
         Worker* worker = m_threadPool.PopQueue(this);
-        if (worker != nullptr)
+        if (worker != NULL)
         {
           worker->Process();
           delete worker;
@@ -132,7 +134,7 @@ namespace OS
           break;
       }
 
-      return nullptr;
+      return NULL;
     }
 
     void Finalize(void)

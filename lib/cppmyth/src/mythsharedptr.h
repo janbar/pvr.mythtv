@@ -22,6 +22,9 @@
 #ifndef MYTHSHAREDPTR_H
 #define	MYTHSHAREDPTR_H
 
+// Compatibility with C++98 remains
+#include <cstddef> // for NULL
+
 namespace Myth
 {
   namespace OS {
@@ -42,7 +45,7 @@ namespace Myth
     void reset_counter(); /* initialize a new count */
     void swap_counter(shared_ptr_base& s);
     int get_count() const;
-    bool is_null() const { return (pc == nullptr); }
+    bool is_null() const { return (pc == NULL); }
   };
 
 
@@ -55,13 +58,13 @@ namespace Myth
 
     shared_ptr()
     : shared_ptr_base()
-    , p(nullptr) { }
+    , p(NULL) { }
 
     explicit shared_ptr(T* s)
     : shared_ptr_base()
     , p(s)
     {
-      if (s != nullptr)
+      if (s != NULL)
         shared_ptr_base::reset_counter();
     }
 
@@ -70,7 +73,7 @@ namespace Myth
     , p(s.p)
     {
       if (shared_ptr_base::is_null())
-        p = nullptr;
+        p = NULL;
     }
 
     shared_ptr& operator=(const shared_ptr& s)
@@ -81,7 +84,7 @@ namespace Myth
         p = s.p;
         shared_ptr_base::operator = (s);
         if (shared_ptr_base::is_null())
-          p = nullptr;
+          p = NULL;
       }
       return *this;
     }
@@ -104,7 +107,7 @@ namespace Myth
     {
       if (shared_ptr_base::clear_counter())
         delete p;
-      p = nullptr;
+      p = NULL;
     }
 
     void reset(T* s)
@@ -113,7 +116,7 @@ namespace Myth
       {
         reset();
         p = s;
-        if (s != nullptr)
+        if (s != NULL)
           shared_ptr_base::reset_counter();
       }
     }
@@ -130,7 +133,7 @@ namespace Myth
       s.p = _p;
       shared_ptr_base::swap_counter(s);
       if (shared_ptr_base::is_null())
-        p = nullptr;
+        p = NULL;
     }
 
     int use_count() const
@@ -150,12 +153,12 @@ namespace Myth
 
     operator bool() const
     {
-      return p != nullptr;
+      return p != NULL;
     }
 
     bool operator!() const
     {
-      return p == nullptr;
+      return p == NULL;
     }
   };
 
