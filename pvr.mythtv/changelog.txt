@@ -1,5 +1,6 @@
-v21.1.12
-- Sync upstream lib cppmyth 2.18.1
+v21.2.0
+- Sync upstream lib cppmyth 2.18.2
+- Discard channel without chanNum: Channel Number is required
 
 v21.1.11
 - Demuxing: complete streams setup
