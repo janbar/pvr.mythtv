@@ -126,11 +126,12 @@ bool TaskHandlerPrivate::Resume()
 
 void *TaskHandlerPrivate::Process()
 {
-  Myth::OS::LockGuard lock(m_mutex);
   while (!IsStopped())
   {
     Myth::OS::Timeout later;
     unsigned left = 0;
+
+    m_mutex.Lock();
 
     // refill all delayed in queue
     for (std::vector<Scheduled>::const_iterator it = m_delayed.begin(); it != m_delayed.end(); ++it)
@@ -145,32 +146,29 @@ void *TaskHandlerPrivate::Process()
       if ((left = item.second->TimeLeft()) > 0)
       {
         m_delayed.push_back(item);
-        lock.Unlock();
+        m_mutex.Unlock();
         if (!later.IsSet() || later.TimeLeft() > left)
           later.Set(left);
       }
       else
       {
-        lock.Unlock();
+        m_mutex.Unlock();
         item.first->Execute();
         delete item.second;
         delete item.first;
       }
-
-      lock.Lock();
+      m_mutex.Lock();
     }
+
+    m_mutex.Unlock();
 
     if (IsStopped())
       break;
-
-    lock.Unlock();
 
     if (!later.IsSet())
       m_queueContent.Wait();
     else if ((left = later.TimeLeft()) > 0)
       m_queueContent.Wait(left);
-
-    lock.Lock();
   }
   return NULL;
 }
