@@ -88,6 +88,8 @@ namespace NSROOT
 
     bool IsCertificateValid(std::string& info);
 
+    const char* GetSSLError();
+
   private:
     SecureSocket(void* ssl);
 
@@ -104,12 +106,10 @@ namespace NSROOT
      * Await a connection.
      * @param listener the tcp server socket to accept new connection
      * @param socket the secure socket to connect on new request
-     * @param errmsg the pointer to const message on failure
      * @return true on success, else false
      */
     static bool AcceptConnection(TcpServerSocket& listener,
-                                 SecureSocket& socket,
-                                 const char** errmsg);
+                                 SecureSocket& socket);
   private:
     SecureServerSocket() { }
     ~SecureServerSocket() { }

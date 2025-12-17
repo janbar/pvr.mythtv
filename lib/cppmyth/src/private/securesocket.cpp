@@ -324,12 +324,12 @@ size_t SecureSocket::ReceiveData(void* buf, size_t n)
       if (err == SSL_ERROR_WANT_WRITE)
       {
         DBG(DBG_DEBUG, "%s: SSL wants write\n", __FUNCTION__);
-        m_ssl_error = err;
+        m_ssl_error = ERR_get_error();
         break;
       }
-      const char* errmsg = ERR_error_string(ERR_get_error(), nullptr);
+      m_ssl_error = ERR_get_error();
+      const char* errmsg = ERR_error_string(m_ssl_error, nullptr);
       DBG(DBG_ERROR, "%s: SSL read failed: %s\n", __FUNCTION__, errmsg);
-      m_ssl_error = err;
       break;
     }
   }
@@ -355,12 +355,12 @@ bool SecureSocket::SendData(const char* buf, size_t size)
       if (err == SSL_ERROR_WANT_READ)
       {
         DBG(DBG_DEBUG, "%s: SSL wants read\n", __FUNCTION__);
-        m_ssl_error = err;
+        m_ssl_error = ERR_get_error();
         break;
       }
-      const char* errmsg = ERR_error_string(ERR_get_error(), nullptr);
+      m_ssl_error = ERR_get_error();
+      const char* errmsg = ERR_error_string(m_ssl_error, nullptr);
       DBG(DBG_ERROR, "%s: SSL write failed: %s\n", __FUNCTION__, errmsg);
-      m_ssl_error = err;
       break;
     }
   }
@@ -399,11 +399,17 @@ bool SecureSocket::IsCertificateValid(std::string& str)
   return false;
 }
 
-bool SecureServerSocket::AcceptConnection(TcpServerSocket& listener,
-                                          SecureSocket& socket,
-                                          const char** errmsg)
+const char* SecureSocket::GetSSLError()
 {
-  if (listener.AcceptConnection(socket, errmsg))
+  static char _errmsg[256];
+  ERR_error_string_n(m_ssl_error, _errmsg, sizeof(_errmsg));
+  return _errmsg;
+}
+
+bool SecureServerSocket::AcceptConnection(TcpServerSocket& listener,
+                                          SecureSocket& socket)
+{
+  if (listener.AcceptConnection(socket))
   {
     static char _errmsg[256];
     SSL_set_fd(static_cast<SSL*>(socket.m_ssl), socket.m_socket);
@@ -413,12 +419,10 @@ bool SecureServerSocket::AcceptConnection(TcpServerSocket& listener,
     int r = SSL_accept(static_cast<SSL*>(socket.m_ssl));
     if (r < 1)
     {
-      ERR_error_string_n(ERR_get_error(), _errmsg, sizeof(_errmsg));
-      *errmsg = _errmsg;
+      socket.m_ssl_error = ERR_get_error();
       return false;
     }
     DBG(DBG_PROTO, "%s: SSL handshake initialized\n", __FUNCTION__);
-    *errmsg = nullptr;
     socket.m_connected = true;
     return true;
   }
@@ -452,6 +456,14 @@ SecureSocket* SSLSessionFactory::NewClientSocket()
 SecureSocket* SSLSessionFactory::NewServerSocket()
 {
   return new SecureSocket(nullptr);
+}
+
+bool SSLSessionFactory::UseServerCertificateFile(const std::string& certfile,
+                                                  const std::string& pkeyfile)
+{
+  (void)certfile;
+  (void)pkeyfile;
+  return false;
 }
 
 SecureSocket::SecureSocket(void* ssl)
@@ -499,13 +511,16 @@ bool SecureSocket::IsCertificateValid(std::string& str)
   return false;
 }
 
+const char* SecureSocket::GetSSLError()
+{
+  return "SSL not available";
+}
+
 bool SecureServerSocket::AcceptConnection(TcpServerSocket& listener,
-                                          SecureSocket& socket,
-                                          const char** errmsg)
+                                          SecureSocket& socket)
 {
   (void)listener;
   (void)socket;
-  (void)errmsg;
   return false;
 }
 

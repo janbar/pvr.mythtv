@@ -601,15 +601,12 @@ bool TcpServerSocket::ListenConnection(int queueSize /*= SOCKET_LISTEN_QUEUE_SIZ
   return true;
 }
 
-bool TcpServerSocket::AcceptConnection(TcpSocket& socket, const char** errmsg)
+bool TcpServerSocket::AcceptConnection(TcpSocket& socket)
 {
-  static char _errmsg[256];
   socket.m_socket = accept(m_socket, m_addr->sa(), &m_addr->sa_len);
   if (!socket.IsValid())
   {
     m_errno = LASTERROR;
-    snprintf(_errmsg, sizeof(_errmsg), "Accept failed (%d)", m_errno);
-    *errmsg = _errmsg;
     return false;
   }
 
@@ -620,7 +617,6 @@ bool TcpServerSocket::AcceptConnection(TcpSocket& socket, const char** errmsg)
 #endif
 
   socket.SetReadAttempt(0);
-  *errmsg = nullptr;
   return true;
 }
 

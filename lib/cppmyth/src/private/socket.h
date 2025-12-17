@@ -196,10 +196,9 @@ namespace NSROOT
     /**
      * Await a connection.
      * @param socket the tcp socket to connect on new request
-     * @param errmsg the pointer to const message on failure
      * @return true on success, else false
      */
-    bool AcceptConnection(TcpSocket& socket, const char** errmsg);
+    bool AcceptConnection(TcpSocket& socket);
 
     /**
      * @return the address string of the accepted remote
