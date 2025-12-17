@@ -94,7 +94,7 @@ SubscriptionHandlerThread::SubscriptionHandlerThread(EventSubscriber *handle, un
 SubscriptionHandlerThread::~SubscriptionHandlerThread()
 {
   Stop();
-  m_handle = NULL;
+  m_handle = nullptr;
 }
 
 bool SubscriptionHandlerThread::Start()
@@ -143,7 +143,7 @@ void *SubscriptionHandlerThread::Process()
     // The tread is woken up by m_queueContent.Signal();
     m_queueContent.Wait();
   }
-  return NULL;
+  return nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -333,7 +333,7 @@ void *BasicEventHandler::Process()
   while (!OS::Thread::IsStopped())
   {
     int r;
-    EventMessage *msg = NULL;
+    EventMessage *msg = nullptr;
     r = m_event->RcvBackendMessage(EVENTHANDLER_TIMEOUT, &msg);
     if (r > 0)
       DispatchEvent(EventMessagePtr(msg));
@@ -357,7 +357,7 @@ void *BasicEventHandler::Process()
   AnnounceStatus(EVENTHANDLER_STOPPED);
   // Close connection
   m_event->Close();
-  return NULL;
+  return nullptr;
 }
 
 void BasicEventHandler::AnnounceStatus(const char *status)

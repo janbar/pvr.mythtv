@@ -26,7 +26,7 @@
 using namespace Myth;
 
 WSStream::WSStream()
-: m_response(NULL)
+: m_response(nullptr)
 , m_position(0)
 {
 }
@@ -44,7 +44,7 @@ WSStream::~WSStream()
 
 int WSStream::Read(void* buffer, unsigned n)
 {
-  if (m_response == NULL)
+  if (m_response == nullptr)
     return 0;
   size_t s = m_response->ReadContent((char *)buffer, n);
   m_position += s;
@@ -53,12 +53,12 @@ int WSStream::Read(void* buffer, unsigned n)
 
 int64_t WSStream::GetSize() const
 {
-  return (m_response != NULL ? (int64_t)(-1) : 0);
+  return (m_response != nullptr ? (int64_t)(-1) : 0);
 }
 
 int64_t WSStream::GetPosition() const
 {
-  return (m_response != NULL ? m_position : 0);
+  return (m_response != nullptr ? m_position : 0);
 }
 
 int64_t WSStream::Seek(int64_t offset, WHENCE_t whence)

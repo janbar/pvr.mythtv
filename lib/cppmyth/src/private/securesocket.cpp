@@ -21,7 +21,6 @@
 
 #include "securesocket.h"
 #include "debug.h"
-#include "cppdef.h"
 
 #include <errno.h>
 
@@ -47,7 +46,9 @@ SSLSessionFactory& SSLSessionFactory::Instance()
 
 void SSLSessionFactory::Destroy()
 {
-  SAFE_DELETE(m_instance);
+  if (m_instance)
+    delete m_instance;
+  m_instance = nullptr;
 }
 
 #if HAVE_OPENSSL
@@ -61,9 +62,14 @@ void SSLSessionFactory::Destroy()
 /* Cipher suites, https://www.openssl.org/docs/apps/ciphers.html */
 const char* const PREFERRED_CIPHERS = "HIGH:!aNULL:!kRSA:!SRP:!PSK:!CAMELLIA:!RC4:!MD5:!DSS";
 
+#define ENABLE_SSL_CTX_NONE     0x0
+#define ENABLE_SSL_CTX_CLIENT   0x1
+#define ENABLE_SSL_CTX_SERVER   0x2
+
 SSLSessionFactory::SSLSessionFactory()
-: m_enabled(false)
-, m_ctx(NULL)
+: m_client_ctx(nullptr)
+, m_server_ctx(nullptr)
+, m_enabled(ENABLE_SSL_CTX_NONE)
 {
   if (SSL_library_init() < 0)
     DBG(DBG_ERROR, "%s: could not initialize the SSL library\n", __FUNCTION__);
@@ -73,16 +79,17 @@ SSLSessionFactory::SSLSessionFactory()
     /* SSL_load_error_strings loads both libssl and libcrypto strings */
     /* ERR_load_crypto_strings(); */
 
+    /* Setup the default client context */
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-    m_ctx = SSL_CTX_new(TLS_client_method());
+    m_client_ctx = SSL_CTX_new(TLS_client_method());
 #else
-    m_ctx = SSL_CTX_new(SSLv23_client_method());
+    m_client_ctx = SSL_CTX_new(SSLv23_client_method());
 #endif
-    if (m_ctx == NULL)
-      DBG(DBG_ERROR, "%s: could not create the SSL context\n", __FUNCTION__);
+    if (m_client_ctx == nullptr)
+      DBG(DBG_ERROR, "%s: could not create the SSL client context\n", __FUNCTION__);
     else
     {
-      SSL_CTX_set_verify(static_cast<SSL_CTX*>(m_ctx), SSL_VERIFY_NONE, 0);
+      SSL_CTX_set_verify(static_cast<SSL_CTX*>(m_client_ctx), SSL_VERIFY_NONE, 0);
 
       /* Remove the most egregious. Because SSLv2 and SSLv3 have been removed,
        * a TLSv1.0 handshake is used. The client accepts TLSv1.0 and above.
@@ -90,7 +97,7 @@ SSLSessionFactory::SSLSessionFactory()
        * Name Indicatior (SNI).
        */
       const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
-      (void)SSL_CTX_set_options(static_cast<SSL_CTX*>(m_ctx), flags);
+      (void)SSL_CTX_set_options(static_cast<SSL_CTX*>(m_client_ctx), flags);
 
       /* Each cipher suite takes 2 bytes in the ClientHello, so advertising every
        * cipher suite available at the client is going to cause a big ClientHello
@@ -98,32 +105,68 @@ SSLSessionFactory::SSLSessionFactory()
        * When using SSL_CTX_set_cipher_list or SSL_set_cipher_list with the string
        * below you'll cut the number of cipher suites down to about 45.
        */
-      if (SSL_CTX_set_cipher_list(static_cast<SSL_CTX*>(m_ctx), PREFERRED_CIPHERS) != 1)
+      if (SSL_CTX_set_cipher_list(static_cast<SSL_CTX*>(m_client_ctx), PREFERRED_CIPHERS) != 1)
         DBG(DBG_ERROR, "%s: Set cipher list failed\n", __FUNCTION__);
 
       /* The SSL trace callback is only used for verbose logging */
-      /* SSL_CTX_set_msg_callback(static_cast<SSL_CTX*>(m_ctx), ssl_trace); */
+      /* SSL_CTX_set_msg_callback(static_cast<SSL_CTX*>(m_client_ctx), ssl_trace); */
 
-      DBG(DBG_INFO, "%s: SSL engine initialized\n", __FUNCTION__);
-      m_enabled = true;
+      m_enabled |= ENABLE_SSL_CTX_CLIENT;
     }
+
+    /* Setup the default server context */
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+    m_server_ctx = SSL_CTX_new(TLS_server_method());
+#else
+    m_server_ctx = SSL_CTX_new(SSLv23_server_method());
+#endif
+    if (m_server_ctx == nullptr)
+      DBG(DBG_ERROR, "%s: could not create the SSL server context\n", __FUNCTION__);
+    {
+      SSL_CTX_set_verify(static_cast<SSL_CTX*>(m_server_ctx), SSL_VERIFY_NONE, 0);
+
+      /* Remove the most egregious. Because SSLv2 and SSLv3 have been removed,
+       * a TLSv1.0 handshake is used. The client accepts TLSv1.0 and above.
+       * An added benefit of TLS 1.0 and above are TLS extensions like Server
+       * Name Indicatior (SNI).
+       */
+      const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
+      (void)SSL_CTX_set_options(static_cast<SSL_CTX*>(m_server_ctx), flags);
+
+      if (SSL_CTX_set_cipher_list(static_cast<SSL_CTX*>(m_server_ctx), PREFERRED_CIPHERS) != 1)
+        DBG(DBG_ERROR, "%s: Set cipher list failed\n", __FUNCTION__);
+
+      /* The SSL trace callback is only used for verbose logging */
+      /* SSL_CTX_set_msg_callback(static_cast<SSL_CTX*>(m_server_ctx), ssl_trace); */
+
+      m_enabled |= ENABLE_SSL_CTX_SERVER;
+    }
+
+    DBG(DBG_INFO, "%s: SSL engine initialized (%d)\n", __FUNCTION__, m_enabled);
   }
 }
 
 SSLSessionFactory::~SSLSessionFactory()
 {
-  if (m_ctx)
-    SSL_CTX_free(static_cast<SSL_CTX*>(m_ctx));
+  if (m_client_ctx)
+    SSL_CTX_free(static_cast<SSL_CTX*>(m_client_ctx));
+  if (m_server_ctx)
+    SSL_CTX_free(static_cast<SSL_CTX*>(m_server_ctx));
   ERR_free_strings();
   EVP_cleanup();
   DBG(DBG_INFO, "%s: SSL resources destroyed\n", __FUNCTION__);
 }
 
-SecureSocket* SSLSessionFactory::NewSocket()
+bool SSLSessionFactory::isEnabled() const
 {
-  if (m_enabled)
+  return (m_enabled != ENABLE_SSL_CTX_NONE);
+}
+
+SecureSocket* SSLSessionFactory::NewClientSocket()
+{
+  if ((m_enabled & ENABLE_SSL_CTX_CLIENT))
   {
-    SSL* ssl = SSL_new(static_cast<SSL_CTX*>(m_ctx));
+    SSL* ssl = SSL_new(static_cast<SSL_CTX*>(m_client_ctx));
     /* SSL_MODE_AUTO_RETRY
      * With this option set, if the server suddenly wants a new handshake,
      * OpenSSL handles it in the background. Without this option, any read
@@ -133,13 +176,57 @@ SecureSocket* SSLSessionFactory::NewSocket()
     SSL_set_mode(static_cast<SSL*>(ssl), SSL_MODE_AUTO_RETRY);
     return new SecureSocket(ssl);
   }
-  return NULL;
+  return nullptr;
+}
+
+SecureSocket* SSLSessionFactory::NewServerSocket()
+{
+  if ((m_enabled & ENABLE_SSL_CTX_SERVER))
+  {
+    SSL* ssl = SSL_new(static_cast<SSL_CTX*>(m_server_ctx));
+    /* SSL_MODE_AUTO_RETRY
+     * With this option set, if the server suddenly wants a new handshake,
+     * OpenSSL handles it in the background. Without this option, any read
+     * or write operation will return an error if the server wants a new
+     * handshake, setting the retry flag in the process.
+     */
+    SSL_set_mode(static_cast<SSL*>(ssl), SSL_MODE_AUTO_RETRY);
+    return new SecureSocket(ssl);
+  }
+  return nullptr;
+}
+
+bool SSLSessionFactory::UseServerCertificateFile(const std::string& certfile,
+                                                 const std::string& pkeyfile)
+{
+  if (m_server_ctx == nullptr)
+    return false;
+
+  /* Set the certificate to be used */
+  if (SSL_CTX_use_certificate_chain_file(static_cast<SSL_CTX*>(m_server_ctx), certfile.c_str()) != 1)
+  {
+    DBG(DBG_ERROR, "%s: Certificate file is invalid\n", __FUNCTION__);
+    return false;
+  }
+  /* Set the private key to be used */
+  if (SSL_CTX_use_PrivateKey_file(static_cast<SSL_CTX*>(m_server_ctx), pkeyfile.c_str(), SSL_FILETYPE_PEM) != 1)
+  {
+    DBG(DBG_ERROR, "%s: Private key file is invalid\n", __FUNCTION__);
+    return false;
+  }
+  /* Make sure the key and certificate file match */
+  if (SSL_CTX_check_private_key(static_cast<SSL_CTX*>(m_server_ctx)) != 1) {
+    DBG(DBG_ERROR, "%s: Private key does not match the certificate public key\n", __FUNCTION__);
+    return false;
+  }
+  DBG(DBG_INFO, "%s: Server certificate was successfully loaded\n", __FUNCTION__);
+  return true;
 }
 
 SecureSocket::SecureSocket(void* ssl)
 : TcpSocket()
 , m_ssl(ssl)
-, m_cert(NULL)
+, m_cert(nullptr)
 , m_connected(false)
 , m_ssl_error(0)
 {
@@ -180,7 +267,7 @@ bool SecureSocket::Connect(const char* server, unsigned port, int rcvbuf)
         continue;
       }
     }
-    const char* errmsg = ERR_error_string(ERR_get_error(), NULL);
+    const char* errmsg = ERR_error_string(ERR_get_error(), nullptr);
     DBG(DBG_ERROR, "%s: SSL connect failed: %s\n", __FUNCTION__, errmsg);
     TcpSocket::Disconnect();
     return false;
@@ -240,7 +327,7 @@ size_t SecureSocket::ReceiveData(void* buf, size_t n)
         m_ssl_error = err;
         break;
       }
-      const char* errmsg = ERR_error_string(ERR_get_error(), NULL);
+      const char* errmsg = ERR_error_string(ERR_get_error(), nullptr);
       DBG(DBG_ERROR, "%s: SSL read failed: %s\n", __FUNCTION__, errmsg);
       m_ssl_error = err;
       break;
@@ -271,7 +358,7 @@ bool SecureSocket::SendData(const char* buf, size_t size)
         m_ssl_error = err;
         break;
       }
-      const char* errmsg = ERR_error_string(ERR_get_error(), NULL);
+      const char* errmsg = ERR_error_string(ERR_get_error(), nullptr);
       DBG(DBG_ERROR, "%s: SSL write failed: %s\n", __FUNCTION__, errmsg);
       m_ssl_error = err;
       break;
@@ -291,13 +378,8 @@ void SecureSocket::Disconnect()
   if (m_cert)
   {
     X509_free(static_cast<X509*>(m_cert));
-    m_cert = NULL;
+    m_cert = nullptr;
   }
-}
-
-bool SecureSocket::IsValid() const
-{
-  return m_connected;
 }
 
 bool SecureSocket::IsCertificateValid(std::string& str)
@@ -317,11 +399,38 @@ bool SecureSocket::IsCertificateValid(std::string& str)
   return false;
 }
 
+bool SecureServerSocket::AcceptConnection(TcpServerSocket& listener,
+                                          SecureSocket& socket,
+                                          const char** errmsg)
+{
+  if (listener.AcceptConnection(socket, errmsg))
+  {
+    static char _errmsg[256];
+    SSL_set_fd(static_cast<SSL*>(socket.m_ssl), socket.m_socket);
+    SSL_set_accept_state(static_cast<SSL*>(socket.m_ssl));
+
+    /* do SSL handshake */
+    int r = SSL_accept(static_cast<SSL*>(socket.m_ssl));
+    if (r < 1)
+    {
+      ERR_error_string_n(ERR_get_error(), _errmsg, sizeof(_errmsg));
+      *errmsg = _errmsg;
+      return false;
+    }
+    DBG(DBG_PROTO, "%s: SSL handshake initialized\n", __FUNCTION__);
+    *errmsg = nullptr;
+    socket.m_connected = true;
+    return true;
+  }
+  return false;
+}
+
 #else
 
 SSLSessionFactory::SSLSessionFactory()
-: m_enabled(false)
-, m_ctx(NULL)
+: m_client_ctx(nullptr)
+, m_server_ctx(nullptr)
+, m_enabled(0)
 {
   DBG(DBG_INFO, "%s: SSL feature is disabled\n", __FUNCTION__);
 }
@@ -330,15 +439,25 @@ SSLSessionFactory::~SSLSessionFactory()
 {
 }
 
-SecureSocket* SSLSessionFactory::NewSocket()
+bool SSLSessionFactory::isEnabled() const
 {
-  return new SecureSocket(NULL);
+  return false;
+}
+
+SecureSocket* SSLSessionFactory::NewClientSocket()
+{
+  return new SecureSocket(nullptr);
+}
+
+SecureSocket* SSLSessionFactory::NewServerSocket()
+{
+  return new SecureSocket(nullptr);
 }
 
 SecureSocket::SecureSocket(void* ssl)
 : TcpSocket()
 , m_ssl(ssl)
-, m_cert(NULL)
+, m_cert(nullptr)
 , m_connected(false)
 , m_ssl_error(0)
 {
@@ -374,14 +493,19 @@ void SecureSocket::Disconnect()
 {
 }
 
-bool SecureSocket::IsValid() const
-{
-  return m_connected;
-}
-
 bool SecureSocket::IsCertificateValid(std::string& str)
 {
   (void)str;
+  return false;
+}
+
+bool SecureServerSocket::AcceptConnection(TcpServerSocket& listener,
+                                          SecureSocket& socket,
+                                          const char** errmsg)
+{
+  (void)listener;
+  (void)socket;
+  (void)errmsg;
   return false;
 }
 

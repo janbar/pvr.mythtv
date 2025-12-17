@@ -40,8 +40,10 @@ namespace NSROOT
   class WSResponse
   {
   public:
-    WSResponse(const WSRequest& request) : WSResponse(request, 1, true, false) { }
-    WSResponse(const WSRequest &request, int maxRedirs, bool trustedLocation, bool followAny);
+    WSResponse(const WSRequest& request)
+    { init(request, 1, true, false); }
+    WSResponse(const WSRequest &request, int maxRedirs, bool trustedLocation, bool followAny)
+    { init(request, maxRedirs, trustedLocation, followAny); }
     ~WSResponse();
 
     bool IsSuccessful() const { return p->IsSuccessful(); }
@@ -61,6 +63,7 @@ namespace NSROOT
     static bool ReadHeaderLine(NetSocket *socket, const char *eol, std::string& line, size_t *len);
 
   private:
+    void init(const WSRequest &request, int maxRedirs, bool trustedLocation, bool followAny);
 
     // prevent copy
     WSResponse(const WSResponse&);

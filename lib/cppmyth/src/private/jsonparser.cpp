@@ -171,7 +171,7 @@ JSON::Node JSON::Node::GetObjectValue(const char *key) const
 
 JSON::Document::Document(NSROOT::WSResponse& resp)
 : m_isValid(false)
-, m_document(NULL)
+, m_document(nullptr)
 {
   std::string content;
   content.reserve(resp.GetContentLength());

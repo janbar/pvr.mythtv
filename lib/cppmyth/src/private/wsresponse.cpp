@@ -21,9 +21,8 @@
 
 #include "wsresponse.h"
 #include "securesocket.h"
-#include "debug.h"
-#include "cppdef.h"
 #include "compressor.h"
+#include "debug.h"
 
 #include <cstdlib>  // for atol
 #include <cstdio>
@@ -32,11 +31,11 @@
 #define HTTP_TOKEN_MAXSIZE    20
 #define HTTP_HEADER_MAXSIZE   4000
 #define RESPONSE_BUFFER_SIZE  4000
+#define CHUNK_MAX_SIZE        0x1FFFF
 
 using namespace NSROOT;
 
-WSResponse::WSResponse(const WSRequest &request, int maxRedirs, bool trustedLocation, bool followAny)
-: p(0)
+void WSResponse::init(const WSRequest &request, int maxRedirs, bool trustedLocation, bool followAny)
 {
   p = new _response(request);
   while (0 < maxRedirs--)
@@ -68,6 +67,7 @@ WSResponse::~WSResponse()
 {
   if (p)
     delete p;
+  p = nullptr;
 }
 
 bool WSResponse::ReadHeaderLine(NetSocket *socket, const char *eol, std::string& line, size_t *len)
@@ -77,7 +77,7 @@ bool WSResponse::ReadHeaderLine(NetSocket *socket, const char *eol, std::string&
   int p = 0, p_eol = 0, l_eol;
   size_t l = 0;
 
-  if (eol != NULL)
+  if (eol != nullptr)
     s_eol = eol;
   else
     s_eol = "\n";
@@ -124,7 +124,7 @@ bool WSResponse::ReadHeaderLine(NetSocket *socket, const char *eol, std::string&
 }
 
 WSResponse::_response::_response(const WSRequest &request)
-: m_socket(NULL)
+: m_socket(nullptr)
 , m_successful(false)
 , m_statusCode(0)
 , m_serverInfo()
@@ -135,14 +135,14 @@ WSResponse::_response::_response(const WSRequest &request)
 , m_contentChunked(false)
 , m_contentLength(0)
 , m_consumed(0)
-, m_chunkBuffer(NULL)
-, m_chunkPtr(NULL)
-, m_chunkEOR(NULL)
-, m_chunkEnd(NULL)
-, m_decoder(NULL)
+, m_chunkBuffer(nullptr)
+, m_chunkPtr(nullptr)
+, m_chunkEOR(nullptr)
+, m_chunkEnd(nullptr)
+, m_decoder(nullptr)
 {
   if (request.IsSecureURI())
-    m_socket = SSLSessionFactory::Instance().NewSocket();
+    m_socket = SSLSessionFactory::Instance().NewClientSocket();
   else
     m_socket = new TcpSocket();
   if (!m_socket)
@@ -170,9 +170,15 @@ WSResponse::_response::_response(const WSRequest &request)
 
 WSResponse::_response::~_response()
 {
-  SAFE_DELETE(m_decoder);
-  SAFE_DELETE_ARRAY(m_chunkBuffer);
-  SAFE_DELETE(m_socket);
+  if (m_decoder)
+    delete m_decoder;
+  m_decoder = nullptr;
+  if (m_chunkBuffer)
+    delete [] m_chunkBuffer;
+  m_chunkBuffer = m_chunkPtr = m_chunkEOR = m_chunkEnd = nullptr;
+  if (m_socket)
+    delete m_socket;
+  m_socket = nullptr;
 }
 
 bool WSResponse::_response::SendRequest(const WSRequest &request)
@@ -200,7 +206,7 @@ bool WSResponse::_response::GetResponse()
   token[0] = 0;
   while (WSResponse::ReadHeaderLine(m_socket, "\r\n", strread, &len))
   {
-    const char *line = strread.c_str(), *val = NULL;
+    const char *line = strread.c_str(), *val = nullptr;
     int value_len = 0;
 
     DBG(DBG_PROTO, "%s: %s\n", __FUNCTION__, line);
@@ -328,8 +334,9 @@ size_t WSResponse::_response::ReadChunk(void *buf, size_t buflen)
     if (m_chunkPtr >= m_chunkEnd)
     {
       // process next chunk
-      SAFE_DELETE_ARRAY(m_chunkBuffer);
-      m_chunkBuffer = m_chunkPtr = m_chunkEOR = m_chunkEnd = NULL;
+      if (m_chunkBuffer)
+        delete [] m_chunkBuffer;
+      m_chunkBuffer = m_chunkPtr = m_chunkEOR = m_chunkEnd = nullptr;
       std::string strread;
       size_t len = 0;
       while (WSResponse::ReadHeaderLine(m_socket, "\r\n", strread, &len) && len == 0);
@@ -338,6 +345,12 @@ size_t WSResponse::_response::ReadChunk(void *buf, size_t buflen)
       uint32_t chunkSize;
       if (!strread.empty() && sscanf(chunkStr.append(strread).c_str(), "%x", &chunkSize) == 1 && chunkSize > 0)
       {
+        // check chunk-size overflow
+        if (chunkSize > CHUNK_MAX_SIZE)
+        {
+          DBG(DBG_ERROR, "%s: chunk-size overflow (req=%u) (max=%u)\n", __FUNCTION__, chunkSize, (unsigned)CHUNK_MAX_SIZE);
+          return 0;
+        }
         if (!(m_chunkBuffer = new char[chunkSize]))
           return 0;
         m_chunkPtr = m_chunkEOR = m_chunkBuffer;
@@ -365,7 +378,7 @@ size_t WSResponse::_response::ReadChunk(void *buf, size_t buflen)
 int WSResponse::_response::SocketStreamReader(void *hdl, void *buf, int sz)
 {
   _response *resp = static_cast<_response*>(hdl);
-  if (resp == NULL)
+  if (resp == nullptr)
     return 0;
   size_t s = 0;
   // let read on unknown length
@@ -383,7 +396,7 @@ int WSResponse::_response::SocketStreamReader(void *hdl, void *buf, int sz)
 int WSResponse::_response::ChunkStreamReader(void *hdl, void *buf, int sz)
 {
   _response *resp = static_cast<_response*>(hdl);
-  return (resp == NULL ? 0 : resp->ReadChunk(buf, sz));
+  return (resp == nullptr ? 0 : resp->ReadChunk(buf, sz));
 }
 
 size_t WSResponse::_response::ReadContent(char* buf, size_t buflen)
@@ -405,7 +418,7 @@ size_t WSResponse::_response::ReadContent(char* buf, size_t buflen)
     }
     else if (m_contentEncoding == CE_GZIP || m_contentEncoding == CE_DEFLATE)
     {
-      if (m_decoder == NULL)
+      if (m_decoder == nullptr)
         m_decoder = new Decompressor(&SocketStreamReader, this);
       if (m_decoder->HasOutputData())
         s = m_decoder->ReadOutput(buf, buflen);
@@ -428,7 +441,7 @@ size_t WSResponse::_response::ReadContent(char* buf, size_t buflen)
     }
     else if (m_contentEncoding == CE_GZIP || m_contentEncoding == CE_DEFLATE)
     {
-      if (m_decoder == NULL)
+      if (m_decoder == nullptr)
         m_decoder = new Decompressor(&ChunkStreamReader, this);
       if (m_decoder->HasOutputData())
         s = m_decoder->ReadOutput(buf, buflen);
