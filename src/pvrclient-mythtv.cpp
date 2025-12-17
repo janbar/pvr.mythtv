@@ -593,11 +593,11 @@ void PVRClientMythTV::RunHouseKeeping()
   // Trigger recording update as needed
   if (m_recordingChangePinCount)
   {
-    Myth::OS::LockGuard lock(*m_recordingsLock);
+    m_recordingsLock->Lock();
     m_recordingChangePinCount = 0;
     m_recordingsAmountChange = true; // Need count recording amount
     m_deletedRecAmountChange = true; // Need count of deleted amount
-    lock.Unlock();
+    m_recordingsLock->Unlock();
     kodi::addon::CInstancePVRClient::TriggerRecordingUpdate();
   }
 }
@@ -1398,12 +1398,12 @@ PVR_ERROR PVRClientMythTV::SetRecordingLastPlayedPosition(const kodi::addon::PVR
   if (CMythSettings::GetExtraDebug())
     kodi::Log(ADDON_LOG_DEBUG, "%s: Setting Bookmark for: %s to %d", __FUNCTION__, recording.GetTitle().c_str(), lastplayedposition);
 
-  Myth::OS::LockGuard lock(*m_recordingsLock);
+  m_recordingsLock->Lock();
   ProgramInfoMap::iterator it = m_recordings.find(recording.GetRecordingId());
   if (it != m_recordings.end())
   {
     Myth::ProgramPtr prog(it->second.GetPtr());
-    lock.Unlock();
+    m_recordingsLock->Unlock();
     if (prog)
     {
       long long duration = (long long)lastplayedposition * 1000;
@@ -1418,6 +1418,7 @@ PVR_ERROR PVRClientMythTV::SetRecordingLastPlayedPosition(const kodi::addon::PVR
     kodi::Log(ADDON_LOG_INFO, "%s: Setting Bookmark failed", __FUNCTION__);
     return PVR_ERROR_NO_ERROR;
   }
+  m_recordingsLock->Unlock();
   kodi::Log(ADDON_LOG_ERROR, "%s: Recording %s does not exist", __FUNCTION__, recording.GetRecordingId().c_str());
   return PVR_ERROR_FAILED;
 }
