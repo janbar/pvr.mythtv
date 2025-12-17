@@ -22,6 +22,9 @@
 #ifndef MYTHLOCKED_H
 #define	MYTHLOCKED_H
 
+// Compatibility with C++98 remains
+#include <cstddef> // for NULL
+
 namespace Myth
 {
 
@@ -131,7 +134,7 @@ namespace Myth
       T& operator* () const { return *m_val; }
       T *operator->() const { return m_val; }
 
-      pointer() : m_val(nullptr), m_x(nullptr) { }
+      pointer() : m_val(NULL), m_x(NULL) { }
       ~pointer() { if (m_x) m_x->Unlock(); }
 
       pointer(const pointer& other)
@@ -150,8 +153,8 @@ namespace Myth
       pointer(pointer&& other) noexcept
       : m_val(other.m_val), m_x(other.m_x)
       {
-        other.m_val = nullptr;
-        other.m_x = nullptr;
+        other.m_val = NULL;
+        other.m_x = NULL;
       }
 
       pointer& operator=(pointer&& other) noexcept
@@ -159,8 +162,8 @@ namespace Myth
         if (m_x) m_x->Unlock();
         m_val = other.m_val;
         m_x = other.m_x;
-        other.m_val = nullptr;
-        other.m_x = nullptr;
+        other.m_val = NULL;
+        other.m_x = NULL;
         return *this;
       }
 #endif
@@ -184,7 +187,7 @@ namespace Myth
       const T& operator* () const { return *m_val; }
       const T *operator->() const { return m_val; }
 
-      const_pointer() : m_val(nullptr), m_s(nullptr) { }
+      const_pointer() : m_val(NULL), m_s(NULL) { }
       ~const_pointer() { if (m_s) m_s->UnlockShared(); }
 
       const_pointer(const const_pointer& other)
@@ -203,8 +206,8 @@ namespace Myth
       const_pointer(const_pointer&& other) noexcept
       : m_val(other.m_val), m_s(other.m_s)
       {
-        other.m_val = nullptr;
-        other.m_s = nullptr;
+        other.m_val = NULL;
+        other.m_s = NULL;
       }
 
       const_pointer& operator=(const_pointer&& other) noexcept
@@ -212,8 +215,8 @@ namespace Myth
         if (m_s) m_s->UnlockShared();
         m_val = other.m_val;
         m_s = other.m_s;
-        other.m_val = nullptr;
-        other.m_s = nullptr;
+        other.m_val = NULL;
+        other.m_s = NULL;
         return *this;
       }
 #endif

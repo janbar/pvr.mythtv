@@ -219,13 +219,14 @@ Worker* ThreadPool::PopQueue(WorkerThread* _thread)
 void ThreadPool::WaitQueue(WorkerThread* _thread)
 {
   (void)_thread;
-  LockGuard lock(m_mutex);
+  m_mutex.Lock();
   ++m_waitingCount;
   unsigned millisec = m_keepAlive;
-  lock.Unlock();
+  m_mutex.Unlock();
   m_queueFill.Wait(millisec);
-  lock.Lock();
+  m_mutex.Lock();
   --m_waitingCount;
+  m_mutex.Unlock();
 }
 
 void ThreadPool::StartThread(WorkerThread* _thread)
