@@ -133,10 +133,10 @@ void *SubscriptionHandlerThread::Process()
     while (!m_msgQueue.empty() && !IsStopped())
     {
       // Critical section
-      OS::LockGuard lock(m_mutex);
+      m_mutex.Lock();
       EventMessagePtr msg = m_msgQueue.front();
       m_msgQueue.pop_front();
-      lock.Unlock();
+      m_mutex.Unlock();
       // Do work
       m_handle->HandleBackendMessage(msg);
     }

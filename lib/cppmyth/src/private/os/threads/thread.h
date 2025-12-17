@@ -167,18 +167,18 @@ namespace OS
       if (thread)
       {
         bool finalize = thread->m_finalizeOnStop;
-        {
-          LockGuard lock(thread->m_handle->mutex);
-          thread->m_handle->running = true;
-          thread->m_handle->stopped = false;
-          thread->m_handle->condition.Broadcast();
-          lock.Unlock();
-          ret = thread->Process();
-          lock.Lock();
-          thread->m_handle->running = false;
-          thread->m_handle->stopped = true;
-          thread->m_handle->condition.Broadcast();
-        }
+        thread->m_handle->mutex.Lock();
+        thread->m_handle->running = true;
+        thread->m_handle->stopped = false;
+        thread->m_handle->condition.Broadcast();
+        thread->m_handle->mutex.Unlock();
+        ret = thread->Process();
+        thread->m_handle->mutex.Lock();
+        thread->m_handle->running = false;
+        thread->m_handle->stopped = true;
+        thread->m_handle->condition.Broadcast();
+        thread->m_handle->mutex.Unlock();
+
         // Thread without finalizer could be freed here
         if (finalize)
           thread->Finalize();

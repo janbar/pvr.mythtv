@@ -22,6 +22,8 @@
 #include "mythlocked.h"
 #include "private/os/threads/latch.h"
 
+// Compatibility with C++98 remains
+
 using namespace Myth;
 
 Lockable::Lockable()

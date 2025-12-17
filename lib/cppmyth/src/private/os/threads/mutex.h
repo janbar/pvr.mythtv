@@ -110,68 +110,15 @@ namespace OS
   class LockGuard
   {
   public:
-    LockGuard(Mutex& mutex)
-    : m_mutex(mutex)
-    , m_lockCount(0)
-    {
-      Lock();
-    }
-
-    ~LockGuard()
-    {
-      Clear();
-    }
-
-    bool TryLock()
-    {
-      if (m_mutex.TryLock())
-      {
-        ++m_lockCount;
-        return true;
-      }
-      return false;
-    }
-
-    void Lock()
-    {
-      m_mutex.Lock();
-      ++m_lockCount;
-    }
-
-    void Unlock()
-    {
-      if (m_mutex.TryLock())
-      {
-        if (m_lockCount > 0)
-        {
-          m_mutex.Unlock();
-          --m_lockCount;
-        }
-        m_mutex.Unlock();
-      }
-    }
-
-    void Clear()
-    {
-      if (m_mutex.TryLock())
-      {
-        for (unsigned i = m_lockCount; i > 0; --i)
-          m_mutex.Unlock();
-        m_lockCount = 0;
-        m_mutex.Unlock();
-      }
-    }
-
+    LockGuard(Mutex& mutex) : m_mutex(mutex) { m_mutex.Lock(); }
+    ~LockGuard() { m_mutex.Unlock(); }
 #if __cplusplus >= 201103L
     // Prevent copy
     LockGuard(const LockGuard& other) = delete;
     LockGuard& operator=(const LockGuard& other) = delete;
 #endif
-
   private:
     Mutex&            m_mutex;
-    unsigned          m_lockCount;
-
 #if __cplusplus < 201103L
     // Prevent copy
     LockGuard(const LockGuard& other);
