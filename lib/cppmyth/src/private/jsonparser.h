@@ -26,7 +26,6 @@
 #include "wsresponse.h"
 #include "sajson.h"
 #include "os/os.h"
-#include "cppdef.h"
 
 #include <string>
 
@@ -76,7 +75,9 @@ namespace JSON
     Document(NSROOT::WSResponse& resp);
     ~Document()
     {
-      SAFE_DELETE(m_document);
+      if (m_document)
+        delete m_document;
+      m_document = nullptr;
     }
 
     bool IsValid() const

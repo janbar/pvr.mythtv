@@ -37,7 +37,7 @@ using namespace Myth;
 
 FilePlayback::FilePlayback(const std::string& server, unsigned port)
 : ProtoPlayback(server, port)
-, m_transfer(NULL)
+, m_transfer(nullptr)
 {
   ProtoPlayback::Open();
 }

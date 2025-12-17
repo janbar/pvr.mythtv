@@ -238,7 +238,7 @@ void LiveTVPlayback::InitChain()
   BUILTIN_BUFFER buf;
   // Begin critical section
   OS::WriteLock lock(*m_latch);
-  time_to_iso8601(time(NULL), &buf);
+  time_to_iso8601(time(0), &buf);
   m_chain.UID = m_socket->GetMyHostName();
   m_chain.UID.append("-").append(buf.data);
   m_chain.currentSequence = 0;

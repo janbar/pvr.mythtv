@@ -25,8 +25,6 @@
 #include "mythdto82.h"  // Add protocol version 82
 #include "mythdto85.h"  // Add protocol version 85
 
-#include <cstddef>
-
 const bindings_t *MythDTO::getVersionBindArray(unsigned ranking)
 {
   (void)ranking;
@@ -43,7 +41,7 @@ const bindings_t *MythDTO::getChannelBindArray(unsigned proto)
 {
   if (proto >= 75)
     return &MythDTO75::ChannelBindArray;
-  return NULL;
+  return nullptr;
 }
 
 const bindings_t *MythDTO::getRecordingBindArray(unsigned proto)
@@ -52,35 +50,35 @@ const bindings_t *MythDTO::getRecordingBindArray(unsigned proto)
     return &MythDTO82::RecordingBindArray;
   if (proto >= 75)
     return &MythDTO75::RecordingBindArray;
-  return NULL;
+  return nullptr;
 }
 
 const bindings_t *MythDTO::getArtworkBindArray(unsigned proto)
 {
   if (proto >= 75)
     return &MythDTO75::ArtworkBindArray;
-  return NULL;
+  return nullptr;
 }
 
 const bindings_t *MythDTO::getProgramBindArray(unsigned proto)
 {
   if (proto >= 75)
     return &MythDTO75::ProgramBindArray;
-  return NULL;
+  return nullptr;
 }
 
 const bindings_t *MythDTO::getCaptureCardBindArray(unsigned proto)
 {
   if (proto >= 75)
     return &MythDTO75::CaptureCardBindArray;
-  return NULL;
+  return nullptr;
 }
 
 const bindings_t *MythDTO::getVideoSourceBindArray(unsigned proto)
 {
   if (proto >= 75)
     return &MythDTO75::VideoSourceBindArray;
-  return NULL;
+  return nullptr;
 }
 
 const bindings_t *MythDTO::getRecordScheduleBindArray(unsigned proto)
@@ -89,12 +87,12 @@ const bindings_t *MythDTO::getRecordScheduleBindArray(unsigned proto)
     return &MythDTO76::RecordScheduleBindArray;
   if (proto >= 75)
     return &MythDTO75::RecordScheduleBindArray;
-  return NULL;
+  return nullptr;
 }
 
 const bindings_t *MythDTO::getCuttingBindArray(unsigned proto)
 {
   if (proto >= 85)
     return &MythDTO85::CuttingBindArray;
-  return NULL;
+  return nullptr;
 }
