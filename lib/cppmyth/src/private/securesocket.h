@@ -97,6 +97,7 @@ namespace NSROOT
     void* m_cert;     ///< X509 certificate
     bool m_connected; ///< SSL session state
     int m_ssl_error;  ///< SSL error code
+    char* m_errmsg;   ///< error message buffer
   };
 
   class SecureServerSocket

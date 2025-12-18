@@ -229,6 +229,7 @@ SecureSocket::SecureSocket(void* ssl)
 , m_cert(nullptr)
 , m_connected(false)
 , m_ssl_error(0)
+, m_errmsg(nullptr)
 {
 }
 
@@ -236,6 +237,8 @@ SecureSocket::~SecureSocket()
 {
   Disconnect();
   SSL_free(static_cast<SSL*>(m_ssl));
+  if (m_errmsg)
+    delete [] m_errmsg;
 }
 
 bool SecureSocket::Connect(const char* server, unsigned port, int rcvbuf)
@@ -267,8 +270,8 @@ bool SecureSocket::Connect(const char* server, unsigned port, int rcvbuf)
         continue;
       }
     }
-    const char* errmsg = ERR_error_string(ERR_get_error(), nullptr);
-    DBG(DBG_ERROR, "%s: SSL connect failed: %s\n", __FUNCTION__, errmsg);
+    m_ssl_error = ERR_get_error();
+    DBG(DBG_ERROR, "%s: SSL connect failed: %s\n", __FUNCTION__, GetSSLError());
     TcpSocket::Disconnect();
     return false;
   }
@@ -328,8 +331,7 @@ size_t SecureSocket::ReceiveData(void* buf, size_t n)
         break;
       }
       m_ssl_error = ERR_get_error();
-      const char* errmsg = ERR_error_string(m_ssl_error, nullptr);
-      DBG(DBG_ERROR, "%s: SSL read failed: %s\n", __FUNCTION__, errmsg);
+      DBG(DBG_ERROR, "%s: SSL read failed: %s\n", __FUNCTION__, GetSSLError());
       break;
     }
   }
@@ -359,8 +361,7 @@ bool SecureSocket::SendData(const char* buf, size_t size)
         break;
       }
       m_ssl_error = ERR_get_error();
-      const char* errmsg = ERR_error_string(m_ssl_error, nullptr);
-      DBG(DBG_ERROR, "%s: SSL write failed: %s\n", __FUNCTION__, errmsg);
+      DBG(DBG_ERROR, "%s: SSL write failed: %s\n", __FUNCTION__, GetSSLError());
       break;
     }
   }
@@ -399,11 +400,14 @@ bool SecureSocket::IsCertificateValid(std::string& str)
   return false;
 }
 
+#define ERROR_MSG_SIZE  256
 const char* SecureSocket::GetSSLError()
 {
-  static char _errmsg[256];
-  ERR_error_string_n(m_ssl_error, _errmsg, sizeof(_errmsg));
-  return _errmsg;
+  // create error message buffer as needed
+  if (!m_errmsg)
+    m_errmsg = new char[ERROR_MSG_SIZE];
+  ERR_error_string_n(m_ssl_error, m_errmsg, ERROR_MSG_SIZE);
+  return m_errmsg;
 }
 
 bool SecureServerSocket::AcceptConnection(TcpServerSocket& listener,
