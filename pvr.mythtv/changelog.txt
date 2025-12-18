@@ -1,3 +1,6 @@
+v21.2.2
+- Sync upstream lib cppmyth 2.18.4
+
 v21.2.1
 - Sync upstream lib cppmyth 2.18.3
 - Discard channel without chanNum: Channel Number is required
