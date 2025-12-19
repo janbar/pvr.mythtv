@@ -35,31 +35,14 @@ namespace NSROOT
   public:
     static SSLSessionFactory& Instance();
     static void Destroy();
-    bool isEnabled() const;
+    bool IsEnabled() const { return m_enabled; }
 
     /**
-     * Create a new socket with the client SSL context.
+     * Create a new client socket.
      * Ownership of the returned pointer is transferred to the caller.
-     * @return new pointer to socket or NULL on failure
+     * @return new pointer to socket or nullptr on failure
      */
     SecureSocket* NewClientSocket();
-
-    /**
-     * Create a new socket with the server SSL context.
-     * Ownership of the returned pointer is transferred to the caller.
-     * @return new pointer to socket or NULL on failure
-     */
-    SecureSocket* NewServerSocket();
-
-    /**
-     * Configure identify of the server context.
-     * The certificate and key must match for the operation to succeed.
-     * @param certfile the string path of the certificate file (pem)
-     * @param pkeyfile the string path of the private key file (pem)
-     * @return true on success, else false
-     */
-    bool UseServerCertificateFile(const std::string& certfile,
-                                  const std::string& pkeyfile);
 
   private:
     SSLSessionFactory();
@@ -69,13 +52,42 @@ namespace NSROOT
 
     static SSLSessionFactory* m_instance;
     void* m_client_ctx;       ///< SSL default client context
-    void* m_server_ctx;       ///< SSL default server context
-    char m_enabled;           ///< SSL feature status
+    bool m_enabled;           ///< SSL feature status
+  };
+
+  class SSLServerContext
+  {
+  public:
+    SSLServerContext() : m_server_ctx(nullptr) { }
+    ~SSLServerContext();
+
+    /**
+     * Initialize the server context with the given identity.
+     * The certificate and key must match for the operation to succeed.
+     * @param certfile the string path of the certificate file (pem)
+     * @param pkeyfile the string path of the private key file (pem)
+     * @return true on success, else false
+     */
+    bool InitContext(const std::string& certfile, const std::string& pkeyfile);
+
+    /**
+     * Create a new server socket with this context.
+     * Ownership of the returned pointer is transferred to the caller.
+     * @return new pointer to socket or nullptr on failure
+     */
+    SecureSocket* NewServerSocket();
+
+  private:
+    SSLServerContext(const SSLServerContext& other);
+    SSLServerContext& operator=(const SSLServerContext& other);
+
+    void* m_server_ctx;       ///< SSL server context
   };
 
   class SecureSocket : public TcpSocket
   {
     friend class SSLSessionFactory;
+    friend class SSLServerContext;
     friend class SecureServerSocket;
   public:
     virtual ~SecureSocket();
