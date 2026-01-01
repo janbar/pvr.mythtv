@@ -1030,12 +1030,20 @@ bool UdpServerSocket::Bind(unsigned port, bool reuse /*= false*/)
     DBG(DBG_ERROR, "%s: could not set exclusiveaddruse from socket (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
-#else
+#elif defined(SO_REUSEPORT)
   int opt = (reuse ? 1 : 0);
   if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, (char*)&opt, sizeof(opt)))
   {
     m_errno = LASTERROR;
     DBG(DBG_ERROR, "%s: could not set reuseport from socket (%d)\n", __FUNCTION__, m_errno);
+    return false;
+  }
+#else
+  int opt = (reuse ? 1 : 0);
+  if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)))
+  {
+    m_errno = LASTERROR;
+    DBG(DBG_ERROR, "%s: could not set reuseaddr from socket (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
 #endif
@@ -1095,12 +1103,20 @@ bool UdpServerSocket::Bind(const char* addr, unsigned port, bool reuse /*= false
     DBG(DBG_ERROR, "%s: could not set exclusiveaddruse from socket (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
-#else
+#elif defined(SO_REUSEPORT)
   int opt = (reuse ? 1 : 0);
   if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, (char*)&opt, sizeof(opt)))
   {
     m_errno = LASTERROR;
     DBG(DBG_ERROR, "%s: could not set reuseport from socket (%d)\n", __FUNCTION__, m_errno);
+    return false;
+  }
+#else
+  int opt = (reuse ? 1 : 0);
+  if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)))
+  {
+    m_errno = LASTERROR;
+    DBG(DBG_ERROR, "%s: could not set reuseaddr from socket (%d)\n", __FUNCTION__, m_errno);
     return false;
   }
 #endif

@@ -70,7 +70,7 @@ namespace Myth
     /**
      * @brief GET Myth/GetSetting
      */
-    SettingPtr GetSetting(const std::string& key, const std::string& hostname)
+    SettingPtr GetHostSetting(const std::string& key, const std::string& hostname)
     {
       WSServiceVersion_t wsv = CheckService(WS_Myth);
       if (wsv.ranking >= 0x00050000) return GetSetting5_0(key, hostname);
@@ -86,7 +86,7 @@ namespace Myth
     /**
      * @brief GET Myth/GetSetting
      */
-    SettingMapPtr GetSettings(const std::string& hostname)
+    SettingMapPtr GetHostSettings(const std::string& hostname)
     {
       WSServiceVersion_t wsv = CheckService(WS_Myth);
       if (wsv.ranking >= 0x00050000) return GetSettings5_0(hostname);

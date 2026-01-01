@@ -38,6 +38,7 @@
 
 using namespace Myth;
 
+#define WS_ACCEPT             "application/json"
 #define WS_ROOT_MYTH          "/Myth"
 #define WS_ROOT_CAPTURE       "/Capture"
 #define WS_ROOT_CHANNEL       "/Channel"
@@ -118,7 +119,7 @@ bool WSAPI::GetServiceVersion(WSServiceId_t id, WSServiceVersion_t& wsv)
   std::string url(WSServiceRoot[id]);
   url.append("/version");
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService(url);
   WSResponse resp(req);
   if (resp.IsSuccessful())
@@ -151,7 +152,7 @@ bool WSAPI::CheckServerHostName2_0()
   m_serverHostName.clear();
 
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Myth/GetHostName");
   WSResponse resp(req);
   if (!resp.IsSuccessful())
@@ -184,7 +185,7 @@ bool WSAPI::CheckVersion2_0()
   WSServiceVersion_t& wsv = m_serviceVersion[WS_Myth];
 
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Myth/GetConnectionInfo");
   if (!m_securityPin.empty())
   {
@@ -252,7 +253,7 @@ std::string WSAPI::ResolveHostName(const std::string& hostname)
   std::map<std::string, std::string>::const_iterator it = m_namedCache.find(hostname);
   if (it != m_namedCache.end())
     return it->second;
-  Myth::SettingPtr addr = this->GetSetting("BackendServerIP6", hostname);
+  Myth::SettingPtr addr = this->GetHostSetting("BackendServerIP6", hostname);
   if (addr && !addr->value.empty() && addr->value != "::1")
   {
     std::string& ret = m_namedCache[hostname];
@@ -260,7 +261,7 @@ std::string WSAPI::ResolveHostName(const std::string& hostname)
     DBG(DBG_DEBUG, "%s: resolving hostname %s as %s\n", __FUNCTION__, hostname.c_str(), ret.c_str());
     return ret;
   }
-  addr = this->GetSetting("BackendServerIP", hostname);
+  addr = this->GetHostSetting("BackendServerIP", hostname);
   if (addr && !addr->value.empty())
   {
     std::string& ret = m_namedCache[hostname];
@@ -283,7 +284,7 @@ SettingPtr WSAPI::GetSetting2_0(const std::string& key, const std::string& hostn
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Myth/GetSetting");
   req.SetContentParam("HostName", hostname);
   req.SetContentParam("Key", key);
@@ -328,7 +329,7 @@ SettingPtr WSAPI::GetSetting5_0(const std::string& key, const std::string& hostn
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Myth/GetSetting");
   req.SetContentParam("HostName", hostname);
   req.SetContentParam("Key", key);
@@ -363,7 +364,7 @@ SettingPtr WSAPI::GetSetting(const std::string& key, bool myhost)
   std::string hostname;
   if (myhost)
     hostname = TcpSocket::GetMyHostName();
-  return GetSetting(key, hostname);
+  return GetHostSetting(key, hostname);
 }
 
 SettingMapPtr WSAPI::GetSettings2_0(const std::string& hostname)
@@ -372,7 +373,7 @@ SettingMapPtr WSAPI::GetSettings2_0(const std::string& hostname)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Myth/GetSetting");
   req.SetContentParam("HostName", hostname);
   WSResponse resp(req);
@@ -418,7 +419,7 @@ SettingMapPtr WSAPI::GetSettings5_0(const std::string& hostname)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Myth/GetSettingList");
   req.SetContentParam("HostName", hostname);
   WSResponse resp(req);
@@ -463,15 +464,15 @@ SettingMapPtr WSAPI::GetSettings(bool myhost)
   std::string hostname;
   if (myhost)
     hostname = TcpSocket::GetMyHostName();
-  return GetSettings(hostname);
+  return GetHostSettings(hostname);
 }
 
 bool WSAPI::PutSetting2_0(const std::string& key, const std::string& value, bool myhost)
 {
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Myth/PutSetting", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Myth/PutSetting", WS_METHOD_Post);
   std::string hostname;
   if (myhost)
     hostname = TcpSocket::GetMyHostName();
@@ -513,7 +514,7 @@ CaptureCardListPtr WSAPI::GetCaptureCardList1_4()
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Capture/GetCaptureCardList");
   req.SetContentParam("HostName", m_serverHostName.c_str());
   WSResponse resp(req);
@@ -562,7 +563,7 @@ VideoSourceListPtr WSAPI::GetVideoSourceList1_2()
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Channel/GetVideoSourceList");
   WSResponse resp(req);
   if (!resp.IsSuccessful())
@@ -609,7 +610,7 @@ ChannelListPtr WSAPI::GetChannelList1_2(uint32_t sourceid, bool onlyVisible)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Channel/GetChannelInfoList");
 
   do
@@ -684,7 +685,7 @@ ChannelListPtr WSAPI::GetChannelList1_5(uint32_t sourceid, bool onlyVisible)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Channel/GetChannelInfoList");
 
   do
@@ -761,7 +762,7 @@ ChannelPtr WSAPI::GetChannel1_2(uint32_t chanid)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Channel/GetChannelInfo");
   uint32_to_string(chanid, &buf);
   req.SetContentParam("ChanID", buf.data);
@@ -809,7 +810,7 @@ std::map<uint32_t, ProgramMapPtr> WSAPI::GetProgramGuide1_0(time_t starttime, ti
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Guide/GetProgramGuide");
   req.SetContentParam("StartChanId", "0");
   req.SetContentParam("NumChannels", "0");
@@ -889,7 +890,7 @@ ProgramMapPtr WSAPI::GetProgramGuide1_0(uint32_t chanid, time_t starttime, time_
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Guide/GetProgramGuide");
   uint32_to_string(chanid, &buf);
   req.SetContentParam("StartChanId", buf.data);
@@ -976,7 +977,7 @@ std::map<uint32_t, ProgramMapPtr> WSAPI::GetProgramGuide2_2(time_t starttime, ti
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Guide/GetProgramGuide");
 
   do
@@ -1067,7 +1068,7 @@ ProgramMapPtr WSAPI::GetProgramList2_2(uint32_t chanid, time_t starttime, time_t
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Guide/GetProgramList");
 
   do
@@ -1156,7 +1157,7 @@ ProgramListPtr WSAPI::GetRecordedList1_5(unsigned n, bool descending)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetRecordedList");
 
   do
@@ -1253,7 +1254,7 @@ ProgramPtr WSAPI::GetRecorded1_5(uint32_t chanid, time_t recstartts)
   const bindings_t *bindartw = MythDTO::getArtworkBindArray(proto);
 
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetRecorded");
   uint32_to_string(chanid, &buf);
   req.SetContentParam("ChanId", buf.data);
@@ -1316,7 +1317,7 @@ ProgramPtr WSAPI::GetRecorded6_0(uint32_t recordedid)
   const bindings_t *bindartw = MythDTO::getArtworkBindArray(proto);
 
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetRecorded");
   uint32_to_string(recordedid, &buf);
   req.SetContentParam("RecordedId", buf.data);
@@ -1370,8 +1371,8 @@ bool WSAPI::DeleteRecording2_1(uint32_t chanid, time_t recstartts, bool forceDel
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/DeleteRecording", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/DeleteRecording", WS_METHOD_Post);
   uint32_to_string(chanid, &buf);
   req.SetContentParam("ChanId", buf.data);
   time_to_iso8601utc(recstartts, &buf);
@@ -1405,8 +1406,8 @@ bool WSAPI::DeleteRecording6_0(uint32_t recordedid, bool forceDelete, bool allow
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/DeleteRecording", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/DeleteRecording", WS_METHOD_Post);
   uint32_to_string(recordedid, &buf);
   req.SetContentParam("RecordedId", buf.data);
   req.SetContentParam("ForceDelete", BOOLSTR(forceDelete));
@@ -1438,8 +1439,8 @@ bool WSAPI::UnDeleteRecording2_1(uint32_t chanid, time_t recstartts)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/UnDeleteRecording", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/UnDeleteRecording", WS_METHOD_Post);
   uint32_to_string(chanid, &buf);
   req.SetContentParam("ChanId", buf.data);
   time_to_iso8601utc(recstartts, &buf);
@@ -1471,8 +1472,8 @@ bool WSAPI::UnDeleteRecording6_0(uint32_t recordedid)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/UnDeleteRecording", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/UnDeleteRecording", WS_METHOD_Post);
   uint32_to_string(recordedid, &buf);
   req.SetContentParam("RecordedId", buf.data);
   WSResponse resp(req);
@@ -1502,8 +1503,8 @@ bool WSAPI::UpdateRecordedWatchedStatus4_5(uint32_t chanid, time_t recstartts, b
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/UpdateRecordedWatchedStatus", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/UpdateRecordedWatchedStatus", WS_METHOD_Post);
   uint32_to_string(chanid, &buf);
   req.SetContentParam("ChanId", buf.data);
   time_to_iso8601utc(recstartts, &buf);
@@ -1536,8 +1537,8 @@ bool WSAPI::UpdateRecordedWatchedStatus6_0(uint32_t recordedid, bool watched)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/UpdateRecordedWatchedStatus", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/UpdateRecordedWatchedStatus", WS_METHOD_Post);
   uint32_to_string(recordedid, &buf);
   req.SetContentParam("RecordedId", buf.data);
   req.SetContentParam("Watched", BOOLSTR(watched));
@@ -1573,7 +1574,7 @@ MarkListPtr WSAPI::GetRecordedCommBreak6_1(uint32_t recordedid, int unit)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetRecordedCommBreak");
   uint32_to_string(recordedid, &buf);
   req.SetContentParam("RecordedId", buf.data);
@@ -1624,7 +1625,7 @@ MarkListPtr WSAPI::GetRecordedCutList6_1(uint32_t recordedid, int unit)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetRecordedCutList");
   uint32_to_string(recordedid, &buf);
   req.SetContentParam("RecordedId", buf.data);
@@ -1670,8 +1671,8 @@ bool WSAPI::SetSavedBookmark6_2(uint32_t recordedid, int unit, int64_t value)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/SetSavedBookmark", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/SetSavedBookmark", WS_METHOD_Post);
   uint32_to_string(recordedid, &buf);
   req.SetContentParam("RecordedId", buf.data);
   if (unit == 2)
@@ -1707,8 +1708,8 @@ int64_t WSAPI::GetSavedBookmark6_2(uint32_t recordedid, int unit)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/GetSavedBookmark", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/GetSavedBookmark", WS_METHOD_Post);
   uint32_to_string(recordedid, &buf);
   req.SetContentParam("RecordedId", buf.data);
   if (unit == 2)
@@ -1761,7 +1762,7 @@ RecordScheduleListPtr WSAPI::GetRecordScheduleList1_5()
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetRecordScheduleList");
 
   do
@@ -1831,7 +1832,7 @@ RecordSchedulePtr WSAPI::GetRecordSchedule1_5(uint32_t recordid)
   const bindings_t *bindrec = MythDTO::getRecordScheduleBindArray(proto);
 
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetRecordSchedule");
   uint32_to_string(recordid, &buf);
   req.SetContentParam("RecordId", buf.data);
@@ -1890,8 +1891,8 @@ bool WSAPI::AddRecordSchedule1_5(RecordSchedule& record)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/AddRecordSchedule", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/AddRecordSchedule", WS_METHOD_Post);
 
   req.SetContentParam("Title", record.title);
   req.SetContentParam("Subtitle", record.subtitle);
@@ -1979,8 +1980,8 @@ bool WSAPI::AddRecordSchedule1_7(RecordSchedule& record)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/AddRecordSchedule", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/AddRecordSchedule", WS_METHOD_Post);
 
   req.SetContentParam("Title", record.title);
   req.SetContentParam("Subtitle", record.subtitle);
@@ -2071,8 +2072,8 @@ bool WSAPI::UpdateRecordSchedule1_7(RecordSchedule& record)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/UpdateRecordSchedule", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/UpdateRecordSchedule", WS_METHOD_Post);
 
   uint32_to_string(record.recordId, &buf);
   req.SetContentParam("RecordId", buf.data);
@@ -2159,8 +2160,8 @@ bool WSAPI::DisableRecordSchedule1_5(uint32_t recordid)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/DisableRecordSchedule", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/DisableRecordSchedule", WS_METHOD_Post);
 
   uint32_to_string(recordid, &buf);
   req.SetContentParam("RecordId", buf.data);
@@ -2192,8 +2193,8 @@ bool WSAPI::EnableRecordSchedule1_5(uint32_t recordid)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/EnableRecordSchedule", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/EnableRecordSchedule", WS_METHOD_Post);
 
   uint32_to_string(recordid, &buf);
   req.SetContentParam("RecordId", buf.data);
@@ -2225,8 +2226,8 @@ bool WSAPI::RemoveRecordSchedule1_5(uint32_t recordid)
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
-  req.RequestService("/Dvr/RemoveRecordSchedule", HRM_POST);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Dvr/RemoveRecordSchedule", WS_METHOD_Post);
 
   uint32_to_string(recordid, &buf);
   req.SetContentParam("RecordId", buf.data);
@@ -2281,7 +2282,7 @@ ProgramListPtr WSAPI::GetUpcomingList2_2()
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetUpcomingList");
 
   do
@@ -2362,7 +2363,7 @@ ProgramListPtr WSAPI::GetConflictList1_5()
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetConflictList");
 
   do
@@ -2442,7 +2443,7 @@ ProgramListPtr WSAPI::GetExpiringList1_5()
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetExpiringList");
 
   do
@@ -2513,7 +2514,7 @@ StringListPtr WSAPI::GetRecGroupList1_5()
 
   // Initialize request header
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Dvr/GetRecGroupList");
   WSResponse resp(req);
   if (!resp.IsSuccessful())
@@ -2763,7 +2764,7 @@ ArtworkListPtr WSAPI::GetRecordingArtworkList1_32(uint32_t chanid, time_t recsta
   const bindings_t *bindartw = MythDTO::getArtworkBindArray(proto);
 
   WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(CT_JSON);
+  req.RequestAccept(WS_ACCEPT);
   req.RequestService("/Content/GetRecordingArtworkList");
   uint32_to_string(chanid, &buf);
   req.SetContentParam("ChanId", buf.data);

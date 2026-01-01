@@ -88,6 +88,9 @@ namespace JSON
     Node GetRoot() const;
 
   private:
+    Document(const Document&);
+    Document& operator=(const Document&);
+
     bool m_isValid;
     sajson::document *m_document;
   };
