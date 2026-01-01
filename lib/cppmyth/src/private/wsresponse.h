@@ -23,7 +23,7 @@
 #define	WSRESPONSE_H
 
 #include "local_config.h"
-#include "wscontent.h"
+#include "wsstatic.h"
 #include "wsrequest.h"
 
 #include <cstddef>  // for size_t
@@ -92,8 +92,9 @@ namespace NSROOT
       std::string m_serverInfo;
       std::string m_etag;
       std::string m_location;
-      CT_t m_contentType;
-      CE_t m_contentEncoding;
+      std::string m_contentTypeStr;
+      WS_CTYPE m_contentType;
+      WS_CENCODING m_contentEncoding;
       bool m_contentChunked;
       size_t m_contentLength;
       size_t m_consumed;

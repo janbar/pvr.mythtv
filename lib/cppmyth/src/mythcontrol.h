@@ -108,9 +108,9 @@ namespace Myth
      * @param hostname
      * @return SettingPtr
      */
-    SettingPtr GetSetting(const std::string& key, const std::string& hostname)
+    SettingPtr GetHostSetting(const std::string& key, const std::string& hostname)
     {
-      return m_wsapi.GetSetting(key, hostname);
+      return m_wsapi.GetHostSetting(key, hostname);
     }
 
     /**
@@ -129,9 +129,9 @@ namespace Myth
      * @param hostname
      * @return SettingMapPtr
      */
-    SettingMapPtr GetSettings(const std::string& hostname)
+    SettingMapPtr GetHostSettings(const std::string& hostname)
     {
-      return m_wsapi.GetSettings(hostname);
+      return m_wsapi.GetHostSettings(hostname);
     }
 
     /**

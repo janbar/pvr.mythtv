@@ -60,7 +60,7 @@ void SSLSessionFactory::Destroy()
 #include <openssl/x509_vfy.h>
 
 /* Cipher suites, https://www.openssl.org/docs/apps/ciphers.html */
-const char* const PREFERRED_CIPHERS = "HIGH:!aNULL:!kRSA:!SRP:!PSK:!CAMELLIA:!RC4:!MD5:!DSS";
+const char* const PREFERRED_CIPHERS = "HIGH:!aNULL:!PSK:!SRP:!MD5:!RC4:!CAMELLIA:!DSS";
 
 SSLSessionFactory::SSLSessionFactory()
 : m_client_ctx(nullptr)
@@ -139,8 +139,11 @@ SecureSocket* SSLSessionFactory::NewClientSocket()
 
 SSLServerContext::~SSLServerContext()
 {
-  DBG(DBG_DEBUG, "%s: Free SSL server context (%p)\n", __FUNCTION__, m_server_ctx);
-  SSL_CTX_free(static_cast<SSL_CTX*>(m_server_ctx));
+  if (m_server_ctx)
+  {
+    DBG(DBG_DEBUG, "%s: Free SSL server context (%p)\n", __FUNCTION__, m_server_ctx);
+    SSL_CTX_free(static_cast<SSL_CTX*>(m_server_ctx));
+  }
 }
 
 bool SSLServerContext::InitContext(const std::string& certfile, const std::string& pkeyfile)
@@ -162,15 +165,11 @@ bool SSLServerContext::InitContext(const std::string& certfile, const std::strin
 
   SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, 0);
 
-  /* Remove the most egregious. Because SSLv2 and SSLv3 have been removed,
-   * a TLSv1.0 handshake is used. The client accepts TLSv1.0 and above.
-   * An added benefit of TLS 1.0 and above are TLS extensions like Server
-   * Name Indicatior (SNI).
-   */
+  /* Remove the most egregious */
   const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
   (void)SSL_CTX_set_options(ctx, flags);
 
-  if (SSL_CTX_set_cipher_list(ctx, PREFERRED_CIPHERS) != 1)
+  if (SSL_CTX_set_cipher_list(ctx, "ALL:!EXPORT:!LOW:!aNULL:!eNULL:!SSLv2") != 1)
     DBG(DBG_ERROR, "%s: Set cipher list failed\n", __FUNCTION__);
 
   /* The SSL trace callback is only used for verbose logging */
