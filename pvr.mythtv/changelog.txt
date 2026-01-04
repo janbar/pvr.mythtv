@@ -1,5 +1,5 @@
-v22.2.9
-- Sync upstream lib cppmyth 2.19.0
+v22.2.10
+- Sync upstream lib cppmyth 2.19.1
 
 v22.2.8
 - Sync upstream lib cppmyth 2.18.5
