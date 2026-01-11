@@ -412,23 +412,24 @@ void TcpSocket::Disconnect()
 {
   if (IsValid())
   {
-    char buf[256];
-    struct timeval tv;
-    fd_set fds;
-    int r = 0;
-
-    shutdown(m_socket, SHUT_RDWR);
-
-    tv.tv_sec = 5;
-    tv.tv_usec = 0;
-    do
+    if (shutdown(m_socket, SHUT_WR) == 0)
     {
+      struct timeval tv;
+      fd_set fds;
+      tv.tv_sec = 3;
+      tv.tv_usec = 0;
       FD_ZERO(&fds);
       FD_SET(m_socket, &fds);
-      r = select(m_socket + 1, &fds, nullptr, nullptr, &tv);
-      if (r > 0)
-        r = recv(m_socket, buf, sizeof(buf), 0);
-    } while (r > 0);
+      for (int i = 0; i < 2; ++i)
+      {
+        if (select(m_socket + 1, &fds, nullptr, nullptr, &tv) <= 0)
+          break;
+        char buf[256];
+        if (recv(m_socket, buf, sizeof(buf), 0) == 0)
+          break;
+      }
+      shutdown(m_socket, SHUT_RD);
+    }
 
     closesocket(m_socket);
     m_socket = INVALID_SOCKET_VALUE;
