@@ -32,6 +32,11 @@
 namespace NSROOT
 {
 
+namespace OS
+{
+class Mutex;
+}
+
 class RingBufferPacket
 {
 public:
@@ -130,9 +135,8 @@ private:
   RingBuffer& operator=(const RingBuffer& other);
 
 private:
-  struct Lockable;
-  mutable Lockable * m_ringlock;
-  mutable Lockable * m_poollock;
+  mutable OS::Mutex * m_ringlock;
+  mutable OS::Mutex * m_poollock;
   const int m_capacity;           /// buffer size
   unsigned m_count;               /// total count of processed chunk
   unsigned m_unread;              /// total size of unread data in the buffer
