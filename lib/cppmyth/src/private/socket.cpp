@@ -149,14 +149,14 @@ static int __connectAddr(struct addrinfo *addr, net_socket_t *s, int rcvbuf)
 
   opt_rcvbuf = (rcvbuf < SOCKET_RCVBUF_MINSIZE ? SOCKET_RCVBUF_MINSIZE : rcvbuf);
   size = sizeof (opt_rcvbuf);
-  if (setsockopt(*s, SOL_SOCKET, SO_RCVBUF, (void *)&opt_rcvbuf, size))
+  if (setsockopt(*s, SOL_SOCKET, SO_RCVBUF, (char*)&opt_rcvbuf, size))
     DBG(DBG_WARN, "%s: could not set SO_RCVBUF from socket (%d)\n", __FUNCTION__, LASTERROR);
-  if (getsockopt(*s, SOL_SOCKET, SO_RCVBUF, (void *)&opt_rcvbuf, &size))
+  if (getsockopt(*s, SOL_SOCKET, SO_RCVBUF, (char*)&opt_rcvbuf, &size))
     DBG(DBG_WARN, "%s: could not get SO_RCVBUF from socket (%d)\n", __FUNCTION__, LASTERROR);
 
 #ifdef SO_NOSIGPIPE
   int opt_set = 1;
-  if (setsockopt(*s, SOL_SOCKET, SO_NOSIGPIPE, (void *)&opt_set, sizeof(int)))
+  if (setsockopt(*s, SOL_SOCKET, SO_NOSIGPIPE, (char*)&opt_set, sizeof(int)))
     DBG(DBG_WARN, "%s: could not set SO_NOSIGPIPE from socket (%d)\n", __FUNCTION__, LASTERROR);
 #endif
 
@@ -525,7 +525,7 @@ bool TcpServerSocket::Create(SOCKET_AF_t af)
   // The bind will succeed even an other socket is currently listening on the
   // same address. So enable the option SO_EXCLUSIVEADDRUSE will fix the issue.
   opt_set = 1;
-  if (setsockopt(m_socket, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (void *)&opt_set, sizeof(int)))
+  if (setsockopt(m_socket, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char*)&opt_set, sizeof(int)))
   {
     m_errno = LASTERROR;
     DBG(DBG_ERROR, "%s: could not set SO_EXCLUSIVEADDRUSE from socket (%d)\n", __FUNCTION__, m_errno);
@@ -535,7 +535,7 @@ bool TcpServerSocket::Create(SOCKET_AF_t af)
   // Reuse address. The bind will fail only if an other socket is currently
   // listening on the same address.
   opt_set = 1;
-  if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (void *)&opt_set, sizeof(int)))
+  if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt_set, sizeof(int)))
   {
     m_errno = LASTERROR;
     DBG(DBG_ERROR, "%s: could not set SO_REUSEADDR from socket (%d)\n", __FUNCTION__, m_errno);
@@ -639,12 +639,12 @@ TcpServerSocket::AcceptStatus TcpServerSocket::AcceptConnection(
   int opt_set;
 #ifdef SO_NOSIGPIPE
   opt_set = 1;
-  if (setsockopt(socket.m_socket, SOL_SOCKET, SO_NOSIGPIPE, (void *)&opt_set, sizeof(int)))
+  if (setsockopt(socket.m_socket, SOL_SOCKET, SO_NOSIGPIPE, (char*)&opt_set, sizeof(int)))
     DBG(DBG_WARN, "%s: could not set SO_NOSIGPIPE from socket (%d)\n", __FUNCTION__, LASTERROR);
 #endif
 #ifdef SO_KEEPALIVE
   opt_set = 1;
-  if (setsockopt(socket.m_socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&opt_set, sizeof(int)))
+  if (setsockopt(socket.m_socket, SOL_SOCKET, SO_KEEPALIVE, (char*)&opt_set, sizeof(int)))
   {
     DBG(DBG_ERROR, "%s: could not set SO_KEEPALIVE from socket (%d)\n", __FUNCTION__, LASTERROR);
     return ACCEPT_FAILURE;
