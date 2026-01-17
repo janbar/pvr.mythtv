@@ -604,7 +604,7 @@ bool TcpServerSocket::ListenConnection(int queueSize /*= SOCKET_LISTEN_QUEUE_SIZ
 
 TcpServerSocket::AcceptStatus TcpServerSocket::AcceptConnection(
         TcpSocket& socket,
-        unsigned timeout)
+        int timeout)
 {
   struct timeval tv = { timeout, 0 };
   fd_set fds;

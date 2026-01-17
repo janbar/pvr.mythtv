@@ -206,7 +206,7 @@ namespace NSROOT
      * @param timeout in seconds
      * @return AcceptStatus
      */
-    AcceptStatus AcceptConnection(TcpSocket& socket, unsigned timeout);
+    AcceptStatus AcceptConnection(TcpSocket& socket, int timeout);
 
     /**
      * @return the address string of the accepted remote

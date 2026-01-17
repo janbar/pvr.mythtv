@@ -125,7 +125,7 @@ namespace NSROOT
     static TcpServerSocket::AcceptStatus AcceptConnection(
             TcpServerSocket& listener,
             SecureSocket& socket,
-            unsigned timeout);
+            int timeout);
   private:
     SecureServerSocket() { }
     ~SecureServerSocket() { }

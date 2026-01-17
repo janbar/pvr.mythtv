@@ -405,7 +405,7 @@ const char* SecureSocket::GetSSLError()
 TcpServerSocket::AcceptStatus SecureServerSocket::AcceptConnection(
         TcpServerSocket& listener,
         SecureSocket& socket,
-        unsigned timeout)
+        int timeout)
 {
   TcpServerSocket::AcceptStatus ra = listener.AcceptConnection(socket, timeout);
   if (ra == TcpServerSocket::ACCEPT_SUCCESS)
@@ -511,7 +511,7 @@ const char* SecureSocket::GetSSLError()
 TcpServerSocket::AcceptStatus SecureServerSocket::AcceptConnection(
         TcpServerSocket& listener,
         SecureSocket& socket,
-        unsigned timeout)
+        int timeout)
 {
   (void)listener;
   (void)socket;
