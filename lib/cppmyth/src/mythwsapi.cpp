@@ -46,15 +46,25 @@ using namespace Myth;
 #define WS_ROOT_CONTENT       "/Content"
 #define WS_ROOT_DVR           "/Dvr"
 
-std::string WSAPI::encode_param(const std::string& str)
+template<class T> class autoptr
 {
-  return urlencode(str);
-}
+  T* _p;
+  explicit autoptr(const autoptr&);
+  autoptr& operator=(const autoptr&);
+public:
+  explicit autoptr(T* p) : _p(p) { }
+  ~autoptr() { if (_p) delete _p; }
+  T& operator*() { return *_p; }
+  T* operator->() { return _p; }
+  T* release() { T* p = _p; _p = nullptr; return p; }
+  void reset(T* p) { if (_p) delete _p; _p = p; }
+};
 
 WSAPI::WSAPI(const std::string& server, unsigned port, const std::string& securityPin)
 : m_mutex(new OS::Mutex)
 , m_server(server)
 , m_port(port)
+, m_ssl(false)
 , m_securityPin(securityPin)
 , m_checked(false)
 , m_version()
@@ -67,6 +77,69 @@ WSAPI::~WSAPI()
 {
   SAFE_DELETE(m_mutex);
 }
+
+WSAPI& WSAPI::WithAuthorization(const std::string& user, const std::string& password)
+{
+  m_authUser = user;
+  m_authPassword = password;
+  return *this;
+}
+
+WSAPI& WSAPI::WithSSL(bool yesno)
+{
+#if HAVE_OPENSSL
+  m_ssl = yesno;
+#else
+  DBG(DBG_ERROR, "%s: SSL support is not available\n", __FUNCTION__);
+#endif
+  return *this;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+////
+////  Query wrapper
+////
+
+WSAPI::Query::Query(WSAPI& api)
+: m_api(api)
+, m_request(nullptr)
+{
+  m_request = new WSRequest(m_api.m_server, m_api.m_port, m_api.m_ssl);
+}
+
+WSAPI::Query::~Query()
+{
+  if (m_request)
+    delete m_request;
+}
+
+WSRequest& WSAPI::Query::Request()
+{
+  return *m_request;
+}
+
+WSResponse * WSAPI::Query::Execute(int maxRedirs, bool trustedLocation, bool followAny)
+{
+  // v36: add authorization header if token is filled
+  if (!m_api.m_authToken.empty())
+    m_request->SetHeader(ws_header_to_str(WS_HEADER_Authorization), m_api.m_authToken);
+  WSResponse * response = new WSResponse(*m_request, maxRedirs, trustedLocation, followAny);
+  if (response->GetStatusCode() == 401)
+  {
+    if (m_api.LoginUser())
+    {
+      delete response;
+      m_request->SetHeader(ws_header_to_str(WS_HEADER_Authorization), m_api.m_authToken);
+      response = new WSResponse(*m_request, maxRedirs, trustedLocation, followAny);
+    }
+  }
+  return response;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+////
+////  API core
+////
 
 bool WSAPI::InitWSAPI()
 {
@@ -118,14 +191,14 @@ bool WSAPI::GetServiceVersion(WSServiceId_t id, WSServiceVersion_t& wsv)
   };
   std::string url(WSServiceRoot[id]);
   url.append("/version");
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService(url);
-  WSResponse resp(req);
-  if (resp.IsSuccessful())
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService(url, WS_METHOD_Get);
+  WSResponse * resp = qry.Execute();
+  if (resp->IsSuccessful())
   {
     // Parse content response
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (json.IsValid() && root.IsObject())
     {
@@ -151,17 +224,17 @@ bool WSAPI::CheckServerHostName2_0()
 {
   m_serverHostName.clear();
 
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Myth/GetHostName");
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Myth/GetHostName", WS_METHOD_Get);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
   // Parse content response
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (json.IsValid() && root.IsObject())
   {
@@ -184,22 +257,22 @@ bool WSAPI::CheckVersion2_0()
   m_version.version.clear();
   WSServiceVersion_t& wsv = m_serviceVersion[WS_Myth];
 
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Myth/GetConnectionInfo");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Myth/GetConnectionInfo", WS_METHOD_Get);
   if (!m_securityPin.empty())
   {
     // Skip if null or empty
-    req.SetContentParam("Pin", m_securityPin);
+    qry.Request().SetContentParam("Pin", m_securityPin);
   }
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
   // Parse content response
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (json.IsValid() && root.IsObject())
   {
@@ -242,6 +315,21 @@ std::string WSAPI::GetServerHostName()
   return m_serverHostName;
 }
 
+std::string WSAPI::GetBaseURL()
+{
+  BUILTIN_BUFFER buf;
+  std::string url;
+  url.reserve(47);
+  if (m_ssl)
+    url.append("https://");
+  else
+    url.append("http://");
+  url.append(m_server);
+  uint32_to_string(m_port, &buf);
+  url.append(":").append(buf.data);
+  return url;
+}
+
 VersionPtr WSAPI::GetVersion()
 {
   return VersionPtr(new Version(m_version));
@@ -278,23 +366,58 @@ std::string WSAPI::ResolveHostName(const std::string& hostname)
 ////  Service operations
 ////
 
+bool WSAPI::LoginUser()
+{
+  // Initialize request header
+  WSRequest req(m_server, m_port, m_ssl);
+  req.RequestAccept(WS_ACCEPT);
+  req.RequestService("/Myth/LoginUser", WS_METHOD_Post);
+  req.SetContentParam("UserName", m_authUser);
+  req.SetContentParam("Password", m_authPassword);
+  WSResponse resp(req);
+  if (!resp.IsSuccessful())
+  {
+    DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
+    return false;
+  }
+  const JSON::Document json(resp);
+  const JSON::Node& root = json.GetRoot();
+  if (!json.IsValid() || !root.IsObject())
+  {
+    DBG(DBG_ERROR, "%s: unexpected content\n", __FUNCTION__);
+    return false;
+  }
+  DBG(DBG_DEBUG, "%s: content parsed\n", __FUNCTION__);
+
+  // Object: String
+  const JSON::Node& val = root.GetObjectValue("String");
+  if (val.IsString())
+  {
+    m_authToken = val.GetStringValue();
+    if (!m_authToken.empty())
+      return true;
+    DBG(DBG_ERROR, "%s: invalid user or password\n", __FUNCTION__);
+  }
+  return false;
+}
+
 SettingPtr WSAPI::GetSetting2_0(const std::string& key, const std::string& hostname)
 {
   SettingPtr ret;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Myth/GetSetting");
-  req.SetContentParam("HostName", hostname);
-  req.SetContentParam("Key", key);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Myth/GetSetting", WS_METHOD_Get);
+  qry.Request().SetContentParam("HostName", hostname);
+  qry.Request().SetContentParam("Key", key);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -328,18 +451,18 @@ SettingPtr WSAPI::GetSetting5_0(const std::string& key, const std::string& hostn
   SettingPtr ret;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Myth/GetSetting");
-  req.SetContentParam("HostName", hostname);
-  req.SetContentParam("Key", key);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Myth/GetSetting", WS_METHOD_Get);
+  qry.Request().SetContentParam("HostName", hostname);
+  qry.Request().SetContentParam("Key", key);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -372,17 +495,17 @@ SettingMapPtr WSAPI::GetSettings2_0(const std::string& hostname)
   SettingMapPtr ret(new SettingMap);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Myth/GetSetting");
-  req.SetContentParam("HostName", hostname);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Myth/GetSetting", WS_METHOD_Get);
+  qry.Request().SetContentParam("HostName", hostname);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -418,17 +541,17 @@ SettingMapPtr WSAPI::GetSettings5_0(const std::string& hostname)
   SettingMapPtr ret(new SettingMap);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Myth/GetSettingList");
-  req.SetContentParam("HostName", hostname);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Myth/GetSettingList", WS_METHOD_Get);
+  qry.Request().SetContentParam("HostName", hostname);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -470,22 +593,22 @@ SettingMapPtr WSAPI::GetSettings(bool myhost)
 bool WSAPI::PutSetting2_0(const std::string& key, const std::string& value, bool myhost)
 {
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Myth/PutSetting", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Myth/PutSetting", WS_METHOD_Post);
   std::string hostname;
   if (myhost)
     hostname = TcpSocket::GetMyHostName();
-  req.SetContentParam("HostName", hostname);
-  req.SetContentParam("Key", key);
-  req.SetContentParam("Value", value);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("HostName", hostname);
+  qry.Request().SetContentParam("Key", key);
+  qry.Request().SetContentParam("Value", value);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -513,17 +636,17 @@ CaptureCardListPtr WSAPI::GetCaptureCardList1_4()
   const bindings_t *bindcard = MythDTO::getCaptureCardBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Capture/GetCaptureCardList");
-  req.SetContentParam("HostName", m_serverHostName.c_str());
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Capture/GetCaptureCardList", WS_METHOD_Get);
+  qry.Request().SetContentParam("HostName", m_serverHostName.c_str());
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -562,16 +685,16 @@ VideoSourceListPtr WSAPI::GetVideoSourceList1_2()
   const bindings_t *bindvsrc = MythDTO::getVideoSourceBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Channel/GetVideoSourceList");
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Channel/GetVideoSourceList", WS_METHOD_Get);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -609,28 +732,28 @@ ChannelListPtr WSAPI::GetChannelList1_2(uint32_t sourceid, bool onlyVisible)
   const bindings_t *bindchan = MythDTO::getChannelBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Channel/GetChannelInfoList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Channel/GetChannelInfoList", WS_METHOD_Get);
 
   do
   {
-    req.ClearContent();
+    qry.Request().ClearContent();
     uint32_to_string(sourceid, &buf);
-    req.SetContentParam("SourceID", buf.data);
+    qry.Request().SetContentParam("SourceID", buf.data);
     int32_to_string(req_index, &buf);
-    req.SetContentParam("StartIndex", buf.data);
+    qry.Request().SetContentParam("StartIndex", buf.data);
     int32_to_string(req_count, &buf);
-    req.SetContentParam("Count", buf.data);
+    qry.Request().SetContentParam("Count", buf.data);
 
     DBG(DBG_DEBUG, "%s: request index(%d) count(%d)\n", __FUNCTION__, req_index, req_count);
-    WSResponse resp(req);
-    if (!resp.IsSuccessful())
+    autoptr<WSResponse> resp(qry.Execute());
+    if (!resp->IsSuccessful())
     {
       DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
       break;
     }
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (!json.IsValid() || !root.IsObject())
     {
@@ -684,31 +807,31 @@ ChannelListPtr WSAPI::GetChannelList1_5(uint32_t sourceid, bool onlyVisible)
   const bindings_t *bindchan = MythDTO::getChannelBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Channel/GetChannelInfoList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Channel/GetChannelInfoList", WS_METHOD_Get);
 
   do
   {
-    req.ClearContent();
-    req.SetContentParam("Details", "true");
-    req.SetContentParam("OnlyVisible", BOOLSTR(onlyVisible));
+    qry.Request().ClearContent();
+    qry.Request().SetContentParam("Details", "true");
+    qry.Request().SetContentParam("OnlyVisible", BOOLSTR(onlyVisible));
     uint32_to_string(sourceid, &buf);
-    req.SetContentParam("SourceID", buf.data);
+    qry.Request().SetContentParam("SourceID", buf.data);
     // W.A. for bug tracked by ticket 12461
     //int32_to_string(req_index, &buf);
-    //req.SetContentParam("StartIndex", buf.data);
+    //qry.Request().SetContentParam("StartIndex", buf.data);
     //int32_to_string(req_count, &buf);
-    //req.SetContentParam("Count", buf.data);
+    //qry.Request().SetContentParam("Count", buf.data);
 
     //DBG(DBG_DEBUG, "%s: request index(%d) count(%d)\n", __FUNCTION__, req_index, req_count);
-    WSResponse resp(req);
-    if (!resp.IsSuccessful())
+    autoptr<WSResponse> resp(qry.Execute());
+    if (!resp->IsSuccessful())
     {
       DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
       break;
     }
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (!json.IsValid() || !root.IsObject())
     {
@@ -761,19 +884,19 @@ ChannelPtr WSAPI::GetChannel1_2(uint32_t chanid)
   const bindings_t *bindchan = MythDTO::getChannelBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Channel/GetChannelInfo");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Channel/GetChannelInfo", WS_METHOD_Get);
   uint32_to_string(chanid, &buf);
-  req.SetContentParam("ChanID", buf.data);
+  qry.Request().SetContentParam("ChanID", buf.data);
 
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -809,24 +932,24 @@ std::map<uint32_t, ProgramMapPtr> WSAPI::GetProgramGuide1_0(time_t starttime, ti
   const bindings_t *bindprog = MythDTO::getProgramBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Guide/GetProgramGuide");
-  req.SetContentParam("StartChanId", "0");
-  req.SetContentParam("NumChannels", "0");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Guide/GetProgramGuide", WS_METHOD_Get);
+  qry.Request().SetContentParam("StartChanId", "0");
+  qry.Request().SetContentParam("NumChannels", "0");
   time_to_iso8601utc(starttime, &buf);
-  req.SetContentParam("StartTime", buf.data);
+  qry.Request().SetContentParam("StartTime", buf.data);
   time_to_iso8601utc(endtime, &buf);
-  req.SetContentParam("EndTime", buf.data);
-  req.SetContentParam("Details", "true");
+  qry.Request().SetContentParam("EndTime", buf.data);
+  qry.Request().SetContentParam("Details", "true");
 
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -889,25 +1012,25 @@ ProgramMapPtr WSAPI::GetProgramGuide1_0(uint32_t chanid, time_t starttime, time_
   const bindings_t *bindprog = MythDTO::getProgramBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Guide/GetProgramGuide");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Guide/GetProgramGuide", WS_METHOD_Get);
   uint32_to_string(chanid, &buf);
-  req.SetContentParam("StartChanId", buf.data);
-  req.SetContentParam("NumChannels", "1");
+  qry.Request().SetContentParam("StartChanId", buf.data);
+  qry.Request().SetContentParam("NumChannels", "1");
   time_to_iso8601utc(starttime, &buf);
-  req.SetContentParam("StartTime", buf.data);
+  qry.Request().SetContentParam("StartTime", buf.data);
   time_to_iso8601utc(endtime, &buf);
-  req.SetContentParam("EndTime", buf.data);
-  req.SetContentParam("Details", "true");
+  qry.Request().SetContentParam("EndTime", buf.data);
+  qry.Request().SetContentParam("Details", "true");
 
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -976,31 +1099,31 @@ std::map<uint32_t, ProgramMapPtr> WSAPI::GetProgramGuide2_2(time_t starttime, ti
   const bindings_t *bindchan = MythDTO::getChannelBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Guide/GetProgramGuide");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Guide/GetProgramGuide", WS_METHOD_Get);
 
   do
   {
-    req.ClearContent();
+    qry.Request().ClearContent();
     uint32_to_string(req_index, &buf);
-    req.SetContentParam("StartIndex", buf.data);
+    qry.Request().SetContentParam("StartIndex", buf.data);
     uint32_to_string(req_count, &buf);
-    req.SetContentParam("Count", buf.data);
+    qry.Request().SetContentParam("Count", buf.data);
     time_to_iso8601utc(starttime, &buf);
-    req.SetContentParam("StartTime", buf.data);
+    qry.Request().SetContentParam("StartTime", buf.data);
     time_to_iso8601utc(endtime, &buf);
-    req.SetContentParam("EndTime", buf.data);
-    req.SetContentParam("Details", "true");
+    qry.Request().SetContentParam("EndTime", buf.data);
+    qry.Request().SetContentParam("Details", "true");
 
     DBG(DBG_DEBUG, "%s: request index(%d) count(%d)\n", __FUNCTION__, req_index, req_count);
-    WSResponse resp(req);
-    if (!resp.IsSuccessful())
+    autoptr<WSResponse> resp(qry.Execute());
+    if (!resp->IsSuccessful())
     {
       DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
       break;
     }
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (!json.IsValid() || !root.IsObject())
     {
@@ -1067,33 +1190,33 @@ ProgramMapPtr WSAPI::GetProgramList2_2(uint32_t chanid, time_t starttime, time_t
   const bindings_t *bindchan = MythDTO::getChannelBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Guide/GetProgramList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Guide/GetProgramList", WS_METHOD_Get);
 
   do
   {
-    req.ClearContent();
+    qry.Request().ClearContent();
     uint32_to_string(req_index, &buf);
-    req.SetContentParam("StartIndex", buf.data);
+    qry.Request().SetContentParam("StartIndex", buf.data);
     uint32_to_string(req_count, &buf);
-    req.SetContentParam("Count", buf.data);
+    qry.Request().SetContentParam("Count", buf.data);
     uint32_to_string(chanid, &buf);
-    req.SetContentParam("ChanId", buf.data);
+    qry.Request().SetContentParam("ChanId", buf.data);
     time_to_iso8601utc(starttime, &buf);
-    req.SetContentParam("StartTime", buf.data);
+    qry.Request().SetContentParam("StartTime", buf.data);
     time_to_iso8601utc(endtime, &buf);
-    req.SetContentParam("EndTime", buf.data);
-    req.SetContentParam("Details", "true");
+    qry.Request().SetContentParam("EndTime", buf.data);
+    qry.Request().SetContentParam("Details", "true");
 
     DBG(DBG_DEBUG, "%s: request index(%d) count(%d)\n", __FUNCTION__, req_index, req_count);
-    WSResponse resp(req);
-    if (!resp.IsSuccessful())
+    autoptr<WSResponse> resp(qry.Execute());
+    if (!resp->IsSuccessful())
     {
       DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
       break;
     }
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (!json.IsValid() || !root.IsObject())
     {
@@ -1156,9 +1279,9 @@ ProgramListPtr WSAPI::GetRecordedList1_5(unsigned n, bool descending)
   const bindings_t *bindartw = MythDTO::getArtworkBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetRecordedList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetRecordedList", WS_METHOD_Get);
 
   do
   {
@@ -1166,21 +1289,21 @@ ProgramListPtr WSAPI::GetRecordedList1_5(unsigned n, bool descending)
     if (n && req_count > (n - total))
       req_count = (n - total);
 
-    req.ClearContent();
+    qry.Request().ClearContent();
     uint32_to_string(req_index, &buf);
-    req.SetContentParam("StartIndex", buf.data);
+    qry.Request().SetContentParam("StartIndex", buf.data);
     uint32_to_string(req_count, &buf);
-    req.SetContentParam("Count", buf.data);
-    req.SetContentParam("Descending", BOOLSTR(descending));
+    qry.Request().SetContentParam("Count", buf.data);
+    qry.Request().SetContentParam("Descending", BOOLSTR(descending));
 
     DBG(DBG_DEBUG, "%s: request index(%d) count(%d)\n", __FUNCTION__, req_index, req_count);
-    WSResponse resp(req);
-    if (!resp.IsSuccessful())
+    autoptr<WSResponse> resp(qry.Execute());
+    if (!resp->IsSuccessful())
     {
       DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
       break;
     }
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (!json.IsValid() || !root.IsObject())
     {
@@ -1253,20 +1376,20 @@ ProgramPtr WSAPI::GetRecorded1_5(uint32_t chanid, time_t recstartts)
   const bindings_t *bindreco = MythDTO::getRecordingBindArray(proto);
   const bindings_t *bindartw = MythDTO::getArtworkBindArray(proto);
 
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetRecorded");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetRecorded", WS_METHOD_Get);
   uint32_to_string(chanid, &buf);
-  req.SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("ChanId", buf.data);
   time_to_iso8601utc(recstartts, &buf);
-  req.SetContentParam("StartTime", buf.data);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("StartTime", buf.data);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1316,18 +1439,18 @@ ProgramPtr WSAPI::GetRecorded6_0(uint32_t recordedid)
   const bindings_t *bindreco = MythDTO::getRecordingBindArray(proto);
   const bindings_t *bindartw = MythDTO::getArtworkBindArray(proto);
 
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetRecorded");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetRecorded", WS_METHOD_Get);
   uint32_to_string(recordedid, &buf);
-  req.SetContentParam("RecordedId", buf.data);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("RecordedId", buf.data);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1370,22 +1493,22 @@ bool WSAPI::DeleteRecording2_1(uint32_t chanid, time_t recstartts, bool forceDel
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/DeleteRecording", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/DeleteRecording", WS_METHOD_Post);
   uint32_to_string(chanid, &buf);
-  req.SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("ChanId", buf.data);
   time_to_iso8601utc(recstartts, &buf);
-  req.SetContentParam("StartTime", buf.data);
-  req.SetContentParam("ForceDelete", BOOLSTR(forceDelete));
-  req.SetContentParam("AllowRerecord", BOOLSTR(allowRerecord));
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("StartTime", buf.data);
+  qry.Request().SetContentParam("ForceDelete", BOOLSTR(forceDelete));
+  qry.Request().SetContentParam("AllowRerecord", BOOLSTR(allowRerecord));
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1405,20 +1528,20 @@ bool WSAPI::DeleteRecording6_0(uint32_t recordedid, bool forceDelete, bool allow
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/DeleteRecording", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/DeleteRecording", WS_METHOD_Post);
   uint32_to_string(recordedid, &buf);
-  req.SetContentParam("RecordedId", buf.data);
-  req.SetContentParam("ForceDelete", BOOLSTR(forceDelete));
-  req.SetContentParam("AllowRerecord", BOOLSTR(allowRerecord));
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("RecordedId", buf.data);
+  qry.Request().SetContentParam("ForceDelete", BOOLSTR(forceDelete));
+  qry.Request().SetContentParam("AllowRerecord", BOOLSTR(allowRerecord));
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1438,20 +1561,20 @@ bool WSAPI::UnDeleteRecording2_1(uint32_t chanid, time_t recstartts)
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/UnDeleteRecording", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/UnDeleteRecording", WS_METHOD_Post);
   uint32_to_string(chanid, &buf);
-  req.SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("ChanId", buf.data);
   time_to_iso8601utc(recstartts, &buf);
-  req.SetContentParam("StartTime", buf.data);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("StartTime", buf.data);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1471,18 +1594,18 @@ bool WSAPI::UnDeleteRecording6_0(uint32_t recordedid)
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/UnDeleteRecording", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/UnDeleteRecording", WS_METHOD_Post);
   uint32_to_string(recordedid, &buf);
-  req.SetContentParam("RecordedId", buf.data);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("RecordedId", buf.data);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1502,21 +1625,21 @@ bool WSAPI::UpdateRecordedWatchedStatus4_5(uint32_t chanid, time_t recstartts, b
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/UpdateRecordedWatchedStatus", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/UpdateRecordedWatchedStatus", WS_METHOD_Post);
   uint32_to_string(chanid, &buf);
-  req.SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("ChanId", buf.data);
   time_to_iso8601utc(recstartts, &buf);
-  req.SetContentParam("StartTime", buf.data);
-  req.SetContentParam("Watched", BOOLSTR(watched));
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("StartTime", buf.data);
+  qry.Request().SetContentParam("Watched", BOOLSTR(watched));
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1536,19 +1659,19 @@ bool WSAPI::UpdateRecordedWatchedStatus6_0(uint32_t recordedid, bool watched)
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/UpdateRecordedWatchedStatus", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/UpdateRecordedWatchedStatus", WS_METHOD_Post);
   uint32_to_string(recordedid, &buf);
-  req.SetContentParam("RecordedId", buf.data);
-  req.SetContentParam("Watched", BOOLSTR(watched));
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("RecordedId", buf.data);
+  qry.Request().SetContentParam("Watched", BOOLSTR(watched));
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1573,22 +1696,22 @@ MarkListPtr WSAPI::GetRecordedCommBreak6_1(uint32_t recordedid, int unit)
   const bindings_t *bindcut = MythDTO::getCuttingBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetRecordedCommBreak");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetRecordedCommBreak", WS_METHOD_Get);
   uint32_to_string(recordedid, &buf);
-  req.SetContentParam("RecordedId", buf.data);
+  qry.Request().SetContentParam("RecordedId", buf.data);
   if (unit == 1)
-    req.SetContentParam("OffsetType", "Position");
+    qry.Request().SetContentParam("OffsetType", "Position");
   else if (unit == 2)
-    req.SetContentParam("OffsetType", "Duration");
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+    qry.Request().SetContentParam("OffsetType", "Duration");
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1624,22 +1747,22 @@ MarkListPtr WSAPI::GetRecordedCutList6_1(uint32_t recordedid, int unit)
   const bindings_t *bindcut = MythDTO::getCuttingBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetRecordedCutList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetRecordedCutList", WS_METHOD_Get);
   uint32_to_string(recordedid, &buf);
-  req.SetContentParam("RecordedId", buf.data);
+  qry.Request().SetContentParam("RecordedId", buf.data);
   if (unit == 1)
-    req.SetContentParam("OffsetType", "Position");
+    qry.Request().SetContentParam("OffsetType", "Position");
   else if (unit == 2)
-    req.SetContentParam("OffsetType", "Duration");
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+    qry.Request().SetContentParam("OffsetType", "Duration");
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1670,24 +1793,24 @@ bool WSAPI::SetSavedBookmark6_2(uint32_t recordedid, int unit, int64_t value)
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/SetSavedBookmark", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/SetSavedBookmark", WS_METHOD_Post);
   uint32_to_string(recordedid, &buf);
-  req.SetContentParam("RecordedId", buf.data);
+  qry.Request().SetContentParam("RecordedId", buf.data);
   if (unit == 2)
-    req.SetContentParam("OffsetType", "Duration");
+    qry.Request().SetContentParam("OffsetType", "Duration");
   else
-    req.SetContentParam("OffsetType", "Position");
+    qry.Request().SetContentParam("OffsetType", "Position");
   int64_to_string(value, &buf);
-  req.SetContentParam("Offset", buf.data);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("Offset", buf.data);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1707,22 +1830,22 @@ int64_t WSAPI::GetSavedBookmark6_2(uint32_t recordedid, int unit)
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetSavedBookmark", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetSavedBookmark", WS_METHOD_Get);
   uint32_to_string(recordedid, &buf);
-  req.SetContentParam("RecordedId", buf.data);
+  qry.Request().SetContentParam("RecordedId", buf.data);
   if (unit == 2)
-    req.SetContentParam("OffsetType", "Duration");
+    qry.Request().SetContentParam("OffsetType", "Duration");
   else
-    req.SetContentParam("OffsetType", "Position");
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+    qry.Request().SetContentParam("OffsetType", "Position");
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1761,26 +1884,26 @@ RecordScheduleListPtr WSAPI::GetRecordScheduleList1_5()
   const bindings_t *bindrec = MythDTO::getRecordScheduleBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetRecordScheduleList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetRecordScheduleList", WS_METHOD_Get);
 
   do
   {
-    req.ClearContent();
+    qry.Request().ClearContent();
     int32_to_string(req_index, &buf);
-    req.SetContentParam("StartIndex", buf.data);
+    qry.Request().SetContentParam("StartIndex", buf.data);
     int32_to_string(req_count, &buf);
-    req.SetContentParam("Count", buf.data);
+    qry.Request().SetContentParam("Count", buf.data);
 
     DBG(DBG_DEBUG, "%s: request index(%d) count(%d)\n", __FUNCTION__, req_index, req_count);
-    WSResponse resp(req);
-    if (!resp.IsSuccessful())
+    autoptr<WSResponse> resp(qry.Execute());
+    if (!resp->IsSuccessful())
     {
       DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
       break;
     }
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (!json.IsValid() || !root.IsObject())
     {
@@ -1831,18 +1954,18 @@ RecordSchedulePtr WSAPI::GetRecordSchedule1_5(uint32_t recordid)
   // Get bindings for protocol version
   const bindings_t *bindrec = MythDTO::getRecordScheduleBindArray(proto);
 
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetRecordSchedule");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetRecordSchedule", WS_METHOD_Get);
   uint32_to_string(recordid, &buf);
-  req.SetContentParam("RecordId", buf.data);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("RecordId", buf.data);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1890,69 +2013,69 @@ bool WSAPI::AddRecordSchedule1_5(RecordSchedule& record)
   ProcessRecordOUT(proto, record);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/AddRecordSchedule", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/AddRecordSchedule", WS_METHOD_Post);
 
-  req.SetContentParam("Title", record.title);
-  req.SetContentParam("Subtitle", record.subtitle);
-  req.SetContentParam("Description", record.description);
-  req.SetContentParam("Category", record.category);
+  qry.Request().SetContentParam("Title", record.title);
+  qry.Request().SetContentParam("Subtitle", record.subtitle);
+  qry.Request().SetContentParam("Description", record.description);
+  qry.Request().SetContentParam("Category", record.category);
   time_to_iso8601utc(record.startTime, &buf);
-  req.SetContentParam("StartTime", buf.data);
+  qry.Request().SetContentParam("StartTime", buf.data);
   time_to_iso8601utc(record.endTime, &buf);
-  req.SetContentParam("EndTime", buf.data);
-  req.SetContentParam("SeriesId", record.seriesId);
-  req.SetContentParam("ProgramId", record.programId);
+  qry.Request().SetContentParam("EndTime", buf.data);
+  qry.Request().SetContentParam("SeriesId", record.seriesId);
+  qry.Request().SetContentParam("ProgramId", record.programId);
   uint32_to_string(record.chanId, &buf);
-  req.SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("ChanId", buf.data);
   uint32_to_string(record.parentId, &buf);
-  req.SetContentParam("ParentId", buf.data);
-  req.SetContentParam("Inactive", BOOLSTR(record.inactive));
+  qry.Request().SetContentParam("ParentId", buf.data);
+  qry.Request().SetContentParam("Inactive", BOOLSTR(record.inactive));
   uint16_to_string(record.season, &buf);
-  req.SetContentParam("Season", buf.data);
+  qry.Request().SetContentParam("Season", buf.data);
   uint16_to_string(record.episode, &buf);
-  req.SetContentParam("Episode", buf.data);
-  req.SetContentParam("Inetref", record.inetref);
-  req.SetContentParam("Type", record.type);
-  req.SetContentParam("SearchType", record.searchType);
+  qry.Request().SetContentParam("Episode", buf.data);
+  qry.Request().SetContentParam("Inetref", record.inetref);
+  qry.Request().SetContentParam("Type", record.type);
+  qry.Request().SetContentParam("SearchType", record.searchType);
   int8_to_string(record.recPriority, &buf);
-  req.SetContentParam("RecPriority", buf.data);
+  qry.Request().SetContentParam("RecPriority", buf.data);
   uint32_to_string(record.preferredInput, &buf);
-  req.SetContentParam("PreferredInput", buf.data);
+  qry.Request().SetContentParam("PreferredInput", buf.data);
   uint8_to_string(record.startOffset, &buf);
-  req.SetContentParam("StartOffset", buf.data);
+  qry.Request().SetContentParam("StartOffset", buf.data);
   uint8_to_string(record.endOffset, &buf);
-  req.SetContentParam("EndOffset", buf.data);
-  req.SetContentParam("DupMethod", record.dupMethod);
-  req.SetContentParam("DupIn", record.dupIn);
+  qry.Request().SetContentParam("EndOffset", buf.data);
+  qry.Request().SetContentParam("DupMethod", record.dupMethod);
+  qry.Request().SetContentParam("DupIn", record.dupIn);
   uint32_to_string(record.filter, &buf);
-  req.SetContentParam("Filter", buf.data);
-  req.SetContentParam("RecProfile", record.recProfile);
-  req.SetContentParam("RecGroup", record.recGroup);
-  req.SetContentParam("StorageGroup", record.storageGroup);
-  req.SetContentParam("PlayGroup", record.playGroup);
-  req.SetContentParam("AutoExpire", BOOLSTR(record.autoExpire));
+  qry.Request().SetContentParam("Filter", buf.data);
+  qry.Request().SetContentParam("RecProfile", record.recProfile);
+  qry.Request().SetContentParam("RecGroup", record.recGroup);
+  qry.Request().SetContentParam("StorageGroup", record.storageGroup);
+  qry.Request().SetContentParam("PlayGroup", record.playGroup);
+  qry.Request().SetContentParam("AutoExpire", BOOLSTR(record.autoExpire));
   uint32_to_string(record.maxEpisodes, &buf);
-  req.SetContentParam("MaxEpisodes", buf.data);
-  req.SetContentParam("MaxNewest", BOOLSTR(record.maxNewest));
-  req.SetContentParam("AutoCommflag", BOOLSTR(record.autoCommflag));
-  req.SetContentParam("AutoTranscode", BOOLSTR(record.autoTranscode));
-  req.SetContentParam("AutoMetaLookup", BOOLSTR(record.autoMetaLookup));
-  req.SetContentParam("AutoUserJob1", BOOLSTR(record.autoUserJob1));
-  req.SetContentParam("AutoUserJob2", BOOLSTR(record.autoUserJob2));
-  req.SetContentParam("AutoUserJob3", BOOLSTR(record.autoUserJob3));
-  req.SetContentParam("AutoUserJob4", BOOLSTR(record.autoUserJob4));
+  qry.Request().SetContentParam("MaxEpisodes", buf.data);
+  qry.Request().SetContentParam("MaxNewest", BOOLSTR(record.maxNewest));
+  qry.Request().SetContentParam("AutoCommflag", BOOLSTR(record.autoCommflag));
+  qry.Request().SetContentParam("AutoTranscode", BOOLSTR(record.autoTranscode));
+  qry.Request().SetContentParam("AutoMetaLookup", BOOLSTR(record.autoMetaLookup));
+  qry.Request().SetContentParam("AutoUserJob1", BOOLSTR(record.autoUserJob1));
+  qry.Request().SetContentParam("AutoUserJob2", BOOLSTR(record.autoUserJob2));
+  qry.Request().SetContentParam("AutoUserJob3", BOOLSTR(record.autoUserJob3));
+  qry.Request().SetContentParam("AutoUserJob4", BOOLSTR(record.autoUserJob4));
   uint32_to_string(record.transcoder, &buf);
-  req.SetContentParam("Transcoder", buf.data);
+  qry.Request().SetContentParam("Transcoder", buf.data);
 
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -1979,73 +2102,73 @@ bool WSAPI::AddRecordSchedule1_7(RecordSchedule& record)
   ProcessRecordOUT(proto, record);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/AddRecordSchedule", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/AddRecordSchedule", WS_METHOD_Post);
 
-  req.SetContentParam("Title", record.title);
-  req.SetContentParam("Subtitle", record.subtitle);
-  req.SetContentParam("Description", record.description);
-  req.SetContentParam("Category", record.category);
+  qry.Request().SetContentParam("Title", record.title);
+  qry.Request().SetContentParam("Subtitle", record.subtitle);
+  qry.Request().SetContentParam("Description", record.description);
+  qry.Request().SetContentParam("Category", record.category);
   time_to_iso8601utc(record.startTime, &buf);
-  req.SetContentParam("StartTime", buf.data);
+  qry.Request().SetContentParam("StartTime", buf.data);
   time_to_iso8601utc(record.endTime, &buf);
-  req.SetContentParam("EndTime", buf.data);
-  req.SetContentParam("SeriesId", record.seriesId);
-  req.SetContentParam("ProgramId", record.programId);
+  qry.Request().SetContentParam("EndTime", buf.data);
+  qry.Request().SetContentParam("SeriesId", record.seriesId);
+  qry.Request().SetContentParam("ProgramId", record.programId);
   uint32_to_string(record.chanId, &buf);
-  req.SetContentParam("ChanId", buf.data);
-  req.SetContentParam("Station", record.callSign);
+  qry.Request().SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("Station", record.callSign);
   int8_to_string(record.findDay, &buf);
-  req.SetContentParam("FindDay", buf.data);
-  req.SetContentParam("FindTime", record.findTime);
+  qry.Request().SetContentParam("FindDay", buf.data);
+  qry.Request().SetContentParam("FindTime", record.findTime);
   uint32_to_string(record.parentId, &buf);
-  req.SetContentParam("ParentId", buf.data);
-  req.SetContentParam("Inactive", BOOLSTR(record.inactive));
+  qry.Request().SetContentParam("ParentId", buf.data);
+  qry.Request().SetContentParam("Inactive", BOOLSTR(record.inactive));
   uint16_to_string(record.season, &buf);
-  req.SetContentParam("Season", buf.data);
+  qry.Request().SetContentParam("Season", buf.data);
   uint16_to_string(record.episode, &buf);
-  req.SetContentParam("Episode", buf.data);
-  req.SetContentParam("Inetref", record.inetref);
-  req.SetContentParam("Type", record.type);
-  req.SetContentParam("SearchType", record.searchType);
+  qry.Request().SetContentParam("Episode", buf.data);
+  qry.Request().SetContentParam("Inetref", record.inetref);
+  qry.Request().SetContentParam("Type", record.type);
+  qry.Request().SetContentParam("SearchType", record.searchType);
   int8_to_string(record.recPriority, &buf);
-  req.SetContentParam("RecPriority", buf.data);
+  qry.Request().SetContentParam("RecPriority", buf.data);
   uint32_to_string(record.preferredInput, &buf);
-  req.SetContentParam("PreferredInput", buf.data);
+  qry.Request().SetContentParam("PreferredInput", buf.data);
   uint8_to_string(record.startOffset, &buf);
-  req.SetContentParam("StartOffset", buf.data);
+  qry.Request().SetContentParam("StartOffset", buf.data);
   uint8_to_string(record.endOffset, &buf);
-  req.SetContentParam("EndOffset", buf.data);
-  req.SetContentParam("DupMethod", record.dupMethod);
-  req.SetContentParam("DupIn", record.dupIn);
+  qry.Request().SetContentParam("EndOffset", buf.data);
+  qry.Request().SetContentParam("DupMethod", record.dupMethod);
+  qry.Request().SetContentParam("DupIn", record.dupIn);
   uint32_to_string(record.filter, &buf);
-  req.SetContentParam("Filter", buf.data);
-  req.SetContentParam("RecProfile", record.recProfile);
-  req.SetContentParam("RecGroup", record.recGroup);
-  req.SetContentParam("StorageGroup", record.storageGroup);
-  req.SetContentParam("PlayGroup", record.playGroup);
-  req.SetContentParam("AutoExpire", BOOLSTR(record.autoExpire));
+  qry.Request().SetContentParam("Filter", buf.data);
+  qry.Request().SetContentParam("RecProfile", record.recProfile);
+  qry.Request().SetContentParam("RecGroup", record.recGroup);
+  qry.Request().SetContentParam("StorageGroup", record.storageGroup);
+  qry.Request().SetContentParam("PlayGroup", record.playGroup);
+  qry.Request().SetContentParam("AutoExpire", BOOLSTR(record.autoExpire));
   uint32_to_string(record.maxEpisodes, &buf);
-  req.SetContentParam("MaxEpisodes", buf.data);
-  req.SetContentParam("MaxNewest", BOOLSTR(record.maxNewest));
-  req.SetContentParam("AutoCommflag", BOOLSTR(record.autoCommflag));
-  req.SetContentParam("AutoTranscode", BOOLSTR(record.autoTranscode));
-  req.SetContentParam("AutoMetaLookup", BOOLSTR(record.autoMetaLookup));
-  req.SetContentParam("AutoUserJob1", BOOLSTR(record.autoUserJob1));
-  req.SetContentParam("AutoUserJob2", BOOLSTR(record.autoUserJob2));
-  req.SetContentParam("AutoUserJob3", BOOLSTR(record.autoUserJob3));
-  req.SetContentParam("AutoUserJob4", BOOLSTR(record.autoUserJob4));
+  qry.Request().SetContentParam("MaxEpisodes", buf.data);
+  qry.Request().SetContentParam("MaxNewest", BOOLSTR(record.maxNewest));
+  qry.Request().SetContentParam("AutoCommflag", BOOLSTR(record.autoCommflag));
+  qry.Request().SetContentParam("AutoTranscode", BOOLSTR(record.autoTranscode));
+  qry.Request().SetContentParam("AutoMetaLookup", BOOLSTR(record.autoMetaLookup));
+  qry.Request().SetContentParam("AutoUserJob1", BOOLSTR(record.autoUserJob1));
+  qry.Request().SetContentParam("AutoUserJob2", BOOLSTR(record.autoUserJob2));
+  qry.Request().SetContentParam("AutoUserJob3", BOOLSTR(record.autoUserJob3));
+  qry.Request().SetContentParam("AutoUserJob4", BOOLSTR(record.autoUserJob4));
   uint32_to_string(record.transcoder, &buf);
-  req.SetContentParam("Transcoder", buf.data);
+  qry.Request().SetContentParam("Transcoder", buf.data);
 
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -2071,75 +2194,75 @@ bool WSAPI::UpdateRecordSchedule1_7(RecordSchedule& record)
   ProcessRecordOUT(proto, record);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/UpdateRecordSchedule", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/UpdateRecordSchedule", WS_METHOD_Post);
 
   uint32_to_string(record.recordId, &buf);
-  req.SetContentParam("RecordId", buf.data);
-  req.SetContentParam("Title", record.title);
-  req.SetContentParam("Subtitle", record.subtitle);
-  req.SetContentParam("Description", record.description);
-  req.SetContentParam("Category", record.category);
+  qry.Request().SetContentParam("RecordId", buf.data);
+  qry.Request().SetContentParam("Title", record.title);
+  qry.Request().SetContentParam("Subtitle", record.subtitle);
+  qry.Request().SetContentParam("Description", record.description);
+  qry.Request().SetContentParam("Category", record.category);
   time_to_iso8601utc(record.startTime, &buf);
-  req.SetContentParam("StartTime", buf.data);
+  qry.Request().SetContentParam("StartTime", buf.data);
   time_to_iso8601utc(record.endTime, &buf);
-  req.SetContentParam("EndTime", buf.data);
-  req.SetContentParam("SeriesId", record.seriesId);
-  req.SetContentParam("ProgramId", record.programId);
+  qry.Request().SetContentParam("EndTime", buf.data);
+  qry.Request().SetContentParam("SeriesId", record.seriesId);
+  qry.Request().SetContentParam("ProgramId", record.programId);
   uint32_to_string(record.chanId, &buf);
-  req.SetContentParam("ChanId", buf.data);
-  req.SetContentParam("Station", record.callSign);
+  qry.Request().SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("Station", record.callSign);
   int8_to_string(record.findDay, &buf);
-  req.SetContentParam("FindDay", buf.data);
-  req.SetContentParam("FindTime", record.findTime);
+  qry.Request().SetContentParam("FindDay", buf.data);
+  qry.Request().SetContentParam("FindTime", record.findTime);
   uint32_to_string(record.parentId, &buf);
-  req.SetContentParam("ParentId", buf.data);
-  req.SetContentParam("Inactive", BOOLSTR(record.inactive));
+  qry.Request().SetContentParam("ParentId", buf.data);
+  qry.Request().SetContentParam("Inactive", BOOLSTR(record.inactive));
   uint16_to_string(record.season, &buf);
-  req.SetContentParam("Season", buf.data);
+  qry.Request().SetContentParam("Season", buf.data);
   uint16_to_string(record.episode, &buf);
-  req.SetContentParam("Episode", buf.data);
-  req.SetContentParam("Inetref", record.inetref);
-  req.SetContentParam("Type", record.type);
-  req.SetContentParam("SearchType", record.searchType);
+  qry.Request().SetContentParam("Episode", buf.data);
+  qry.Request().SetContentParam("Inetref", record.inetref);
+  qry.Request().SetContentParam("Type", record.type);
+  qry.Request().SetContentParam("SearchType", record.searchType);
   int8_to_string(record.recPriority, &buf);
-  req.SetContentParam("RecPriority", buf.data);
+  qry.Request().SetContentParam("RecPriority", buf.data);
   uint32_to_string(record.preferredInput, &buf);
-  req.SetContentParam("PreferredInput", buf.data);
+  qry.Request().SetContentParam("PreferredInput", buf.data);
   uint8_to_string(record.startOffset, &buf);
-  req.SetContentParam("StartOffset", buf.data);
+  qry.Request().SetContentParam("StartOffset", buf.data);
   uint8_to_string(record.endOffset, &buf);
-  req.SetContentParam("EndOffset", buf.data);
-  req.SetContentParam("DupMethod", record.dupMethod);
-  req.SetContentParam("DupIn", record.dupIn);
+  qry.Request().SetContentParam("EndOffset", buf.data);
+  qry.Request().SetContentParam("DupMethod", record.dupMethod);
+  qry.Request().SetContentParam("DupIn", record.dupIn);
   uint32_to_string(record.filter, &buf);
-  req.SetContentParam("Filter", buf.data);
-  req.SetContentParam("RecProfile", record.recProfile);
-  req.SetContentParam("RecGroup", record.recGroup);
-  req.SetContentParam("StorageGroup", record.storageGroup);
-  req.SetContentParam("PlayGroup", record.playGroup);
-  req.SetContentParam("AutoExpire", BOOLSTR(record.autoExpire));
+  qry.Request().SetContentParam("Filter", buf.data);
+  qry.Request().SetContentParam("RecProfile", record.recProfile);
+  qry.Request().SetContentParam("RecGroup", record.recGroup);
+  qry.Request().SetContentParam("StorageGroup", record.storageGroup);
+  qry.Request().SetContentParam("PlayGroup", record.playGroup);
+  qry.Request().SetContentParam("AutoExpire", BOOLSTR(record.autoExpire));
   uint32_to_string(record.maxEpisodes, &buf);
-  req.SetContentParam("MaxEpisodes", buf.data);
-  req.SetContentParam("MaxNewest", BOOLSTR(record.maxNewest));
-  req.SetContentParam("AutoCommflag", BOOLSTR(record.autoCommflag));
-  req.SetContentParam("AutoTranscode", BOOLSTR(record.autoTranscode));
-  req.SetContentParam("AutoMetaLookup", BOOLSTR(record.autoMetaLookup));
-  req.SetContentParam("AutoUserJob1", BOOLSTR(record.autoUserJob1));
-  req.SetContentParam("AutoUserJob2", BOOLSTR(record.autoUserJob2));
-  req.SetContentParam("AutoUserJob3", BOOLSTR(record.autoUserJob3));
-  req.SetContentParam("AutoUserJob4", BOOLSTR(record.autoUserJob4));
+  qry.Request().SetContentParam("MaxEpisodes", buf.data);
+  qry.Request().SetContentParam("MaxNewest", BOOLSTR(record.maxNewest));
+  qry.Request().SetContentParam("AutoCommflag", BOOLSTR(record.autoCommflag));
+  qry.Request().SetContentParam("AutoTranscode", BOOLSTR(record.autoTranscode));
+  qry.Request().SetContentParam("AutoMetaLookup", BOOLSTR(record.autoMetaLookup));
+  qry.Request().SetContentParam("AutoUserJob1", BOOLSTR(record.autoUserJob1));
+  qry.Request().SetContentParam("AutoUserJob2", BOOLSTR(record.autoUserJob2));
+  qry.Request().SetContentParam("AutoUserJob3", BOOLSTR(record.autoUserJob3));
+  qry.Request().SetContentParam("AutoUserJob4", BOOLSTR(record.autoUserJob4));
   uint32_to_string(record.transcoder, &buf);
-  req.SetContentParam("Transcoder", buf.data);
+  qry.Request().SetContentParam("Transcoder", buf.data);
 
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -2159,20 +2282,20 @@ bool WSAPI::DisableRecordSchedule1_5(uint32_t recordid)
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/DisableRecordSchedule", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/DisableRecordSchedule", WS_METHOD_Post);
 
   uint32_to_string(recordid, &buf);
-  req.SetContentParam("RecordId", buf.data);
+  qry.Request().SetContentParam("RecordId", buf.data);
 
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -2192,20 +2315,20 @@ bool WSAPI::EnableRecordSchedule1_5(uint32_t recordid)
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/EnableRecordSchedule", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/EnableRecordSchedule", WS_METHOD_Post);
 
   uint32_to_string(recordid, &buf);
-  req.SetContentParam("RecordId", buf.data);
+  qry.Request().SetContentParam("RecordId", buf.data);
 
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -2225,20 +2348,20 @@ bool WSAPI::RemoveRecordSchedule1_5(uint32_t recordid)
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/RemoveRecordSchedule", WS_METHOD_Post);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/RemoveRecordSchedule", WS_METHOD_Post);
 
   uint32_to_string(recordid, &buf);
-  req.SetContentParam("RecordId", buf.data);
+  qry.Request().SetContentParam("RecordId", buf.data);
 
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return false;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -2281,27 +2404,27 @@ ProgramListPtr WSAPI::GetUpcomingList2_2()
   const bindings_t *bindreco = MythDTO::getRecordingBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetUpcomingList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetUpcomingList", WS_METHOD_Get);
 
   do
   {
-    req.ClearContent();
+    qry.Request().ClearContent();
     int32_to_string(req_index, &buf);
-    req.SetContentParam("StartIndex", buf.data);
+    qry.Request().SetContentParam("StartIndex", buf.data);
     int32_to_string(req_count, &buf);
-    req.SetContentParam("Count", buf.data);
-    req.SetContentParam("ShowAll", "true");
+    qry.Request().SetContentParam("Count", buf.data);
+    qry.Request().SetContentParam("ShowAll", "true");
 
     DBG(DBG_DEBUG, "%s: request index(%d) count(%d)\n", __FUNCTION__, req_index, req_count);
-    WSResponse resp(req);
-    if (!resp.IsSuccessful())
+    autoptr<WSResponse> resp(qry.Execute());
+    if (!resp->IsSuccessful())
     {
       DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
       break;
     }
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (!json.IsValid() || !root.IsObject())
     {
@@ -2362,26 +2485,26 @@ ProgramListPtr WSAPI::GetConflictList1_5()
   const bindings_t *bindreco = MythDTO::getRecordingBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetConflictList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetConflictList", WS_METHOD_Get);
 
   do
   {
-    req.ClearContent();
+    qry.Request().ClearContent();
     int32_to_string(req_index, &buf);
-    req.SetContentParam("StartIndex", buf.data);
+    qry.Request().SetContentParam("StartIndex", buf.data);
     int32_to_string(req_count, &buf);
-    req.SetContentParam("Count", buf.data);
+    qry.Request().SetContentParam("Count", buf.data);
 
     DBG(DBG_DEBUG, "%s: request index(%d) count(%d)\n", __FUNCTION__, req_index, req_count);
-    WSResponse resp(req);
-    if (!resp.IsSuccessful())
+    autoptr<WSResponse> resp(qry.Execute());
+    if (!resp->IsSuccessful())
     {
       DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
       break;
     }
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (!json.IsValid() || !root.IsObject())
     {
@@ -2442,26 +2565,26 @@ ProgramListPtr WSAPI::GetExpiringList1_5()
   const bindings_t *bindreco = MythDTO::getRecordingBindArray(proto);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetExpiringList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetExpiringList", WS_METHOD_Get);
 
   do
   {
-    req.ClearContent();
+    qry.Request().ClearContent();
     int32_to_string(req_index, &buf);
-    req.SetContentParam("StartIndex", buf.data);
+    qry.Request().SetContentParam("StartIndex", buf.data);
     int32_to_string(req_count, &buf);
-    req.SetContentParam("Count", buf.data);
+    qry.Request().SetContentParam("Count", buf.data);
 
     DBG(DBG_DEBUG, "%s: request index(%d) count(%d)\n", __FUNCTION__, req_index, req_count);
-    WSResponse resp(req);
-    if (!resp.IsSuccessful())
+    autoptr<WSResponse> resp(qry.Execute());
+    if (!resp->IsSuccessful())
     {
       DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
       break;
     }
-    const JSON::Document json(resp);
+    const JSON::Document json(*resp);
     const JSON::Node& root = json.GetRoot();
     if (!json.IsValid() || !root.IsObject())
     {
@@ -2513,16 +2636,16 @@ StringListPtr WSAPI::GetRecGroupList1_5()
   StringListPtr ret(new StringList);
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Dvr/GetRecGroupList");
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Dvr/GetRecGroupList", WS_METHOD_Get);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {
@@ -2557,18 +2680,18 @@ WSStreamPtr WSAPI::GetFile1_32(const std::string& filename, const std::string& s
   WSStreamPtr ret;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestService("/Content/GetFile");
-  req.SetContentParam("StorageGroup", sgname);
-  req.SetContentParam("FileName", filename);
-  WSResponse *resp = new WSResponse(req, 1, false, true);
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Content/GetFile", WS_METHOD_Get);
+  qry.Request().SetContentParam("StorageGroup", sgname);
+  qry.Request().SetContentParam("FileName", filename);
+  autoptr<WSResponse> resp(qry.Execute(1, false, true));
   if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
-    delete resp;
     return ret;
   }
-  ret.reset(new WSStream(resp));
+  ret.reset(new WSStream(resp.release()));
   return ret;
 }
 
@@ -2578,28 +2701,28 @@ WSStreamPtr WSAPI::GetChannelIcon1_32(uint32_t chanid, unsigned width, unsigned 
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestService("/Guide/GetChannelIcon");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Guide/GetChannelIcon", WS_METHOD_Get);
   uint32_to_string(chanid, &buf);
-  req.SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("ChanId", buf.data);
   if (width)
   {
     uint32_to_string(width, &buf);
-    req.SetContentParam("Width", buf.data);
+    qry.Request().SetContentParam("Width", buf.data);
   }
   if (height)
   {
     uint32_to_string(height, &buf);
-    req.SetContentParam("Height", buf.data);
+    qry.Request().SetContentParam("Height", buf.data);
   }
-  WSResponse *resp = new WSResponse(req, 1, false, true);
+  autoptr<WSResponse> resp(qry.Execute(1, false, true));
   if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
-    delete resp;
     return ret;
   }
-  ret.reset(new WSStream(resp));
+  ret.reset(new WSStream(resp.release()));
   return ret;
 }
 
@@ -2607,13 +2730,8 @@ std::string WSAPI::GetChannelIconUrl1_32(uint32_t chanid, unsigned width, unsign
 {
   BUILTIN_BUFFER buf;
   std::string uri;
-  uri.reserve(95);
-  uri.append("http://").append(m_server);
-  if (m_port != 80)
-  {
-    uint32_to_string(m_port, &buf);
-    uri.append(":").append(buf.data);
-  }
+  uri.reserve(127);
+  uri.append(GetBaseURL());
   uri.append("/Guide/GetChannelIcon");
   uint32_to_string(chanid, &buf);
   uri.append("?ChanId=").append(buf.data);
@@ -2636,30 +2754,30 @@ WSStreamPtr WSAPI::GetPreviewImage1_32(uint32_t chanid, time_t recstartts, unsig
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestService("/Content/GetPreviewImage");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Content/GetPreviewImage", WS_METHOD_Get);
   uint32_to_string(chanid, &buf);
-  req.SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("ChanId", buf.data);
   time_to_iso8601utc(recstartts, &buf);
-  req.SetContentParam("StartTime", buf.data);
+  qry.Request().SetContentParam("StartTime", buf.data);
   if (width)
   {
     uint32_to_string(width, &buf);
-    req.SetContentParam("Width", buf.data);
+    qry.Request().SetContentParam("Width", buf.data);
   }
   if (height)
   {
     uint32_to_string(height, &buf);
-    req.SetContentParam("Height", buf.data);
+    qry.Request().SetContentParam("Height", buf.data);
   }
-  WSResponse *resp = new WSResponse(req, 1, false, true);
+  autoptr<WSResponse> resp(qry.Execute(1, false, true));
   if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
-    delete resp;
     return ret;
   }
-  ret.reset(new WSStream(resp));
+  ret.reset(new WSStream(resp.release()));
   return ret;
 }
 
@@ -2667,18 +2785,13 @@ std::string WSAPI::GetPreviewImageUrl1_32(uint32_t chanid, time_t recstartts, un
 {
   BUILTIN_BUFFER buf;
   std::string uri;
-  uri.reserve(95);
-  uri.append("http://").append(m_server);
-  if (m_port != 80)
-  {
-    uint32_to_string(m_port, &buf);
-    uri.append(":").append(buf.data);
-  }
+  uri.reserve(127);
+  uri.append(GetBaseURL());
   uri.append("/Content/GetPreviewImage");
   uint32_to_string(chanid, &buf);
   uri.append("?ChanId=").append(buf.data);
   time_to_iso8601utc(recstartts, &buf);
-  uri.append("&StartTime=").append(encode_param(buf.data));
+  uri.append("&StartTime=").append(urlencode(buf.data));
   if (width)
   {
     uint32_to_string(width, &buf);
@@ -2698,30 +2811,30 @@ WSStreamPtr WSAPI::GetRecordingArtwork1_32(const std::string& type, const std::s
   BUILTIN_BUFFER buf;
 
   // Initialize request header
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestService("/Content/GetRecordingArtwork");
-  req.SetContentParam("Type", type.c_str());
-  req.SetContentParam("Inetref", inetref.c_str());
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Content/GetRecordingArtwork", WS_METHOD_Get);
+  qry.Request().SetContentParam("Type", type.c_str());
+  qry.Request().SetContentParam("Inetref", inetref.c_str());
   uint16_to_string(season, &buf);
-  req.SetContentParam("Season", buf.data);
+  qry.Request().SetContentParam("Season", buf.data);
   if (width)
   {
     uint32_to_string(width, &buf);
-    req.SetContentParam("Width", buf.data);
+    qry.Request().SetContentParam("Width", buf.data);
   }
   if (height)
   {
     uint32_to_string(height, &buf);
-    req.SetContentParam("Height", buf.data);
+    qry.Request().SetContentParam("Height", buf.data);
   }
-  WSResponse *resp = new WSResponse(req, 1, false, true);
+  autoptr<WSResponse> resp(qry.Execute(1, false, true));
   if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
-    delete resp;
     return ret;
   }
-  ret.reset(new WSStream(resp));
+  ret.reset(new WSStream(resp.release()));
   return ret;
 }
 
@@ -2730,15 +2843,10 @@ std::string WSAPI::GetRecordingArtworkUrl1_32(const std::string& type, const std
   BUILTIN_BUFFER buf;
   std::string uri;
   uri.reserve(127);
-  uri.append("http://").append(m_server);
-  if (m_port != 80)
-  {
-    uint32_to_string(m_port, &buf);
-    uri.append(":").append(buf.data);
-  }
+  uri.append(GetBaseURL());
   uri.append("/Content/GetRecordingArtwork");
-  uri.append("?Type=").append(encode_param(type));
-  uri.append("&Inetref=").append(encode_param(inetref));
+  uri.append("?Type=").append(urlencode(type));
+  uri.append("&Inetref=").append(urlencode(inetref));
   uint16_to_string(season, &buf);
   uri.append("&Season=").append(buf.data);
   if (width)
@@ -2763,20 +2871,20 @@ ArtworkListPtr WSAPI::GetRecordingArtworkList1_32(uint32_t chanid, time_t recsta
   // Get bindings for protocol version
   const bindings_t *bindartw = MythDTO::getArtworkBindArray(proto);
 
-  WSRequest req = WSRequest(m_server, m_port);
-  req.RequestAccept(WS_ACCEPT);
-  req.RequestService("/Content/GetRecordingArtworkList");
+  Query qry(*this);
+  qry.Request().RequestAccept(WS_ACCEPT);
+  qry.Request().RequestService("/Content/GetRecordingArtworkList", WS_METHOD_Get);
   uint32_to_string(chanid, &buf);
-  req.SetContentParam("ChanId", buf.data);
+  qry.Request().SetContentParam("ChanId", buf.data);
   time_to_iso8601utc(recstartts, &buf);
-  req.SetContentParam("StartTime", buf.data);
-  WSResponse resp(req);
-  if (!resp.IsSuccessful())
+  qry.Request().SetContentParam("StartTime", buf.data);
+  autoptr<WSResponse> resp(qry.Execute());
+  if (!resp->IsSuccessful())
   {
     DBG(DBG_ERROR, "%s: invalid response\n", __FUNCTION__);
     return ret;
   }
-  const JSON::Document json(resp);
+  const JSON::Document json(*resp);
   const JSON::Node& root = json.GetRoot();
   if (!json.IsValid() || !root.IsObject())
   {

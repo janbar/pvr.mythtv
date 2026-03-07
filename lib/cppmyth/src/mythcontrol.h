@@ -36,6 +36,17 @@ namespace Myth
     Control(const std::string& server, unsigned protoPort, unsigned wsapiPort, const std::string& wsapiSecurityPin, bool frontend);
     ~Control();
 
+    Control& WithAuthorization(const std::string& user, const std::string& password)
+    {
+      m_wsapi.WithAuthorization(user, password);
+      return *this;
+    }
+    Control& WithSSL(bool yesno)
+    {
+      m_wsapi.WithSSL(yesno);
+      return *this;
+    }
+
     bool Open();
     void Close();
     bool IsOpen() { return m_monitor.IsOpen(); }
@@ -59,6 +70,15 @@ namespace Myth
     std::string GetServerHostName()
     {
       return m_wsapi.GetServerHostName();
+    }
+
+    /**
+     * @brief Returns the base URL of WS-API
+     * @return string
+     */
+    std::string GetBaseURL()
+    {
+      return m_wsapi.GetBaseURL();
     }
 
     /**

@@ -54,18 +54,31 @@ namespace Myth
     unsigned      ranking;
   } WSServiceVersion_t;
 
+  class WSRequest;
+  class WSResponse;
+
   class WSAPI
   {
   public:
     WSAPI(const std::string& server, unsigned port, const std::string& securityPin);
     ~WSAPI();
 
+    WSAPI& WithAuthorization(const std::string& user, const std::string& password);
+    WSAPI& WithSSL(bool yesno);
+
     unsigned CheckService();
     WSServiceVersion_t CheckService(WSServiceId_t id);
     void InvalidateService();
     std::string GetServerHostName();
+    std::string GetBaseURL();
     VersionPtr GetVersion();
     std::string ResolveHostName(const std::string& hostname);
+
+    /**
+     * @brief GET Myth/LoginUser
+     * From v36
+     */
+    bool LoginUser();
 
     /**
      * @brief GET Myth/GetSetting
@@ -512,18 +525,32 @@ namespace Myth
     OS::Mutex *m_mutex;
     std::string m_server;
     unsigned m_port;
+    bool m_ssl;
     std::string m_securityPin;
+    std::string m_authUser;
+    std::string m_authPassword;
+    std::string m_authToken;
     bool m_checked;
     Version m_version;
     std::string m_serverHostName;
     WSServiceVersion_t m_serviceVersion[WS_INVALID + 1];
     std::map<std::string, std::string> m_namedCache;
 
-    static std::string encode_param(const std::string& str);
-
     // prevent copy
     WSAPI(const WSAPI&);
     WSAPI& operator=(const WSAPI&);
+
+    class Query
+    {
+      WSAPI& m_api;
+      WSRequest * m_request;
+    public:
+      Query(WSAPI& api);
+      ~Query();
+      WSRequest& Request();
+      WSResponse * Execute(int maxRedirs, bool trustedLocation, bool followAny);
+      WSResponse * Execute() { return Execute(1, true, false); }
+    };
 
     bool InitWSAPI();
     bool GetServiceVersion(WSServiceId_t id, WSServiceVersion_t& version);
