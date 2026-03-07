@@ -14,8 +14,8 @@ endif ()
 ###############################################################################
 # set lib version here
 set (PACKAGE_VERSION_MAJOR 2)
-set (PACKAGE_VERSION_MINOR 19)
-set (PACKAGE_VERSION_PATCH 9)
+set (PACKAGE_VERSION_MINOR 20)
+set (PACKAGE_VERSION_PATCH 0)
 
 set (PACKAGE_VERSION ${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH})
 set (PACKAGE_LIB_SOVERSION ${PACKAGE_VERSION_MAJOR})
@@ -100,7 +100,19 @@ else ()
     set (HAVE_ZLIB 0)
 endif ()
 
-set (HAVE_OPENSSL 0)
+set(HAVE_OPENSSL 0)
+#if (NOT OPENSSL_FOUND)
+#  find_package(OpenSSL QUIET)
+#endif ()
+#if (OPENSSL_FOUND)
+#  include_directories (${OPENSSL_INCLUDE_DIR})
+#  set(HAVE_OPENSSL 1)
+#  message(STATUS "OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
+#  message(STATUS "OpenSSL ssl library: ${OPENSSL_SSL_LIBRARY}")
+#  message(STATUS "OpenSSL crypto library: ${OPENSSL_CRYPTO_LIBRARY}")
+#else ()
+#  set(HAVE_OPENSSL 0)
+#endif ()
 
 # Check what the inline keyword is.
 check_function_keywords ("inline")

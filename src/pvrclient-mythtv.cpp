@@ -252,7 +252,10 @@ PVR_ERROR PVRClientMythTV::GetBackendHostname(std::string& hostname)
 
 PVR_ERROR PVRClientMythTV::GetConnectionString(std::string& connection)
 {
-  connection.append("http://").append(CMythSettings::GetMythHostname()).append(":").append(Myth::IntToString(CMythSettings::GetWSApiPort()));
+  if (m_control)
+  {
+    connection.assign(m_control->GetBaseURL());
+  }
   kodi::Log(ADDON_LOG_DEBUG, "%s: %s", __FUNCTION__, connection.c_str());
   return PVR_ERROR_NO_ERROR;
 }
