@@ -46,9 +46,11 @@ int WSStream::Read(void* buffer, unsigned n)
 {
   if (m_response == nullptr)
     return 0;
-  size_t s = m_response->ReadContent((char *)buffer, n);
+  int s = m_response->ReadContent((char *)buffer, n);
+  if (s < 0)
+    return (-1);
   m_position += s;
-  return (int)s;
+  return s;
 }
 
 int64_t WSStream::GetSize() const
