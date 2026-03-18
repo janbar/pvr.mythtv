@@ -72,7 +72,9 @@ namespace JSON
   class Document
   {
   public:
-    Document(NSROOT::WSResponse& resp);
+    explicit Document(NSROOT::WSResponse& resp);
+    Document(const std::string& content);
+
     ~Document()
     {
       if (m_document)
@@ -88,7 +90,7 @@ namespace JSON
     Node GetRoot() const;
 
   private:
-    Document(const Document&);
+    explicit Document(const Document&);
     Document& operator=(const Document&);
 
     bool m_isValid;
