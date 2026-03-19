@@ -347,10 +347,12 @@ int WSResponse::_response::ReadChunk(void *buf, size_t buflen)
         m_chunkPtr = m_chunkEOR = m_chunkBuffer;
         m_chunkEnd = m_chunkBuffer + chunkSize;
       }
-      else if (WSResponse::ReadHeaderLine(m_socket, WS_CRLF, strread, &len) && len == 0)
-        return 0; // that's the end of chunks
       else
-        return (-1);
+      {
+        // read chunk trailers
+        while (WSResponse::ReadHeaderLine(m_socket, WS_CRLF, strread, &len) && len != 0);
+        return 0; // that's the end of chunks
+      }
     }
     // fill chunk buffer
     if (m_chunkPtr >= m_chunkEOR)
