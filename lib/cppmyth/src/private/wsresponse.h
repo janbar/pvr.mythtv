@@ -96,6 +96,7 @@ namespace NSROOT
       WS_CTYPE m_contentType;
       WS_CENCODING m_contentEncoding;
       bool m_contentChunked;
+      bool m_chunkNext;
       size_t m_contentLength;
       size_t m_consumed;
       char* m_chunkBuffer;      ///< The chunk data buffer
