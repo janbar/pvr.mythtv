@@ -64,11 +64,17 @@ extern int string_to_double(const char *str, double *dbl);
 #define string_to_timeout __str2timeout
 extern int string_to_timeout(const char *str, unsigned *ms);
 
+#define string_to_size __str2size
+extern int string_to_size(const char *str, int64_t *sz);
+
 #define hex_to_num __hex2num
 extern int hex_to_num(const char *str, int *num);
 
 #define char_to_hex __charhex
 extern void char_to_hex(char c, BUILTIN_BUFFER *str);
+
+#define char_to_uhex __charuhex
+extern void char_to_uhex(char c, BUILTIN_BUFFER *str);
 
 #define int64_to_string __int64str
 static CC_INLINE void int64_to_string(int64_t num, BUILTIN_BUFFER *str)
