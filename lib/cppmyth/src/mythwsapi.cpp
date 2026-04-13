@@ -30,7 +30,7 @@
 #include "private/cppdef.h"
 #include "private/builtin.h"
 #include "private/uriparser.h"
-#include "private/urlencoder.h"
+#include "private/uriencoder.h"
 
 #define BOOLSTR(a)  ((a) ? "true" : "false")
 #define FETCHSIZE   100
