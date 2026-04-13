@@ -264,25 +264,24 @@ bool BasicEventHandler::SubscribeForEvent(unsigned subid, EVENT_t event)
 {
   OS::LockGuard lock(m_mutex);
   // Only for registered subscriber
-  subscriptions_t::const_iterator it1 = m_subscriptions.find(subid);
-  if (it1 == m_subscriptions.end())
+  if (m_subscriptions.find(subid) == m_subscriptions.end())
     return false;
-  std::list<unsigned>::const_iterator it2 = m_subscriptionsByEvent[event].begin();
-  while (it2 != m_subscriptionsByEvent[event].end())
+  std::list<unsigned>& sevt = m_subscriptionsByEvent[event];
+  std::list<unsigned>::const_iterator it = sevt.begin();
+  while (it != sevt.end())
   {
-    if (*it2 == subid)
+    if (*it == subid)
       return true;
-    ++it2;
+    ++it;
   }
-  m_subscriptionsByEvent[event].push_back(subid);
+  sevt.push_back(subid);
   return true;
 }
 
 void BasicEventHandler::RevokeSubscription(unsigned subid)
 {
   OS::LockGuard lock(m_mutex);
-  subscriptions_t::iterator it;
-  it = m_subscriptions.find(subid);
+  subscriptions_t::iterator it = m_subscriptions.find(subid);
   if (it != m_subscriptions.end())
   {
     delete it->second;
@@ -310,15 +309,17 @@ void BasicEventHandler::DispatchEvent(const EventMessagePtr& msg)
 {
   OS::LockGuard lock(m_mutex);
   std::vector<std::list<unsigned>::iterator> revoked;
-  std::list<unsigned>::iterator it1 = m_subscriptionsByEvent[msg->event].begin();
-  while (it1 != m_subscriptionsByEvent[msg->event].end())
+  std::list<unsigned>& sevt = m_subscriptionsByEvent[msg->event];
+  std::list<unsigned>::iterator itsevt = sevt.begin();
+  std::list<unsigned>::iterator itsend = sevt.end();
+  while (itsevt != itsend)
   {
-    subscriptions_t::const_iterator it2 = m_subscriptions.find(*it1);
-    if (it2 != m_subscriptions.end())
-      it2->second->PostMessage(msg);
+    subscriptions_t::const_iterator itsub = m_subscriptions.find(*itsevt);
+    if (itsub != m_subscriptions.end())
+      itsub->second->PostMessage(msg);
     else
-      revoked.push_back(it1);
-    ++it1;
+      revoked.push_back(itsevt);
+    ++itsevt;
   }
   std::vector<std::list<unsigned>::iterator>::const_iterator itr;
   for (itr = revoked.begin(); itr != revoked.end(); ++itr)
