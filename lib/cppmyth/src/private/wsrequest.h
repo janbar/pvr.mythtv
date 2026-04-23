@@ -26,7 +26,6 @@
 #include "wsstatic.h"
 #include "uriparser.h"
 
-#include <cstddef>  // for size_t
 #include <string>
 #include <map>
 
