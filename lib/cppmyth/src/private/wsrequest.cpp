@@ -21,10 +21,10 @@
 
 #include "wsrequest.h"
 #include "uriencoder.h"
-#include "debug.h"
 
 #include <cstdio>
 #include <cstring> // for strlen
+#include <cstddef> // for size_t
 
 using namespace NSROOT;
 
