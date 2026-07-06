@@ -7,15 +7,15 @@ msgstr ""
 "Project-Id-Version: KODI Main\n"
 "Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: 2025-07-28 01:28+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2026-07-06 15:50+0000\n"
+"Last-Translator: Michal Várady <miko.vaji@gmail.com>\n"
 "Language-Team: Czech <https://kodi.weblate.cloud/projects/kodi-add-ons-pvr-clients/pvr-mythtv/cs_cz/>\n"
 "Language: cs_cz\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Generator: Weblate 5.12.2\n"
+"X-Generator: Weblate 2026.7\n"
 
 msgctxt "Addon Summary"
 msgid "Kodi frontend for MythTV"
@@ -23,11 +23,11 @@ msgstr "Rozhraní Kodi pro MythTV"
 
 msgctxt "Addon Description"
 msgid "MythTV frontend (up to MythTV 34). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
-msgstr "Rozhraní MythTV (do verze MythTV 34). Podporuje streamování živého vysílání a nahrávání, poslech kanálů rádia, televizní program a časovače."
+msgstr "Rozhraní MythTV (do verze MythTV 34). Podporuje streamování živé TV a nahrávek, poslech rozhlasových kanálů, EPG a časovače."
 
 msgctxt "Addon Disclaimer"
 msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."
-msgstr "Tento software není stabilní! Autoři nejsou žádným způsobem zodpovědní za neúspěšná nahrávání, chybné časovače, ztracený čas nebo jakékoliv jiné nežádoucí výsledky."
+msgstr "Autoři nenesou žádnou odpovědnost za neúspěšná nahrávání, nesprávné časovače, ztracený čas ani jakékoli jiné nežádoucí následky."
 
 msgctxt "#30000"
 msgid "MythTV Backend Hostname or IP"
@@ -51,11 +51,11 @@ msgstr "Název databáze MythTV"
 
 msgctxt "#30005"
 msgid "Include more debug information in the log file"
-msgstr "Zahrnout více ladících informací do souboru protokolu"
+msgstr "Zahrnout do souboru protokolu více ladicích informací"
 
 msgctxt "#30006"
 msgid "Enable Live TV"
-msgstr "Zapnout živé vysílání"
+msgstr "Povolit živou TV"
 
 msgctxt "#30007"
 msgid "Allow Live TV to move scheduled shows"
@@ -143,16 +143,16 @@ msgstr "Převaděč"
 
 msgctxt "#30034"
 msgid "Allow recordings to expire"
-msgstr "Umožnit aby nahrávky vypršely"
+msgstr "Povolit vypršení platnosti nahrávek"
 
 # empty strings from id 30035 to 30045
 msgctxt "#30046"
 msgid "Show damaged recordings as color"
-msgstr ""
+msgstr "Zobrazovat poškozené nahrávky barevně"
 
 msgctxt "#30047"
 msgid "Prompt to delete the watched recording"
-msgstr "Vyzvat k odstranění zhlédnutých nahrávek"
+msgstr "Dotázat se na odstranění zhlédnuté nahrávky"
 
 msgctxt "#30048"
 msgid "Show 'Original Airdate' instead of 'Recording Time'"
@@ -236,15 +236,15 @@ msgstr "Zobrazit nahrávání živého vysílání"
 
 msgctxt "#30068"
 msgid "Use bookmarks of the backend MythTV"
-msgstr ""
+msgstr "Používat záložky backendu MythTV"
 
 msgctxt "#30069"
 msgid "Show default recording group as root"
-msgstr ""
+msgstr "Zobrazit výchozí skupinu nahrávek jako kořenovou"
 
 msgctxt "#30070"
 msgid "Scene Only"
-msgstr ""
+msgstr "Pouze scéna"
 
 msgctxt "#30100"
 msgid "Protocol version: %i - Database version: %i"
@@ -272,23 +272,23 @@ msgstr "Chcete to zkusit znovu?"
 
 msgctxt "#30114"
 msgid "Connected"
-msgstr ""
+msgstr "Připojeno"
 
 msgctxt "#30300"
 msgid "Failed to connect the MythTV backend with the known protocol versions. Please check the compatibility map of the addon and upgrade your backend to a supported version."
-msgstr "Nepodařilo se spojit s backendem MythTV se známou verzí protokolu. Zkontrolujte kompatibilitu doplňku a aktualizujte váš backend na podporovanou verzi."
+msgstr "Nepodařilo se připojit k backendu MythTV pomocí známých verzí protokolu. Zkontrolujte mapu kompatibility doplňku a aktualizujte backend na podporovanou verzi."
 
 msgctxt "#30301"
 msgid "Failed to connect the API services of MythTV backend. Please check your PIN code or backend setup. The PIN code has to be configured in your backend to allow connection."
-msgstr "Nepodařilo se spojit se službami API backendu MythTV. Zkontrolujte svůj kód PIN nebo nastavení backendu. Ve vašem backendu musí být nakonfigurován kód PIN pro povolení připojení."
+msgstr "Nepodařilo se připojit ke službám API backendu MythTV. Zkontrolujte PIN nebo nastavení backendu. Aby bylo připojení povoleno, musí být v backendu nakonfigurovaný PIN."
 
 msgctxt "#30302"
 msgid "Connection to MythTV backend lost"
-msgstr "Spojení s backendem MythTV ztraceno"
+msgstr "Připojení k backendu MythTV bylo ztraceno"
 
 msgctxt "#30303"
 msgid "Connection to MythTV restored"
-msgstr "Spojení s MythTV obnoveno"
+msgstr "Připojení k MythTV bylo obnoveno"
 
 msgctxt "#30304"
 msgid "No response from MythTV backend"
@@ -308,11 +308,11 @@ msgstr "Rušení konfliktní nahrávky: %s"
 
 msgctxt "#30308"
 msgid "Stopping Live TV due to conflicting recording: %s"
-msgstr "Zastavování živého vysílání kvůli konfliktní nahrávce: %s"
+msgstr "Zastavuje se živá TV kvůli konfliktní nahrávce: %s"
 
 msgctxt "#30309"
 msgid "Not recording"
-msgstr "Nenahrávat"
+msgstr "Nenahrává se"
 
 msgctxt "#30310"
 msgid "Enabled"
@@ -336,7 +336,7 @@ msgstr "Ponechat nahrávku"
 
 msgctxt "#30421"
 msgid "Toggle display of alternative/recorded/expired"
-msgstr "Přepnout zobrazení alternativní, nahrané, se skončenou platností"
+msgstr "Přepnout zobrazení alternativních, nahraných a vypršených položek"
 
 msgctxt "#30422"
 msgid "Refresh cache for channel icons"
@@ -352,11 +352,11 @@ msgstr "Zobrazit stav plánování"
 
 msgctxt "#30425"
 msgid "Show status of recording"
-msgstr ""
+msgstr "Zobrazit stav nahrávání"
 
 msgctxt "#30426"
 msgid "Show status of broadcast"
-msgstr ""
+msgstr "Zobrazit stav vysílání"
 
 msgctxt "#30451"
 msgid "Unhandled"
@@ -368,7 +368,7 @@ msgstr "Nadcházející"
 
 msgctxt "#30453"
 msgid "Overriden"
-msgstr "Přepsaný"
+msgstr "Přepsáno"
 
 msgctxt "#30454"
 msgid "Don't record"
@@ -388,7 +388,7 @@ msgstr "Alternativní"
 
 msgctxt "#30458"
 msgid "Currently recorded"
-msgstr "Aktuálně nahrané"
+msgstr "Aktuálně nahráváno"
 
 msgctxt "#30459"
 msgid "Expired recording"
