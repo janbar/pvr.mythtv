@@ -410,6 +410,7 @@ namespace Myth
     , repeat(false)
     , programFlags(0)
     , lastModified(0)
+    , stars(0.0)
     , audioProps(0)
     , videoProps(0)
     , subProps(0)
