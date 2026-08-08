@@ -194,7 +194,7 @@ bool WSAPI::GetServiceVersion(WSServiceId_t id, WSServiceVersion_t& wsv)
   Query qry(*this);
   qry.Request().RequestAccept(WS_ACCEPT);
   qry.Request().RequestService(url, WS_METHOD_Get);
-  WSResponse * resp = qry.Execute();
+  autoptr<WSResponse> resp(qry.Execute());
   if (resp->IsSuccessful())
   {
     // Parse content response

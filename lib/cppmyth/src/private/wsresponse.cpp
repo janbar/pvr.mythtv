@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2014-2015 Jean-Luc Barriere
+ *      Copyright (C) 2014-2026 Jean-Luc Barriere
  *
  *  This library is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published
@@ -33,6 +33,7 @@
 #define RESPONSE_BUFFER_SIZE  0x400     // size of read buffer for headers
 #define RESPONSE_MAX_SIZE     0x20000   // maximum size for the entire response
 #define CHUNK_MAX_SIZE        0x20000
+#define REQUEST_BUFFER_SIZE   0x400
 
 using namespace NSROOT;
 
@@ -47,14 +48,25 @@ void WSResponse::init(const WSRequest &request, int maxRedirs, bool trustedLocat
       // handle redirection
       URIParser uri(p->Redirection());
       bool trusted = (uri.Scheme() && strncmp("https", uri.Scheme(), 5) == 0);
+      unsigned port = uri.Port();
+      if (!port)
+        port = (trusted ? 443 : 80);
+      bool samehost = (!uri.Host() || request.GetServer() == uri.Host());
+      bool sameorigin = (!uri.Host() || (samehost && request.GetPort() == port));
       if (
-          /* relative */ !uri.Host() ||
-          /* same origin */ (request.GetServer() == uri.Host() && (!trustedLocation || trusted)) ||
-          /* follow any */ (followAny && (!trustedLocation || trusted))
+          /* same origin  */ sameorigin ||
+          /* same host    */ (samehost && (!trustedLocation || trusted)) ||
+          /* follow any   */ (followAny && (!trustedLocation || trusted))
           )
       {
         DBG(DBG_DEBUG, "%s: (%d) LOCATION = %s\n", __FUNCTION__, p->GetStatusCode(), p->Redirection().c_str());
         WSRequest redir(request, uri);
+        if (!sameorigin)
+        {
+          /* clear credentials */
+          redir.ClearHeader(ws_header_to_upperstr(WS_HEADER_Authorization));
+          redir.ClearHeader("COOKIE");
+        }
         delete p;
         p = new _response(redir);
         continue;
@@ -153,7 +165,7 @@ WSResponse::_response::_response(const WSRequest &request)
   else if (m_socket->Connect(request.GetServer().c_str(), request.GetPort(), SOCKET_RCVBUF_MINSIZE))
   {
     m_socket->SetReadAttempt(6); // 60 sec to hang up
-    if (SendRequest(request) && GetResponse())
+    if (request.WriteMessage(*this) && ReadResponse())
     {
       if (m_statusCode < 200)
         DBG(DBG_WARN, "%s: status %d\n", __FUNCTION__, m_statusCode);
@@ -184,21 +196,59 @@ WSResponse::_response::~_response()
   m_socket = nullptr;
 }
 
-bool WSResponse::_response::SendRequest(const WSRequest &request)
+bool WSResponse::_response::WriteRequestStream(const char * data, unsigned len)
 {
-  std::string msg;
-
-  request.MakeMessage(msg);
-  DBG(DBG_PROTO, "%s: %s\n", __FUNCTION__, msg.c_str());
-  if (!m_socket->SendData(msg.c_str(), msg.size()))
+  if (!m_chunkBuffer)
   {
-    DBG(DBG_ERROR, "%s: failed (%d)\n", __FUNCTION__, m_socket->GetErrNo());
-    return false;
+    if (!(m_chunkBuffer = new char[RESPONSE_BUFFER_SIZE]))
+      return false;
+    m_chunkPtr = m_chunkEOR = m_chunkBuffer;
+    m_chunkEnd = m_chunkBuffer + RESPONSE_BUFFER_SIZE;
   }
-  return true;
+
+  for(;;)
+  {
+    size_t s = m_chunkEnd - m_chunkPtr;
+    if (s >= len )
+    {
+      memcpy(m_chunkPtr, data, len);
+      m_chunkPtr += len;
+      return true;
+    }
+    else
+    {
+      memcpy(m_chunkPtr, data, s);
+      data += s;
+      if (!m_socket->SendData(m_chunkBuffer, RESPONSE_BUFFER_SIZE))
+      {
+        DBG(DBG_ERROR, "%s: failed (%d)\n", __FUNCTION__, m_socket->GetErrNo());
+        delete [] m_chunkBuffer;
+        m_chunkBuffer = m_chunkPtr = m_chunkEOR = m_chunkEnd = nullptr;
+        return false;
+      }
+      m_chunkPtr = m_chunkBuffer;
+      len -= s;
+    }
+  }
 }
 
-bool WSResponse::_response::GetResponse()
+bool WSResponse::_response::FlushRequestStream()
+{
+  if (!m_chunkBuffer)
+    return false;
+  bool ret = true;
+  size_t s = m_chunkPtr - m_chunkBuffer;
+  if (s > 0 && !m_socket->SendData(m_chunkBuffer, s))
+  {
+    DBG(DBG_ERROR, "%s: failed (%d)\n", __FUNCTION__, m_socket->GetErrNo());
+    ret = false;
+  }
+  delete [] m_chunkBuffer;
+  m_chunkBuffer = m_chunkPtr = m_chunkEOR = m_chunkEnd = nullptr;
+  return ret;
+}
+
+bool WSResponse::_response::ReadResponse()
 {
   size_t len;
   size_t sum = 0;
@@ -347,7 +397,7 @@ int WSResponse::_response::ReadChunk(void *buf, size_t buflen)
       DBG(DBG_PROTO, "%s: chunked data (%s)\n", __FUNCTION__, strread.c_str());
       std::string chunkStr("0x0");
       uint32_t chunkSize;
-      if (strread.empty() || sscanf(chunkStr.append(strread.substr(0, strread.find(','))).c_str(), "%x", &chunkSize) != 1)
+      if (strread.empty() || sscanf(chunkStr.append(strread.substr(0, strread.find(';'))).c_str(), "%x", &chunkSize) != 1)
         return (-1);
       if (chunkSize > 0)
       {
