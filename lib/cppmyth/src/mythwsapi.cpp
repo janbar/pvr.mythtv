@@ -206,7 +206,7 @@ bool WSAPI::GetServiceVersion(WSServiceId_t id, WSServiceVersion_t& wsv)
       if (field.IsString())
       {
         const std::string& val = field.GetStringValue();
-        if (sscanf(val.c_str(), "%d.%d", &(wsv.major), &(wsv.minor)) == 2)
+        if (sscanf(val.c_str(), "%u.%u", &(wsv.major), &(wsv.minor)) == 2)
         {
           wsv.ranking = ((wsv.major & 0xFFFF) << 16) | (wsv.minor & 0xFFFF);
           return true;
