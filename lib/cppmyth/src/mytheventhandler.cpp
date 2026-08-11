@@ -61,7 +61,7 @@ namespace Myth
     SubscriptionHandlerThread(EventSubscriber *handle, unsigned subid);
     virtual ~SubscriptionHandlerThread();
     EventSubscriber *GetHandle() { return m_handle; }
-    bool IsRunning() { return OS::Thread::IsRunning(); }
+    bool IsRunning() { return OS::Thread::is_running(); }
     void PostMessage(const EventMessagePtr& msg);
 
   private:
@@ -73,7 +73,7 @@ namespace Myth
 
     bool Start();
     void Stop();
-    void *Process();
+    void *process();
   };
 }
 
@@ -99,21 +99,21 @@ SubscriptionHandlerThread::~SubscriptionHandlerThread()
 
 bool SubscriptionHandlerThread::Start()
 {
-  if (OS::Thread::IsRunning())
+  if (OS::Thread::is_running())
     return true;
-  return OS::Thread::StartThread();
+  return OS::Thread::start_thread();
 }
 
 void SubscriptionHandlerThread::Stop()
 {
-  if (OS::Thread::IsRunning())
+  if (OS::Thread::is_running())
   {
     DBG(DBG_DEBUG, "%s: subscription thread (%p:%u)\n", __FUNCTION__, m_handle, m_subId);
     // Set stopping. don't wait as we need to signal the thread first
-    OS::Thread::StopThread(false);
-    m_queueContent.Signal();
+    OS::Thread::stop_thread(false);
+    m_queueContent.notify_one();
     // Wait for thread to stop
-    OS::Thread::StopThread(true);
+    OS::Thread::stop_thread(true);
     DBG(DBG_DEBUG, "%s: subscription thread (%p:%u) stopped\n", __FUNCTION__, m_handle, m_subId);
   }
 }
@@ -123,25 +123,25 @@ void SubscriptionHandlerThread::PostMessage(const EventMessagePtr& msg)
   // Critical section
   OS::LockGuard lock(m_mutex);
   m_msgQueue.push_back(msg);
-  m_queueContent.Signal();
+  m_queueContent.notify_one();
 }
 
-void *SubscriptionHandlerThread::Process()
+void *SubscriptionHandlerThread::process()
 {
-  while (!IsStopped())
+  while (!is_stopped())
   {
-    while (!m_msgQueue.empty() && !IsStopped())
+    while (!m_msgQueue.empty() && !is_stopped())
     {
       // Critical section
-      m_mutex.Lock();
+      m_mutex.lock();
       EventMessagePtr msg = m_msgQueue.front();
       m_msgQueue.pop_front();
-      m_mutex.Unlock();
+      m_mutex.unlock();
       // Do work
       m_handle->HandleBackendMessage(msg);
     }
     // The tread is woken up by m_queueContent.Signal();
-    m_queueContent.Wait();
+    m_queueContent.wait();
   }
   return nullptr;
 }
@@ -180,7 +180,7 @@ namespace Myth
     subscriptions_t m_subscriptions;
 
     void DispatchEvent(const EventMessagePtr& msg);
-    virtual void* Process(void);
+    virtual void* process(void);
     void AnnounceStatus(const char *status);
     void AnnounceTimer();
     void RetryConnect();
@@ -209,17 +209,17 @@ BasicEventHandler::~BasicEventHandler()
 
 bool BasicEventHandler::Start()
 {
-  if (OS::Thread::IsRunning())
+  if (OS::Thread::is_running())
     return true;
-  return OS::Thread::StartThread();
+  return OS::Thread::start_thread();
 }
 
 void BasicEventHandler::Stop()
 {
-  if (OS::Thread::IsRunning())
+  if (OS::Thread::is_running())
   {
     DBG(DBG_DEBUG, "%s: event handler thread (%p)\n", __FUNCTION__, this);
-    OS::Thread::StopThread(true);
+    OS::Thread::stop_thread(true);
     DBG(DBG_DEBUG, "%s: event handler thread (%p) stopped\n", __FUNCTION__, this);
   }
   if (m_event->IsOpen())
@@ -234,7 +234,7 @@ void BasicEventHandler::Reset()
 
 bool BasicEventHandler::HasStarted()
 {
-  return OS::Thread::IsRunning();
+  return OS::Thread::is_running();
 }
 
 bool BasicEventHandler::IsConnected()
@@ -326,12 +326,12 @@ void BasicEventHandler::DispatchEvent(const EventMessagePtr& msg)
     m_subscriptionsByEvent[msg->event].erase(*itr);
 }
 
-void *BasicEventHandler::Process()
+void *BasicEventHandler::process()
 {
   // Try to connect
   if (m_event->Open())
     AnnounceStatus(EVENTHANDLER_CONNECTED);
-  while (!OS::Thread::IsStopped())
+  while (!OS::Thread::is_stopped())
   {
     int r;
     EventMessage *msg = nullptr;
@@ -382,7 +382,7 @@ void BasicEventHandler::AnnounceTimer()
 void BasicEventHandler::RetryConnect()
 {
   int c = 0;
-  while (!OS::Thread::IsStopped())
+  while (!OS::Thread::is_stopped())
   {
     if (--c < 0)
     {

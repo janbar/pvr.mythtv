@@ -34,11 +34,17 @@
 
 namespace NSROOT
 {
-  void DBGLevel(int l);
-  void DBGAll(void);
-  void DBGNone(void);
-  void DBG(int level, const char* fmt, ...);
-  void SetDBGMsgCallback(void (*msgcb)(int level, char*));
+
+#define DBG(lv, fmt, ...) \
+  do {if(lv<=NSROOT::_dbgLevel) NSROOT::_writeDBGMsg(lv,fmt,__VA_ARGS__);} while(0)
+
+#define DBGS(lv, str) \
+  do {if(lv<=NSROOT::_dbgLevel) NSROOT::_writeDBGMsg(lv,str);} while(0)
+
+  extern int _dbgLevel;
+
+  void _setDBGMsgCallback(void (*msgcb)(int level, char*));
+  void _writeDBGMsg(int level, const char* fmt, ...);
 }
 
 #endif	/* DEBUG_H */

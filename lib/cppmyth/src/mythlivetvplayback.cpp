@@ -120,7 +120,7 @@ bool LiveTVPlayback::Open()
       {
         usleep(TICK_USEC);
       }
-      while (!m_eventHandler.IsConnected() && timeout.TimeLeft() > 0);
+      while (!m_eventHandler.IsConnected() && timeout.time_left() > 0);
       if (!m_eventHandler.IsConnected())
         DBG(DBG_WARN, "%s: event handler is not connected in time\n", __FUNCTION__);
       else
@@ -191,11 +191,11 @@ bool LiveTVPlayback::SpawnLiveTV(const std::string& chanNum, const ChannelList& 
         lock.lock();
         if (!m_chain.switchOnCreate)
         {
-          DBG(DBG_DEBUG, "%s: tune delay (%" PRIu32 "ms)\n", __FUNCTION__, (delayMs - timeout.TimeLeft()));
+          DBG(DBG_DEBUG, "%s: tune delay (%" PRIu32 "ms)\n", __FUNCTION__, (delayMs - timeout.time_left()));
           return true;
         }
       }
-      while (timeout.TimeLeft() > 0);
+      while (timeout.time_left() > 0);
       DBG(DBG_ERROR, "%s: tune delay exceeded (%" PRIu32 "ms)\n", __FUNCTION__, delayMs);
       m_recorder->StopLiveTV();
     }
@@ -423,7 +423,7 @@ void LiveTVPlayback::HandleBackendMessage(EventMessagePtr msg)
               HandleChainUpdate();
             }
             while (m_chain.watch /* volatile */ &&
-                    timeout.TimeLeft() > 0);
+                    timeout.time_left() > 0);
           }
         }
       }
@@ -587,7 +587,7 @@ int LiveTVPlayback::_read(void* buffer, unsigned n)
             retry = true;
             break;
           }
-          if (!timeout.TimeLeft())
+          if (!timeout.time_left())
           {
             DBG(DBG_WARN, "%s: read position is ahead (%" PRIi64 ")\n", __FUNCTION__, fp);
             return 0;

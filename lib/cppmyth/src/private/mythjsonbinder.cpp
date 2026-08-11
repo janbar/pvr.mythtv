@@ -135,7 +135,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, value.c_str());
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_INT8:
@@ -146,7 +146,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &num);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_INT16:
@@ -157,7 +157,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &num);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_INT32:
@@ -168,7 +168,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &num);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_INT64:
@@ -179,7 +179,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &num);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_UINT8:
@@ -190,7 +190,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &num);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_UINT16:
@@ -201,7 +201,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &num);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_UINT32:
@@ -212,7 +212,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &num);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_DOUBLE:
@@ -223,7 +223,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &num);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_BOOLEAN:
@@ -234,7 +234,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &b);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         case IS_TIME:
@@ -247,7 +247,7 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
             bl->attr_bind[i].set(obj, &time);
           }
           else
-            Myth::DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
+            DBG(DBG_ERROR, "%s: invalid value for field \"%s\" type %d\n", __FUNCTION__, bl->attr_bind[i].field, bl->attr_bind[i].type);
           break;
         }
         default:
@@ -255,6 +255,6 @@ void JSON::BindObject(const Node& node, void *obj, const bindings_t *bl)
       }
     }
     if (err)
-      Myth::DBG(DBG_ERROR, "%s: failed (%d) field \"%s\" type %d\n", __FUNCTION__, err, bl->attr_bind[i].field, bl->attr_bind[i].type);
+      DBG(DBG_ERROR, "%s: failed (%d) field \"%s\" type %d\n", __FUNCTION__, err, bl->attr_bind[i].field, bl->attr_bind[i].type);
   }
 }

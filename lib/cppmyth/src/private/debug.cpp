@@ -25,34 +25,27 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <ctype.h>
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #define snprintf _snprintf
 #endif
 
+
+int NSROOT::_dbgLevel = DBG_NONE;
+
 typedef struct
 {
   const char* name;
-  int cur_level;
   void (*msg_callback)(int level, char* msg);
 } debug_ctx_t;
 
-static debug_ctx_t debug_ctx = {LIBTAG, DBG_NONE, nullptr};
+static debug_ctx_t debug_ctx = {LIBTAG, nullptr};
 
-/**
- * Set the debug level to be used for the subsystem
- * \param ctx the subsystem debug context to use
- * \param level the debug level for the subsystem
- * \return an integer subsystem id used for future interaction
- */
-static inline void __dbg_setlevel(debug_ctx_t* ctx, int level)
+void NSROOT::_setDBGMsgCallback(void (*msgcb)(int level, char*))
 {
-  if (ctx != nullptr)
-  {
-    ctx->cur_level = level;
-  }
+  debug_ctx.msg_callback = msgcb;
 }
+
 /**
  * Generate a debug message at a given debug level
  * \param ctx the subsystem debug context to use
@@ -78,32 +71,10 @@ static inline void __dbg(debug_ctx_t* ctx, int level, const char* fmt, va_list a
   }
 }
 
-void NSROOT::DBGLevel(int l)
+void NSROOT::_writeDBGMsg(int level, const char* fmt, ...)
 {
-  __dbg_setlevel(&debug_ctx, l);
-}
-
-void NSROOT::DBGAll()
-{
-  __dbg_setlevel(&debug_ctx, DBG_ALL);
-}
-
-void NSROOT::DBGNone()
-{
-  __dbg_setlevel(&debug_ctx, DBG_NONE);
-}
-
-void NSROOT::DBG(int level, const char* fmt, ...)
-{
-  if (level > debug_ctx.cur_level)
-    return;
   va_list ap;
   va_start(ap, fmt);
   __dbg(&debug_ctx, level, fmt, ap);
   va_end(ap);
-}
-
-void NSROOT::SetDBGMsgCallback(void (*msgcb)(int level, char*))
-{
-  debug_ctx.msg_callback = msgcb;
 }

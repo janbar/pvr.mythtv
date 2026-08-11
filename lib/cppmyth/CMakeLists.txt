@@ -13,9 +13,9 @@ endif ()
 
 ###############################################################################
 # set lib version here
-set (PACKAGE_VERSION_MAJOR 2)
-set (PACKAGE_VERSION_MINOR 20)
-set (PACKAGE_VERSION_PATCH 9)
+set (PACKAGE_VERSION_MAJOR 3)
+set (PACKAGE_VERSION_MINOR 0)
+set (PACKAGE_VERSION_PATCH 0)
 
 set (PACKAGE_VERSION ${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH})
 set (PACKAGE_LIB_SOVERSION ${PACKAGE_VERSION_MAJOR})
@@ -55,14 +55,6 @@ if (NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     message(STATUS "Using standard c++11")
   endif()
-  include (CheckLibraryExists)
-  include (CheckAtomic)
-  if (HAS_BUILTIN_SYNC_ADD_AND_FETCH)
-    add_definitions ("-DHAS_BUILTIN_SYNC_ADD_AND_FETCH")
-  endif ()
-  if (HAS_BUILTIN_SYNC_SUB_AND_FETCH)
-    add_definitions ("-DHAS_BUILTIN_SYNC_SUB_AND_FETCH")
-  endif ()
 endif ()
 
 ###############################################################################
