@@ -32,7 +32,7 @@ public:
     {
       m_c.push(entry);
       m_filled = true;
-      m_condition.Signal();
+      m_condition.notify_one();
       return true;
     }
     return false;
@@ -45,7 +45,7 @@ public:
     {
       if (timeout == 0)
         return false;
-      if (!m_condition.Wait(m_lock, m_filled, timeout))
+      if (!m_condition.wait_for(m_lock, timeout, m_filled))
         return false;
     }
     entry = m_c.front();
@@ -59,7 +59,7 @@ public:
     Myth::OS::LockGuard guard(m_lock);
     while (!empty())
       m_c.pop();
-    m_condition.Broadcast();
+    m_condition.notify_all();
   }
 
   size_t size(void)

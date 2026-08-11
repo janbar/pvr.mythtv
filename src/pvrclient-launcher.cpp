@@ -22,7 +22,7 @@ public:
   bool WaitForCompletion(unsigned timeout);
 
 protected:
-  void *Process();
+  void *process();
 
 private:
   PVRClientMythTV* m_client;
@@ -62,27 +62,27 @@ PVRClientLauncherPrivate::PVRClientLauncherPrivate(PVRClientMythTV* client)
 
 PVRClientLauncherPrivate::~PVRClientLauncherPrivate()
 {
-  StopThread(false); // Set stopping. don't wait as we need to signal the thread first
-  m_alarm.Signal();
-  StopThread(true); // Wait for thread to stop
+  stop_thread(false); // Set stopping. don't wait as we need to signal the thread first
+  m_alarm.notify_one();
+  stop_thread(true); // Wait for thread to stop
 }
 
 bool PVRClientLauncherPrivate::Start()
 {
-  return StartThread(true);
+  return start_thread(true);
 }
 
 bool PVRClientLauncherPrivate::WaitForCompletion(unsigned timeout)
 {
-  return m_alarm.Wait(timeout);
+  return m_alarm.wait_for(timeout);
 }
 
-void* PVRClientLauncherPrivate::Process()
+void* PVRClientLauncherPrivate::process()
 {
   bool notifyAddonFailure = true;
   // By default this launcher will retry for ever until the user cancel it by a dialog.
   bool retry = true;
-  while (!IsStopped() && retry)
+  while (!is_stopped() && retry)
   {
     if (m_client->Connect())
     {
@@ -131,11 +131,11 @@ void* PVRClientLauncherPrivate::Process()
     }
     else
     {
-      m_alarm.Wait(PVRCLIENT_LAUNCHER_RETRY * 1000);
+      m_alarm.wait_for(PVRCLIENT_LAUNCHER_RETRY * 1000);
     }
   }
   kodi::Log(ADDON_LOG_INFO, "Launcher stopped");
   // Signal the launcher has finished
-  m_alarm.Broadcast();
+  m_alarm.notify_all();
   return 0;
 }
