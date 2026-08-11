@@ -32,7 +32,7 @@ MythScheduleHelperNoHelper::MythScheduleHelperNoHelper(MythScheduleManager *mana
 
 MythScheduleHelperNoHelper::~MythScheduleHelperNoHelper()
 {
-  m_lock->Lock();
+  m_lock->lock();
   m_manager = NULL;
   delete m_lock;
 }

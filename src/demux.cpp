@@ -75,7 +75,7 @@ Demux::Demux(kodi::addon::CInstancePVRClient& handler, Myth::Stream *file, time_
 
     m_AVContext = new TSDemux::AVContext(this, m_av_pos, m_channel);
 
-    StartThread(true);
+    start_thread(true);
   }
   else
   {
@@ -136,7 +136,7 @@ const unsigned char* Demux::ReadAV(uint64_t pos, size_t n)
   // fill new data
   unsigned int len = (unsigned int)(m_av_buf_size - dataread);
   Myth::OS::Timeout timeout;
-  while (!IsStopped())
+  while (!is_stopped())
   {
     int ret = m_file->Read(m_av_rbe, len);
     if (ret > 0)
@@ -147,16 +147,16 @@ const unsigned char* Demux::ReadAV(uint64_t pos, size_t n)
     }
     if (dataread >= n || ret < 0)
       break;
-    if (!(timeout.IsSet()))
-      timeout.Set(READAV_TIMEOUT);
-    else if (!timeout.TimeLeft())
+    if (!(timeout.is_set()))
+      timeout.set(READAV_TIMEOUT);
+    else if (!timeout.time_left())
       break;
     usleep(100000);
   }
   return dataread >= n ? m_av_rbs : NULL;
 }
 
-void* Demux::Process()
+void* Demux::process()
 {
   if (!m_AVContext)
   {
@@ -166,7 +166,7 @@ void* Demux::Process()
 
   int ret = 0;
 
-  while (!IsStopped())
+  while (!is_stopped())
   {
     {
       Myth::OS::LockGuard guard(m_lock);
@@ -231,7 +231,7 @@ void Demux::Flush(void)
 
 void Demux::Abort()
 {
-  StopThread(true);
+  stop_thread(true);
   Flush();
   m_streams.clear();
 }
@@ -239,7 +239,7 @@ void Demux::Abort()
 DEMUX_PACKET* Demux::Read()
 {
   DEMUX_PACKET* packet(NULL);
-  if (IsStopped())
+  if (is_stopped())
     return packet;
   if (m_demuxPacketBuffer.pop(packet, 100))
     return packet;
@@ -252,7 +252,7 @@ bool Demux::SeekTime(double time, bool backwards, double* startpts)
   if (m_posmap.empty())
     return false;
 
-  StopThread(true);
+  stop_thread(true);
 
   Myth::OS::LockGuard guard(m_lock);
 
@@ -309,7 +309,7 @@ bool Demux::SeekTime(double time, bool backwards, double* startpts)
     kodi::Log(ADDON_LOG_WARNING, LOGTAG "seek aborted");
   }
 
-  StartThread(true);
+  start_thread(true);
 
   return (pos != nullptr);
 }
@@ -630,7 +630,7 @@ bool Demux::push_stream_data(DEMUX_PACKET* dxp)
   {
     bool ret = false;
     unsigned c = 0;
-    while (!IsStopped() && !(ret = m_demuxPacketBuffer.push(dxp)))
+    while (!is_stopped() && !(ret = m_demuxPacketBuffer.push(dxp)))
       usleep((++c > 10 ? 10 * FIFO_TIMEOUT_USEC : FIFO_TIMEOUT_USEC));
     if (ret)
       return true;

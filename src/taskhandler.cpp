@@ -24,7 +24,7 @@ public:
   bool Resume();
 
 protected:
-    void *Process();
+    void *process();
 
 private:
   typedef std::pair<Task*, Myth::OS::Timeout*> Scheduled;
@@ -68,7 +68,7 @@ bool TaskHandler::Resume()
 TaskHandlerPrivate::TaskHandlerPrivate()
 : Myth::OS::Thread()
 {
-  StartThread(false);
+  start_thread(false);
 }
 
 TaskHandlerPrivate::~TaskHandlerPrivate()
@@ -76,14 +76,14 @@ TaskHandlerPrivate::~TaskHandlerPrivate()
   Clear();
   Suspend();
   // last chance
-  WaitThread(1000);
+  wait_thread(1000);
 }
 
 void TaskHandlerPrivate::ScheduleTask(Task *task, unsigned delayMs)
 {
   Myth::OS::LockGuard lock(m_mutex);
   m_queue.push(std::make_pair(task, new Myth::OS::Timeout(delayMs)));
-  m_queueContent.Signal();
+  m_queueContent.notify_one();
 }
 
 void TaskHandlerPrivate::Clear()
@@ -106,69 +106,69 @@ void TaskHandlerPrivate::Clear()
 
 void TaskHandlerPrivate::Suspend()
 {
-  if (IsStopped())
+  if (is_stopped())
     return;
-  StopThread(false);
-  m_queueContent.Signal();
+  stop_thread(false);
+  m_queueContent.notify_one();
 }
 
 bool TaskHandlerPrivate::Resume()
 {
-  if (!IsStopped())
+  if (!is_stopped())
     return true;
   // wait until stopped
-  if (IsRunning() && !WaitThread(5000))
+  if (is_running() && !wait_thread(5000))
     return false;
   // wait until running
-  return StartThread(true);
+  return start_thread(true);
 }
 
 
-void *TaskHandlerPrivate::Process()
+void *TaskHandlerPrivate::process()
 {
-  while (!IsStopped())
+  while (!is_stopped())
   {
     Myth::OS::Timeout later;
     unsigned left = 0;
 
-    m_mutex.Lock();
+    m_mutex.lock();
 
     // refill all delayed in queue
     for (std::vector<Scheduled>::const_iterator it = m_delayed.begin(); it != m_delayed.end(); ++it)
       m_queue.push(*it);
     m_delayed.clear();
 
-    while (!m_queue.empty() && !IsStopped())
+    while (!m_queue.empty() && !is_stopped())
     {
       Scheduled& item = m_queue.front();
       m_queue.pop();
       // delay the job else process it
-      if ((left = item.second->TimeLeft()) > 0)
+      if ((left = item.second->time_left()) > 0)
       {
         m_delayed.push_back(item);
-        m_mutex.Unlock();
-        if (!later.IsSet() || later.TimeLeft() > left)
-          later.Set(left);
+        m_mutex.unlock();
+        if (!later.is_set() || later.time_left() > left)
+          later.set(left);
       }
       else
       {
-        m_mutex.Unlock();
+        m_mutex.unlock();
         item.first->Execute();
         delete item.second;
         delete item.first;
       }
-      m_mutex.Lock();
+      m_mutex.lock();
     }
 
-    m_mutex.Unlock();
+    m_mutex.unlock();
 
-    if (IsStopped())
+    if (is_stopped())
       break;
 
-    if (!later.IsSet())
-      m_queueContent.Wait();
-    else if ((left = later.TimeLeft()) > 0)
-      m_queueContent.Wait(left);
+    if (!later.is_set())
+      m_queueContent.wait();
+    else if ((left = later.time_left()) > 0)
+      m_queueContent.wait_for(left);
   }
   return NULL;
 }

@@ -129,7 +129,7 @@ MythScheduleManager::MythScheduleManager(const std::string& server, unsigned pro
 
 MythScheduleManager::~MythScheduleManager()
 {
-  m_lock->Lock();
+  m_lock->lock();
   m_versionHelper.reset();
   SAFE_DELETE(m_recordingIndexByRuleId);
   SAFE_DELETE(m_recordings);
