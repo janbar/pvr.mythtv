@@ -22,8 +22,8 @@ msgid "Kodi frontend for MythTV"
 msgstr "MythTV Kodi 프론트엔드"
 
 msgctxt "Addon Description"
-msgid "MythTV frontend (up to MythTV 34). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
-msgstr "MythTV 프론트엔드 (up to MythTV 34). 라이브 TV 스트리밍, 녹화, 라디오 채널 청취, EPG, 예약 지원."
+msgid "MythTV frontend (up to MythTV 36). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
+msgstr "MythTV 프론트엔드 (up to MythTV 36). 라이브 TV 스트리밍, 녹화, 라디오 채널 청취, EPG, 예약 지원."
 
 msgctxt "Addon Disclaimer"
 msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."

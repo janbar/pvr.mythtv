@@ -22,8 +22,8 @@ msgid "Kodi frontend for MythTV"
 msgstr "MythTV-käyttöliittymä Kodille"
 
 msgctxt "Addon Description"
-msgid "MythTV frontend (up to MythTV 34). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
-msgstr "MythTV (enintään MythTV 34) -käyttöliittymä, joka tukee televisiolähetysten ja tallenteiden suoratoistoa, radiokanavien kuuntelua, ohjelmaopasta ja ajastuksia."
+msgid "MythTV frontend (up to MythTV 36). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
+msgstr "MythTV (enintään MythTV 36) -käyttöliittymä, joka tukee televisiolähetysten ja tallenteiden suoratoistoa, radiokanavien kuuntelua, ohjelmaopasta ja ajastuksia."
 
 msgctxt "Addon Disclaimer"
 msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."

@@ -22,8 +22,8 @@ msgid "Kodi frontend for MythTV"
 msgstr "Kodi frontend za MythTV"
 
 msgctxt "Addon Description"
-msgid "MythTV frontend (up to MythTV 34). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
-msgstr "MythTV predokraj (do MythTV 34). Podržava prijenos uživo TV programa i snimaka, slušanje radio kanala, EPG i mjerače vremena."
+msgid "MythTV frontend (up to MythTV 36). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
+msgstr "MythTV predokraj (do MythTV 36). Podržava prijenos uživo TV programa i snimaka, slušanje radio kanala, EPG i mjerače vremena."
 
 msgctxt "Addon Disclaimer"
 msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."

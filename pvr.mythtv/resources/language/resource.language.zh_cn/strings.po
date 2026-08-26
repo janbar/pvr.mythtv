@@ -22,8 +22,8 @@ msgid "Kodi frontend for MythTV"
 msgstr "Kodi 的 MythTV 前端"
 
 msgctxt "Addon Description"
-msgid "MythTV frontend (up to MythTV 34). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
-msgstr "MythTV 前端 ( MythTV 34 及之后版本) 。支持直播电视和录像节目的流媒体转发，收听广播频道，电子节目表及定时器功能。"
+msgid "MythTV frontend (up to MythTV 36). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
+msgstr "MythTV 前端 ( MythTV 36 及之后版本) 。支持直播电视和录像节目的流媒体转发，收听广播频道，电子节目表及定时器功能。"
 
 msgctxt "Addon Disclaimer"
 msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."
