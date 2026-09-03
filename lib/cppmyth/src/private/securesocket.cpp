@@ -312,7 +312,7 @@ size_t SecureSocket::ReceiveData(void* buf, size_t n)
         int hangcount = 0;
         for (;;)
         {
-          int s = TcpSocket::Listen(&m_timeout);
+          int s = TcpSocket::Listen(m_timeout);
           if (s > 0)
             break;
           else if (s == 0)
@@ -435,7 +435,7 @@ bool SecureSocket::IsCertificateValid(std::string& str)
     char buf[80];
     // X509_get_subject_name() returns the subject name of certificate x.
     // The returned value is an internal pointer which MUST NOT be freed.
-    const X509_NAME* name = X509_get_subject_name(static_cast<X509*>(m_cert));
+    auto name = X509_get_subject_name(static_cast<X509*>(m_cert));
     str.assign(X509_NAME_oneline(name, buf, sizeof(buf) - 1));
     return true;
   }

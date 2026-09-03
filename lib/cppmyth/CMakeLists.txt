@@ -14,8 +14,8 @@ endif ()
 ###############################################################################
 # set lib version here
 set (PACKAGE_VERSION_MAJOR 3)
-set (PACKAGE_VERSION_MINOR 0)
-set (PACKAGE_VERSION_PATCH 2)
+set (PACKAGE_VERSION_MINOR 1)
+set (PACKAGE_VERSION_PATCH 0)
 
 set (PACKAGE_VERSION ${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH})
 set (PACKAGE_LIB_SOVERSION ${PACKAGE_VERSION_MAJOR})

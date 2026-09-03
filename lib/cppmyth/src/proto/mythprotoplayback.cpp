@@ -30,9 +30,11 @@
 
 #ifdef __WINDOWS__
 #include <Ws2tcpip.h>
+typedef unsigned long nfds_t;
+#define poll(fds, nfds, timeout) WSAPoll(fds, nfds, timeout)
 #else
 #include <sys/socket.h> // for recv
-#include <sys/select.h> // for select
+#include <poll.h>       // for poll
 #endif /* __WINDOWS__ */
 
 using namespace Myth;
@@ -144,12 +146,12 @@ bool ProtoPlayback::TransferIsOpen75(ProtoTransfer& transfer)
 
 int ProtoPlayback::TransferRequestBlock(ProtoTransfer& transfer, void *buffer, unsigned n)
 {
-  bool request = false, data = false;
-  int r = 0, nfds = 0, fdc, fdd;
+  bool ok = true;
+  bool request = false;
+  bool data = false;
   char *p = (char*)buffer;
-  struct timeval tv;
-  fd_set fds;
   unsigned s = 0;
+  struct pollfd fds[2];
 
   int64_t filePosition = transfer.GetPosition();
   int64_t fileRequest = transfer.GetRequested();
@@ -157,12 +159,17 @@ int ProtoPlayback::TransferRequestBlock(ProtoTransfer& transfer, void *buffer, u
   if (n == 0)
     return n;
 
-  fdc = GetSocket();
-  if (INVALID_SOCKET_VALUE == (net_socket_t)fdc)
+  // read tranfer socket
+  fds[0].fd = transfer.GetSocket();
+  fds[0].events = POLLIN;
+  // read control socket
+  fds[1].fd = GetSocket();
+  fds[1].events = POLLIN;
+  if (INVALID_SOCKET_VALUE == (net_socket_t)fds[0].fd)
     return -1;
-  fdd = transfer.GetSocket();
-  if (INVALID_SOCKET_VALUE == (net_socket_t)fdd)
+  if (INVALID_SOCKET_VALUE == (net_socket_t)fds[1].fd)
     return -1;
+
   // Max size is RCVBUF size
   if (n > PROTO_TRANSFER_RCVBUF)
     n = PROTO_TRANSFER_RCVBUF;
@@ -170,89 +177,119 @@ int ProtoPlayback::TransferRequestBlock(ProtoTransfer& transfer, void *buffer, u
   {
     // Begin critical section
     m_latch->lock();
-    bool ok = TransferRequestBlock75(transfer, n);
-    if (!ok)
-    {
-      m_latch->unlock();
-      goto err;
-    }
     request = true;
+    ok = TransferRequestBlock75(transfer, n);
   }
 
-  do
+  // While request is not completed the latch remains locked, therefore
+  // the loop must not break while the flags ok and request are true
+  while (ok && (request || data || s == 0))
   {
-    FD_ZERO(&fds);
-    if (request)
-    {
-      FD_SET((net_socket_t)fdc, &fds);
-      if (nfds < fdc)
-        nfds = fdc;
-    }
-    FD_SET((net_socket_t)fdd, &fds);
-    if (nfds < fdd)
-      nfds = fdd;
+    int nfds;
+    int tv;
 
+    // if a request is sent, then listen the control socket too
+    if (request)
+      nfds = 2;
+    else
+      nfds = 1;
+
+    // Read directly to get all queued packets without waiting,
+    // else wait for read incoming packet
     if (data)
+      tv = 0;
+    else
+      tv = 10000;
+
+    int r = poll(fds, nfds, tv);
+    if (r < 0)
     {
-      // Read directly to get all queued packets
-      tv.tv_sec = 0;
-      tv.tv_usec = 0;
+      DBG(DBG_ERROR, "%s: poll error\n", __FUNCTION__);
+      ok = false;
+    }
+    else if (r == 0)
+    {
+      if (data)
+      {
+        // Clear the flag data, so now it will break, or continue with
+        // timeout while the request is not completed
+        data = false;
+      }
+      else
+      {
+        // Timeout expired
+        DBG(DBG_ERROR, "%s: poll timeout\n", __FUNCTION__);
+        ok = false;
+      }
     }
     else
     {
-      // Wait and read for new packet
-      tv.tv_sec = 10;
-      tv.tv_usec = 0;
-    }
+      // Clear flag data for this new attempt
+      data = false;
 
-    r = select (nfds + 1, &fds, NULL, NULL, &tv);
-    if (r < 0)
-    {
-      DBG(DBG_ERROR, "%s: select error (%d)\n", __FUNCTION__, r);
-      goto err;
-    }
-    if (r == 0 && !data)
-    {
-      DBG(DBG_ERROR, "%s: select timeout\n", __FUNCTION__);
-      goto err;
-    }
-    // Check for data
-    data = false;
-    if (FD_ISSET((net_socket_t)fdd, &fds))
-    {
-      r = recv((net_socket_t)fdd, p, (size_t)(n - s), 0);
-      if (r < 0)
+      // Check for data
+      if ((fds[0].revents & (POLLHUP | POLLERR |POLLNVAL)))
       {
-        DBG(DBG_ERROR, "%s: recv data error (%d)\n", __FUNCTION__, r);
-        goto err;
+        DBG(DBG_ERROR, "%s: transfer socket error (%d)\n", __FUNCTION__, fds[0].revents);
+        ok = false;
       }
-      if (r > 0)
+      else if ((fds[0].revents & POLLIN))
       {
-        data = true;
-        s += r;
-        p += r;
-        filePosition += r;
-        transfer.SetPosition(filePosition);
+        int rr = (int) recv(fds[0].fd, p, (size_t)(n - s), 0);
+        if (rr < 0)
+        {
+          DBG(DBG_ERROR, "%s: recv data error (%d)\n", __FUNCTION__, rr);
+          ok = false;
+        }
+        else if (rr > 0)
+        {
+          s += rr;
+          p += rr;
+          filePosition += rr;
+          transfer.SetPosition(filePosition);
+          // If the buffer is full, clear the events to stop the polling
+          // Otherwise, try again immediately
+          if (s == n)
+            fds[0].events = 0;
+          else
+            data = true;
+        }
+      }
+
+      // Check for response of request
+      if (request)
+      {
+        if ((fds[1].revents & (POLLHUP | POLLERR |POLLNVAL)))
+        {
+          DBG(DBG_ERROR, "%s: control socket error (%d)\n", __FUNCTION__, fds[1].revents);
+          ok = false;
+        }
+        else if ((fds[1].revents & POLLIN))
+        {
+          int32_t rlen = TransferRequestBlockFeedback75();
+          request = false; // request is completed
+          m_latch->unlock();
+          if (rlen < 0)
+            ok = false;
+          else
+          {
+            DBG(DBG_DEBUG, "%s: receive block size (%u)\n", __FUNCTION__, (unsigned)rlen);
+            if (rlen == 0 && !data)
+              break; // no more data
+            fileRequest += rlen;
+            transfer.SetRequested(fileRequest);
+          }
+        }
       }
     }
-    // Check for response of request
-    if (request && FD_ISSET((net_socket_t)fdc, &fds))
-    {
-      int32_t rlen = TransferRequestBlockFeedback75();
-      request = false; // request is completed
-      m_latch->unlock();
-      if (rlen < 0)
-        goto err;
-      DBG(DBG_DEBUG, "%s: receive block size (%u)\n", __FUNCTION__, (unsigned)rlen);
-      if (rlen == 0 && !data)
-        break; // no more data
-      fileRequest += rlen;
-      transfer.SetRequested(fileRequest);
-    }
-  } while (request || data || !s);
-  DBG(DBG_DEBUG, "%s: data read (%u)\n", __FUNCTION__, s);
-  return (int)s;
-err:
+  }
+
+  if (ok)
+  {
+    DBG(DBG_DEBUG, "%s: data read (%u)\n", __FUNCTION__, s);
+    return (int)s;
+  }
+
   if (request)
   {
     if (RcvMessageLength())

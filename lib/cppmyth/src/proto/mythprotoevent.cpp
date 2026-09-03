@@ -128,13 +128,10 @@ SignalStatusPtr ProtoEvent::RcvSignalStatus()
   return signal;
 }
 
-int ProtoEvent::RcvBackendMessage(unsigned timeout, EventMessage **msg)
+int ProtoEvent::RcvBackendMessage(unsigned timeout_ms, EventMessage **msg)
 {
   OS::WriteLock lock(*m_latch);
-  struct timeval tv;
-  tv.tv_sec = timeout;
-  tv.tv_usec = 0;
-  int r = m_socket->Listen(&tv);
+  int r = m_socket->Listen(timeout_ms);
   if (r > 0)
   {
     std::string field;
