@@ -36,7 +36,7 @@
 #define TICK_USEC             100000  // valid range: 10000 - 999999
 #define START_TIMEOUT         2000    // millisec
 #define AHEAD_TIMEOUT         10000   // millisec
-#define BREAK_TIMEOUT         4000    // millisec
+#define BREAK_TIMEOUT         5000    // millisec
 #define BUFFER_CAPACITY       2       // 2 chunks
 
 using namespace Myth;

@@ -39,12 +39,12 @@ namespace Myth
 
     /**
      * @brief Wait for new backend message from event connection
-     * @param timeout Number of seconds
+     * @param timeout Number of milli seconds
      * @param msg Handle MythEventMessage
      * @return success: 0 = No message, 1 = New message received
      * @return failure: -(errno)
      */
-    int RcvBackendMessage(unsigned timeout, EventMessage **msg);
+    int RcvBackendMessage(unsigned timeout_ms, EventMessage **msg);
 
   private:
     bool Announce75();
