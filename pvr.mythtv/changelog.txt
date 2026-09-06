@@ -1,3 +1,8 @@
+v21.3.17
+- Sync upstream lib cppmyth 3.2.0
+- Remove the legacy rule that handled program breaks
+- Use timeout to hang up instead read attempt
+
 v21.3.15
 - Sync upstream lib cppmyth 3.1.1
 - Fix socket read failure on platform MS-Windows
