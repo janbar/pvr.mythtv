@@ -228,12 +228,7 @@ int ProtoPlayback::TransferRequestBlock(ProtoTransfer& transfer, void *buffer, u
       data = false;
 
       // Check for data
-      if ((fds[0].revents & (POLLHUP | POLLERR |POLLNVAL)))
-      {
-        DBG(DBG_ERROR, "%s: transfer socket error (%d)\n", __FUNCTION__, fds[0].revents);
-        ok = false;
-      }
-      else if ((fds[0].revents & POLLIN))
+      if ((fds[0].revents & POLLIN))
       {
         int rr = (int) recv(fds[0].fd, p, (size_t)(n - s), 0);
         if (rr < 0)
@@ -255,16 +250,16 @@ int ProtoPlayback::TransferRequestBlock(ProtoTransfer& transfer, void *buffer, u
             data = true;
         }
       }
+      else if ((fds[0].revents & (POLLHUP | POLLERR |POLLNVAL)))
+      {
+        DBG(DBG_ERROR, "%s: transfer socket error (%d)\n", __FUNCTION__, fds[0].revents);
+        ok = false;
+      }
 
       // Check for response of request
       if (request)
       {
-        if ((fds[1].revents & (POLLHUP | POLLERR |POLLNVAL)))
-        {
-          DBG(DBG_ERROR, "%s: control socket error (%d)\n", __FUNCTION__, fds[1].revents);
-          ok = false;
-        }
-        else if ((fds[1].revents & POLLIN))
+        if ((fds[1].revents & POLLIN))
         {
           int32_t rlen = TransferRequestBlockFeedback75();
           request = false; // request is completed
@@ -279,6 +274,11 @@ int ProtoPlayback::TransferRequestBlock(ProtoTransfer& transfer, void *buffer, u
             fileRequest += rlen;
             transfer.SetRequested(fileRequest);
           }
+        }
+        else if ((fds[1].revents & (POLLHUP | POLLERR |POLLNVAL)))
+        {
+          DBG(DBG_ERROR, "%s: control socket error (%d)\n", __FUNCTION__, fds[1].revents);
+          ok = false;
         }
       }
     }

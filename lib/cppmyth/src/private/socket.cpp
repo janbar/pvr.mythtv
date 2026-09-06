@@ -436,10 +436,6 @@ size_t TcpSocket::ReceiveData(void *buf, size_t n)
       {
         m_errno = LASTERROR;
       }
-      else if ((fds[0].revents & (POLLHUP | POLLERR | POLLNVAL)))
-      {
-        m_errno = ENOTCONN;
-      }
       else if ((fds[0].revents & POLLIN))
       {
         // Under threshold use buffering
@@ -476,6 +472,10 @@ size_t TcpSocket::ReceiveData(void *buf, size_t n)
             continue;
           }
         }
+      }
+      else if ((fds[0].revents & (POLLHUP | POLLERR | POLLNVAL)))
+      {
+        m_errno = ENOTCONN;
       }
       break;
     }
@@ -561,13 +561,15 @@ int TcpSocket::Listen(int timeout_ms)
       m_errno = LASTERROR;
       return -1;
     }
+    else if ((fds[0].revents & POLLIN))
+    {
+      return 1;
+    }
     else if ((fds[0].revents & (POLLHUP | POLLERR | POLLNVAL)))
     {
       m_errno = ENOTCONN;
       return -1;
     }
-    else if ((fds[0].revents & POLLIN))
-      return 1;
     else
       return 0;
   }
@@ -1061,11 +1063,6 @@ size_t UdpSocket::ReceiveData(void* buf, size_t n)
       m_errno = LASTERROR;
       DBG(DBG_ERROR, "%s: socket(%p) error (%d)\n", __FUNCTION__, &m_socket, m_errno);
     }
-    else if ((fds[0].revents & (POLLHUP | POLLERR | POLLNVAL)))
-    {
-      m_errno = ENOTSOCK;
-      DBG(DBG_ERROR, "%s: socket(%p) poll error (%d)\n", __FUNCTION__, &m_socket, fds[0].revents);
-    }
     else if ((fds[0].revents & POLLIN))
     {
       int rr = (int) recvfrom(m_socket, m_buffer, m_buflen, 0, m_from->sa(), &m_from->sa_len);
@@ -1081,6 +1078,11 @@ size_t UdpSocket::ReceiveData(void* buf, size_t n)
         memcpy(buf, m_buffer, len);
         m_bufptr += len;
       }
+    }
+    else if ((fds[0].revents & (POLLHUP | POLLERR | POLLNVAL)))
+    {
+      m_errno = ENOTSOCK;
+      DBG(DBG_ERROR, "%s: socket(%p) poll error (%d)\n", __FUNCTION__, &m_socket, fds[0].revents);
     }
     return len;
   }
@@ -1446,11 +1448,6 @@ size_t UdpServerSocket::AwaitIncoming()
       m_errno = LASTERROR;
       DBG(DBG_ERROR, "%s: socket(%p) error (%d)\n", __FUNCTION__, &m_socket, m_errno);
     }
-    else if ((fds[0].revents & (POLLHUP | POLLERR | POLLNVAL)))
-    {
-      m_errno = ENOTSOCK;
-      DBG(DBG_ERROR, "%s: socket(%p) poll error (%d)\n", __FUNCTION__, &m_socket, fds[0].revents);
-    }
     else if ((fds[0].revents & POLLIN))
     {
       int rr = (int) recvfrom(m_socket, m_buffer, m_buflen, 0, m_from->sa(), &m_from->sa_len);
@@ -1462,6 +1459,11 @@ size_t UdpServerSocket::AwaitIncoming()
         if (m_rcvlen == m_buflen)
           DBG(DBG_WARN, "%s: datagram have been truncated (%d)\n", __FUNCTION__, rr);
       }
+    }
+    else if ((fds[0].revents & (POLLHUP | POLLERR | POLLNVAL)))
+    {
+      m_errno = ENOTSOCK;
+      DBG(DBG_ERROR, "%s: socket(%p) poll error (%d)\n", __FUNCTION__, &m_socket, fds[0].revents);
     }
     return m_rcvlen;
   }
