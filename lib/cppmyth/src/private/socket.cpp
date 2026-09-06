@@ -101,7 +101,6 @@ TcpSocket::TcpSocket()
 , m_socket(INVALID_SOCKET_VALUE)
 , m_rcvbuf(SOCKET_RCVBUF_MINSIZE)
 , m_errno(0)
-, m_attempt(SOCKET_READ_ATTEMPT)
 , m_buffer(nullptr)
 , m_bufptr(nullptr)
 , m_buflen(SOCKET_BUFFER_SIZE)
@@ -417,7 +416,6 @@ size_t TcpSocket::ReceiveData(void *buf, size_t n)
     m_bufptr = m_buffer;
     m_rcvlen = 0;
 
-    int hangcount = 0;
     struct pollfd fds[1];
     fds[0].fd = m_socket;
     fds[0].events = POLLIN;
@@ -427,10 +425,8 @@ size_t TcpSocket::ReceiveData(void *buf, size_t n)
       int r = poll(fds, 1, m_timeout);
       if (r == 0)
       {
-        DBG(DBG_INFO, "%s: socket(%p) timed out (%d)\n", __FUNCTION__, &m_socket, hangcount);
+        DBG(DBG_INFO, "%s: socket(%p) timed out (%d)\n", __FUNCTION__, &m_socket, m_timeout);
         m_errno = ETIMEDOUT;
-        if (++hangcount < m_attempt)
-          continue;
       }
       else if (r < 0)
       {
@@ -805,7 +801,6 @@ TcpServerSocket::AcceptStatus TcpServerSocket::AcceptConnection(
   if (setsockopt(socket.m_socket, SOL_SOCKET, SO_SNDTIMEO, (char*)&opt_timeo, sizeof(opt_timeo)))
     DBG(DBG_WARN, "%s: could not set SO_SNDTIMEO from socket (%d)\n", __FUNCTION__, LASTERROR);
 
-  socket.SetReadAttempt(0);
   return ACCEPT_SUCCESS;
 }
 

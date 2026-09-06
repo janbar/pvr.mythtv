@@ -95,6 +95,7 @@ bool ProtoRecorder::IsTunable(const Channel& channel)
 void ProtoRecorder::DoneRecordingCallback()
 {
   OS::WriteLock lock(*m_latch);
+  /* the recording finished, so disable the flag KEEP for the next one */
   m_liveRecording = false;
   DBG(DBG_DEBUG, "%s: completed\n", __FUNCTION__);
 }

@@ -105,6 +105,7 @@ WSAPI::Query::Query(WSAPI& api)
 , m_request(nullptr)
 {
   m_request = new WSRequest(m_api.m_server, m_api.m_port, m_api.m_ssl);
+  m_request->SetTimeout(60000); // 60 sec to hang up
 }
 
 WSAPI::Query::~Query()
@@ -374,6 +375,7 @@ bool WSAPI::LoginUser()
   req.RequestService("/Myth/LoginUser", WS_METHOD_Post);
   req.SetContentParam("UserName", m_authUser);
   req.SetContentParam("Password", m_authPassword);
+  req.SetTimeout(10000); // 10 sec to hang up
   WSResponse resp(req);
   if (!resp.IsSuccessful())
   {

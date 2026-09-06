@@ -309,7 +309,6 @@ size_t SecureSocket::ReceiveData(void* buf, size_t n)
     {
       if (SSL_pending(static_cast<SSL*>(m_ssl)) == 0)
       {
-        int hangcount = 0;
         for (;;)
         {
           int s = TcpSocket::Listen(m_timeout);
@@ -317,10 +316,9 @@ size_t SecureSocket::ReceiveData(void* buf, size_t n)
             break;
           else if (s == 0)
           {
-            DBG(DBG_INFO, "%s: socket(%p) timed out (%d)\n", __FUNCTION__, &m_socket, hangcount);
+            DBG(DBG_INFO, "%s: socket(%p) timed out (%d)\n", __FUNCTION__, &m_socket, m_timeout);
             m_errno = ETIMEDOUT;
-            if (++hangcount >= m_attempt)
-              return 0;
+            return 0;
           }
           else if (m_errno != ERRNO_INTR)
             return 0;

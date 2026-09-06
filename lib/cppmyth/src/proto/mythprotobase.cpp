@@ -70,7 +70,7 @@ ProtoBase::ProtoBase(const std::string& server, unsigned port)
 , m_isOpen(false)
 , m_protoError(ERROR_NO_ERROR)
 {
-  m_socket->SetReadAttempt(6); // 60 sec to hang up
+  m_socket->SetTimeout(60000); // 60 sec to hang up
 }
 
 ProtoBase::~ProtoBase()

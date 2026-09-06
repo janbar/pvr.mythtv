@@ -31,7 +31,6 @@
 #define SOCKET_HOSTNAME_MAXSIZE       256
 #define SOCKET_RCVBUF_MINSIZE         16384
 #define SOCKET_TIMEOUT_SEC            5
-#define SOCKET_READ_ATTEMPT           3
 #define SOCKET_BUFFER_SIZE            1472
 #define SOCKET_LISTEN_QUEUE_SIZE      50
 
@@ -73,13 +72,6 @@ namespace NSROOT
      * @return the last error occuring on call
      */
     int GetErrNo() const { return m_errno; }
-
-    /**
-     * Configure the number of timed out attempt reading the socket before
-     * returning.
-     * @param n the number of attempt
-     */
-    void SetReadAttempt(int n) { m_attempt = n; }
 
     /**
      * Try to connect the socket to an address name, port.
@@ -160,7 +152,6 @@ namespace NSROOT
     net_socket_t m_socket;
     int m_rcvbuf;
     int m_errno;
-    int m_attempt;
 
   private:
     char* m_buffer;

@@ -36,7 +36,6 @@
 #define TICK_USEC             100000  // valid range: 10000 - 999999
 #define START_TIMEOUT         2000    // millisec
 #define AHEAD_TIMEOUT         10000   // millisec
-#define BREAK_TIMEOUT         5000    // millisec
 #define BUFFER_CAPACITY       2       // 2 chunks
 
 using namespace Myth;
@@ -370,10 +369,8 @@ void LiveTVPlayback::HandleBackendMessage(EventMessagePtr msg)
      * When the guide data marks the end of one show and the beginning of
      * the next, which will be recorded to a new file, this instructs the
      * frontend to terminate the existing playback, and change channel to
-     * the new file. Before updating livetv chain and switching to new file
-     * we must to wait for event DONE_RECORDING that informs the current
-     * show is completed. Then we will call livetv chain update to get
-     * current program info. Watch signal will be down during this period.
+     * the new file. So we will call livetv chain update to get current
+     * program info. Watch signal will be down during this period.
      */
     case EVENT_LIVETV_WATCH:
       if (msg->subject.size() >= 3)
@@ -394,11 +391,11 @@ void LiveTVPlayback::HandleBackendMessage(EventMessagePtr msg)
      * Event: DONE_RECORDING
      *
      * Indicates that an active recording has completed on the specified
-     * recorder. used to manage program breaks while watching live tv.
-     * When receive event for recorder, we force an update of livetv chain
-     * to get current program info when chain is not yet updated.
-     * Watch signal is used when up, to mark the break period and
-     * queuing the frontend for reading file buffer.
+     * recorder.
+     * When receive event for recorder, we could update the livetv chain
+     * to get current program info when chain is not yet updated. Watch
+     * signal is used when up, to mark the break period and queuing the
+     * frontend for reading file buffer.
      */
     case EVENT_DONE_RECORDING:
       if (msg->subject.size() >= 2)
@@ -408,23 +405,8 @@ void LiveTVPlayback::HandleBackendMessage(EventMessagePtr msg)
         {
           // Recorder is not subscriber. So callback event to it
           recorder->DoneRecordingCallback();
-          // Manage program break without locking
           if (m_chain.watch /* volatile */)
-          {
-            /*
-             * Last recording is now completed but watch signal is ON.
-             * Then force live tv chain update for the new current
-             * program. We will retry for a short period before returning.
-             */
-            OS::Timeout timeout(BREAK_TIMEOUT);
-            do
-            {
-              usleep(500000); // wait for 500 ms
-              HandleChainUpdate();
-            }
-            while (m_chain.watch /* volatile */ &&
-                    timeout.time_left() > 0);
-          }
+            DBG(DBG_WARN, "%s: recording finished, but WATCH is ON\n", __FUNCTION__);
         }
       }
       break;
