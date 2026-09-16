@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: pvr.mythtv\n"
 "Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: 2026-08-18 02:57+0000\n"
+"PO-Revision-Date: 2026-09-01 06:16+0000\n"
 "Last-Translator: Alfonso Cachero <alfonso.cachero@gmail.com>\n"
 "Language-Team: Spanish (Spain) <https://kodi.weblate.cloud/projects/kodi-add-ons-pvr-clients/pvr-mythtv/es_es/>\n"
 "Language: es_es\n"
@@ -25,11 +25,11 @@ msgstr "Interfaz Kodi para MythTV"
 
 msgctxt "Addon Description"
 msgid "MythTV frontend (up to MythTV 36). Supports streaming of Live TV & Recordings, listening to Radio channels, EPG and Timers."
-msgstr "Interfaz MythTV (hasta MythTV 36). Soporta transmisión de TV en directo y grabaciones, escucha de canales de radio, EPG y temporizadores."
+msgstr "Interfaz MythTV (hasta MythTV 36). Soporta transmisión de TV en directo y grabaciones, escucha de canales de radio, EPG y programaciones."
 
 msgctxt "Addon Disclaimer"
 msgid "This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects."
-msgstr "¡Este software es inestable! Los autores no se hacen responsables de grabaciones fallidas, temporizadores incorrectos, horas perdidas o cualquier otro efecto no deseado."
+msgstr "¡Este software es inestable! Los autores no se hacen responsables de grabaciones fallidas, programaciones incorrectas, horas perdidas o cualquier otro efecto no deseado."
 
 # Settings labels
 msgctxt "#30000"
