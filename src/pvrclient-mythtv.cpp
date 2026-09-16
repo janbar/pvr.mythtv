@@ -95,7 +95,7 @@ static void Log(int level, char *msg)
       doLog = true;
       break;
     case MYTH_DBG_WARN:
-      loglevel = ADDON_LOG_INFO;
+      loglevel = ADDON_LOG_WARNING;
       doLog = true;
       break;
     case MYTH_DBG_INFO:
@@ -119,9 +119,9 @@ void PVRClientMythTV::SetDebug(bool silent /*= false*/)
   if (CMythSettings::GetExtraDebug())
     Myth::DBGAll();
   else if (silent)
-    Myth::DBGLevel(MYTH_DBG_NONE);
+    Myth::DBGLevel(MYTH_DBG_WARN);
   else
-    Myth::DBGLevel(MYTH_DBG_ERROR);
+    Myth::DBGLevel(MYTH_DBG_INFO);
   Myth::SetDBGMsgCallback(Log);
 }
 
