@@ -284,7 +284,7 @@ void LiveTVPlayback::HandleChainUpdate()
    */
   if (prog && !prog->fileName.empty() && !IsChained(*prog))
   {
-    DBG(DBG_DEBUG, "%s: liveTV (%s): adding new transfer %s\n", __FUNCTION__,
+    DBG(DBG_INFO, "%s: liveTV (%s): adding new transfer %s\n", __FUNCTION__,
             m_chain.UID.c_str(), prog->fileName.c_str());
     ProtoTransferPtr transfer(new ProtoTransfer(m_recorder->GetServer(), m_recorder->GetPort(), prog->fileName, prog->recording.storageGroup));
     // Pop previous dummy file if exists then add the new into the chain
@@ -302,7 +302,7 @@ void LiveTVPlayback::HandleChainUpdate()
     if (m_chain.switchOnCreate && transfer->GetSize() > 0 && SwitchChainLast())
       m_chain.switchOnCreate = false;
     m_chain.watch = false; // Chain update done. Restore watch flag
-    DBG(DBG_DEBUG, "%s: liveTV (%s): chain last (%u), watching (%u)\n", __FUNCTION__,
+    DBG(DBG_INFO, "%s: liveTV (%s): chain last (%u), watching (%u)\n", __FUNCTION__,
             m_chain.UID.c_str(), m_chain.lastSequence, m_chain.currentSequence);
   }
 }
@@ -357,7 +357,10 @@ void LiveTVPlayback::HandleBackendMessage(EventMessagePtr msg)
       if (msg->subject.size() >= 3)
       {
         if (msg->subject[1] == "UPDATE" && msg->subject[2] == m_chain.UID)
+        {
+          DBG(DBG_INFO, "%s: EVENT LIVETV CHAIN\n", __FUNCTION__);
           HandleChainUpdate();
+        }
       }
       break;
     /*
@@ -381,6 +384,7 @@ void LiveTVPlayback::HandleBackendMessage(EventMessagePtr msg)
         {
           if (recorder->GetNum() == (int)rnum)
           {
+            DBG(DBG_INFO, "%s: EVENT LIVETV WATCH\n", __FUNCTION__);
             OS::WriteLock lock(*m_latch); // Lock chain
             m_chain.watch = true;
           }
@@ -403,10 +407,11 @@ void LiveTVPlayback::HandleBackendMessage(EventMessagePtr msg)
         int32_t rnum;
         if (string_to_int32(msg->subject[1].c_str(), &rnum) == 0 && recorder->GetNum() == (int)rnum)
         {
+          DBG(DBG_INFO, "%s: EVENT DONE RECORDING\n", __FUNCTION__);
           // Recorder is not subscriber. So callback event to it
           recorder->DoneRecordingCallback();
           if (m_chain.watch /* volatile */)
-            DBG(DBG_WARN, "%s: recording finished, but WATCH is ON\n", __FUNCTION__);
+            DBG(DBG_WARN, "%s: recording finished, but livetv chain hasn't been updated\n", __FUNCTION__);
         }
       }
       break;
