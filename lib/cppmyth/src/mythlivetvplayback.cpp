@@ -36,6 +36,7 @@
 #define TICK_USEC             100000  // valid range: 10000 - 999999
 #define START_TIMEOUT         2000    // millisec
 #define AHEAD_TIMEOUT         10000   // millisec
+#define AHEAD_USEC_INTERVAL   500000  // microsec
 #define BUFFER_CAPACITY       2       // 2 chunks
 
 using namespace Myth;
@@ -287,14 +288,12 @@ void LiveTVPlayback::HandleChainUpdate()
     DBG(DBG_INFO, "%s: liveTV (%s): adding new transfer %s\n", __FUNCTION__,
             m_chain.UID.c_str(), prog->fileName.c_str());
     ProtoTransferPtr transfer(new ProtoTransfer(m_recorder->GetServer(), m_recorder->GetPort(), prog->fileName, prog->recording.storageGroup));
-    // Pop previous dummy file if exists then add the new into the chain
-    if (m_chain.lastSequence && m_chain.chained[m_chain.lastSequence - 1].first->GetSize() == 0)
-    {
-      --m_chain.lastSequence;
-      m_chain.chained.pop_back();
-    }
+    // Add the new file into the chain
     m_chain.chained.push_back(std::make_pair(transfer, prog));
     m_chain.lastSequence = m_chain.chained.size();
+    // close previous dummy file
+    if (m_chain.lastSequence > 1 && m_chain.chained[m_chain.lastSequence - 2].first->GetSize() == 0)
+      m_chain.chained[m_chain.lastSequence - 2].first->Close();
     /*
      * If switchOnCreate flag and file is filled then switch immediatly.
      * Else we will switch later on the next event 'UPDATE_FILE_SIZE'
@@ -325,11 +324,10 @@ bool LiveTVPlayback::SwitchChain(unsigned sequence)
 
 bool LiveTVPlayback::SwitchChainLast()
 {
+  OS::WriteLock lock(*m_latch);
   if (SwitchChain(m_chain.lastSequence))
   {
-    OS::ReadLock lock(*m_latch);
-    if (m_recorder && m_chain.currentTransfer
-            && m_recorder->TransferSeek(*m_chain.currentTransfer, 0, WHENCE_SET) == 0)
+    if (m_recorder && m_recorder->TransferSeek(*m_chain.currentTransfer, 0, WHENCE_SET) == 0)
       return true;
   }
   return false;
@@ -540,46 +538,69 @@ int LiveTVPlayback::Read(void* buffer, unsigned n)
 int LiveTVPlayback::_read(void* buffer, unsigned n)
 {
   int r = 0;
-  bool retry;
-  int64_t s, fp;
+  int64_t rs, fp;
+  bool ahead = false;
 
-  /* stage the current recorder */
+  // stage the current recorder
   m_latch->lock_shared();
   ProtoRecorderPtr recorder(m_recorder);
   m_latch->unlock_shared();
   if (!m_chain.currentTransfer || !recorder)
     return -1;
 
+  // The position in the current transfer
   fp = m_chain.currentTransfer->GetPosition();
 
-  do
+  for (;;)
   {
-    retry = false;
-    s = m_chain.currentTransfer->GetRemaining();  // Acceptable block size
-    if (s == 0)
+    // Get the acceptable block size to read
+    rs = m_chain.currentTransfer->GetRemaining();
+
+    if (rs == 0)
     {
+      // No remaining data or null size.
+      // If the current transfer is the last in the chain, I have to read ahead
+      // until timeout; Otherwise I have to move on to the next transfer, and
+      // retry a new attempt.
       OS::Timeout timeout(AHEAD_TIMEOUT);
       for (;;)
       {
-        // Reading ahead
+        // Read ahead if the transfer is the last in the chain
         m_latch->lock_shared();
-        unsigned lastseq = m_chain.lastSequence;
+        ahead = (m_chain.currentSequence == m_chain.lastSequence);
         m_latch->unlock_shared();
-        if (m_chain.currentSequence == lastseq)
+
+        if (ahead)
         {
-          int64_t rp = recorder->GetFilePosition();
-          if (rp > fp)
+          // The transfer isn't empty
+          if (fp > 0)
           {
-            m_chain.currentTransfer->SetSize(rp);
-            retry = true;
-            break;
+            // Poll the new size, else loop until timeout
+            int64_t rp = recorder->GetFilePosition();
+            if (rp > fp)
+            {
+              // Set the new size, and retry
+              m_chain.currentTransfer->SetSize(rp);
+              break;
+            }
           }
+          // The transfer is empty
+          else if (fp == 0)
+          {
+            // Poll the chain to bypass a dummy file
+            DBG(DBG_INFO, "%s: poll the chain (%u)\n", __FUNCTION__, m_chain.currentSequence);
+            HandleChainUpdate();
+            SwitchChainLast();
+            if (m_chain.currentTransfer->GetSize() > 0)
+              break;
+          }
+
           if (!timeout.time_left())
           {
-            DBG(DBG_WARN, "%s: read position is ahead (%" PRIi64 ")\n", __FUNCTION__, fp);
+            DBG(DBG_WARN, "%s: position is ahead (%" PRIi64 ")\n", __FUNCTION__, fp);
             return 0;
           }
-          usleep(500000);
+          usleep(AHEAD_USEC_INTERVAL);
         }
         // Switch next file transfer is required to continue
         else
@@ -587,26 +608,40 @@ int LiveTVPlayback::_read(void* buffer, unsigned n)
           if (!SwitchChain(m_chain.currentSequence + 1))
             return -1;
           if (m_chain.currentTransfer->GetPosition() != 0)
-            recorder->TransferSeek(*(m_chain.currentTransfer), 0, WHENCE_SET);
-          DBG(DBG_DEBUG, "%s: liveTV (%s): chain last (%u), watching (%u)\n", __FUNCTION__,
-                m_chain.UID.c_str(), lastseq, m_chain.currentSequence);
-          retry = true;
+            recorder->TransferSeek(*m_chain.currentTransfer, 0, WHENCE_SET);
+          DBG(DBG_INFO, "%s: liveTV (%s): watching (%u)\n", __FUNCTION__,
+                  m_chain.UID.c_str(), m_chain.currentSequence);
           break;
         }
       }
     }
-    else if (s < 0)
+    else if (rs < 0)
     {
       // file size not up to date
       return 0;
     }
+    else
+      break;
   }
-  while (retry);
 
-  if (s < (int64_t)n)
-    n = (unsigned)s ;
+  if (rs < (int64_t)n)
+    n = (unsigned)rs ;
 
-  r = recorder->TransferRequestBlock(*(m_chain.currentTransfer), buffer, n);
+  // Try again for a while to work around the desynchronization of the transfer
+  // with the actual file status.
+  for (int i = 0; i < 10; ++i)
+  {
+    r = recorder->TransferRequestBlock(*m_chain.currentTransfer, buffer, n);
+    if (!ahead || r != 0)
+      break;
+    DBG(DBG_WARN, "%s: request block size %u failed (%d): "
+            "path=%s size=%" PRIi64 " fp=%" PRIi64 " rs=%" PRIi64 "\n",
+            __FUNCTION__, n, r,
+            m_chain.currentTransfer->GetPathName().c_str(),
+            m_chain.currentTransfer->GetSize(), fp, rs);
+    usleep(AHEAD_USEC_INTERVAL);
+  }
+
   return r;
 }
 
