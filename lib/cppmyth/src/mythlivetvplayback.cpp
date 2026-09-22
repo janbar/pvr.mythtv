@@ -409,7 +409,21 @@ void LiveTVPlayback::HandleBackendMessage(EventMessagePtr msg)
           // Recorder is not subscriber. So callback event to it
           recorder->DoneRecordingCallback();
           if (m_chain.watch /* volatile */)
+          {
             DBG(DBG_WARN, "%s: recording finished, but livetv chain hasn't been updated\n", __FUNCTION__);
+            // Try again for a while to work around the chain update failure
+            // i.e the new program does not yet have a filename (v30.0)
+            for (int i = 0; i < 10; ++i)
+            {
+              usleep(AHEAD_USEC_INTERVAL);
+              if (!recorder->IsPlaying())
+                break;
+              HandleChainUpdate();
+              // Break on successful chain update
+              if (!m_chain.watch /* volatile */)
+                break;
+            }
+          }
         }
       }
       break;
