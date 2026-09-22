@@ -1,3 +1,6 @@
+v21.3.20
+- Add another workaround for delayed transfer synchronization
+
 v21.3.19
 - Sync upstream lib cppmyth 3.2.2
 - Fix random playback stop on livetv program breaks
